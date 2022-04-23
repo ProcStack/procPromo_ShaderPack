@@ -10,7 +10,7 @@ Softer defails, edges highlights, shadows, and glowing effects.
 ---
 
 ### Creator's Notes
-My first shader pack for Minecraft, it's been quite a journey.
+My first shader pack for Minecraft v1.18.1, it's been quite a journey.
 <br>Since I had no footing for how to create for Optifine's environment, I looked towards 3 packs spcifically for learning from. *(Listed Below)*
 
 I wanted to create the backbone for a general purpose shader pack. Some sort of short term project that requires features for future shader pack dev.
