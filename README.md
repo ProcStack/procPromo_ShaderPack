@@ -35,7 +35,7 @@ Any Alt Textures from the atlases were generated from Minecraft using `texturedu
 
 
 #### Shadow Inspiration and Learning Model
-*[Chocapic13's High Performance](https://www.curseforge.com/minecraft/customization/chocapic13-high-performance-shaders)*
+*[Chocapic13's HighPerformance Toaster](https://www.curseforge.com/minecraft/customization/chocapic13-high-performance-shaders)*
 
 #### Optifine's Shader Environment Learning Models
 *[Capt Tatsu's BSL Shaders v8](https://bitslablab.com)*
