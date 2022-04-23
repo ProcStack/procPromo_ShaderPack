@@ -8,7 +8,7 @@ const float shadowDistanceRenderMul = 1.0; //[-1.0 1.0] Can help to increase sha
 const float shadowIntervalSize = 1.0;
 
 const float k = 1.85;
-float a = 1.05;
+float a = 1.08;
 
 vec4 BiasShadowProjection(in vec4 projectedShadowSpacePosition) {
   float distortFactor = log(length(projectedShadowSpacePosition.xy)+a)*k;

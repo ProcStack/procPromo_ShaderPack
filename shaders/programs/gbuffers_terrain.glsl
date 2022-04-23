@@ -518,7 +518,7 @@ void main() {
           shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
         }
         for( int x=0; x<boxSamplesCount; ++x){
-          projectedShadowPosition = vec3(spCoord+boxSamples[x]*.002, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
+          projectedShadowPosition = vec3(spCoord+boxSamples[x]*.0015, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
         
           shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .05);
         }
@@ -533,7 +533,7 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
     
     
-    diffuseSun = smoothstep(.6,.8,diffuseSun);
+    diffuseSun = smoothstep(.4,.8,diffuseSun); 
     // Mute Shadows during Rain
     diffuseSun = mix( diffuseSun*.6+.6, 1.0, rainStrength);
     
