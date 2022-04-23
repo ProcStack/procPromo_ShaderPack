@@ -35,10 +35,10 @@ Any Alt Textures from the atlases were generated from Minecraft using `texturedu
 
 
 #### Shadow Inspiration and Learning Model
-<br>*[Chocapic13's High Performance](https://www.curseforge.com/minecraft/customization/chocapic13-high-performance-shaders)*
+*[Chocapic13's High Performance](https://www.curseforge.com/minecraft/customization/chocapic13-high-performance-shaders)*
 
 #### Optifine's Shader Environment Learning Models
-<br>*[Capt Tatsu's BSL Shaders v8](https://bitslablab.com)*
+*[Capt Tatsu's BSL Shaders v8](https://bitslablab.com)*
 <br>*[Sildur's Vibrant shaders](https://www.curseforge.com/minecraft/customization/sildurs-vibrant-shaders)*
 
 
