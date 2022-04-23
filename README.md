@@ -5,8 +5,10 @@
 Cartoonized Vibes
 Softer defails, edges highlights, shadows, and glowing effects.
 
+<p align="center">
 <img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;">
-<p style="margin-left:auto;margin-right:auto;">*(More in '/show')*</p>
+(More in '/show')
+</p>
      
 ---
 
