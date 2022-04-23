@@ -317,13 +317,13 @@ texcoordmid=midcoord;
   vIsLava=0.0;
   if (mc_Entity.x == 701){
     vIsLava=1.0;
-    //vColorOnly=1.10;
+    vColorOnly=1.10;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   if (mc_Entity.x == 702){
     vIsLava=1.0;
-    vColorOnly=0.10;
+    //vColorOnly=0.10;
     //vColorOnly=1.30;
     color.rgb = avgColor.rgb;//mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
@@ -559,7 +559,7 @@ void main() {
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
       if(vColorOnly>.0){
-        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, texelSize* DetailBluring*1.0*(1.0-vIsLava));
+        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, texelSize* DetailBluring*(1.0-vIsLava));
       }else{
         txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
@@ -607,7 +607,6 @@ void main() {
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
     outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
     outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(outCd.rgb,1.0), vIsLava);
 
 
 
