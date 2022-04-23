@@ -11,8 +11,7 @@ psPromo Minecraft Screener
 The nether table
 <img src="Main_NetherEnchanter.png" alt="Enchanting, aint it?" style="margin-left:auto;margin-right:auto;">
 
-Diorite bird poop
-Detail bluring for that smoother surface vibe
+Auto Diorite bird poop bluring for that smoother surface finish
 <img src="DioriteBlending_2022-04-11.jpg" alt="Diorite" style="margin-left:auto;margin-right:auto;">
 
 Who can take the sunrise?
