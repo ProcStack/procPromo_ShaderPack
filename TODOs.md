@@ -27,8 +27,8 @@
 
 
 #### Water-
--Write to depth buffer
--Eye in water depth buffer indication
+- Write to depth buffer
+- Eye in water depth buffer indication
 
 
 #### Composite Passes-
