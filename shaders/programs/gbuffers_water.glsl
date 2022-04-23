@@ -220,10 +220,6 @@ void main() {
   outCd.rgb*=txCd.rgb;//+0.5;
   outCd.a*=txCd.a;
   
-  vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
-  normalCd = normalize( normalCd*tbnMatrix );
-  //float highlights = dot(normalize(sunPosition),normalCd);
-  //highlights = (highlights-.5)*0.3;
 
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
     outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
@@ -242,12 +238,22 @@ void main() {
     
     outCd.a = max( vMinAlpha, outCd.a );
     
-    vec3 glowCd = outCd.rgb*vTextureGlow;
+    vec3 glowCd = outCd.rgb*outCd.rgb;
+    vec3 glowHSV = rgb2hsv(glowCd);
+    //glowHSV.z *= (depthBias*.5+.2);
+    glowHSV.z *= (depth*.2+.8) * .5;// * lightLuma;
+    glowHSV.y *= 1.2;// * lightLuma;
+
+#ifdef NETHER
+    glowHSV.z *= vTextureGlow;
+#else
+    glowHSV.z *= vTextureGlow*.7;
+#endif
 
 	gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-	gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);
-	gl_FragData[2] = vec4(glowCd,1.0);
+	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
+	gl_FragData[3] = vec4(glowHSV,1.0);
 
 }
 

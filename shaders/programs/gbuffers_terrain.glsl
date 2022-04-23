@@ -39,7 +39,6 @@ in vec3 at_velocity; // vertex offset to previous frame
 
 // Glow Pass Varyings --
 varying float blockFogInfluence;
-varying float glowMultVertColor;
 varying float txGlowThreshold;
 // -- -- -- -- -- -- -- --
 
@@ -265,10 +264,8 @@ texcoordmid=midcoord;
   vColorOnly=0.0;
 
   blockFogInfluence = 1.0;
-  glowMultVertColor=0.0;
   if (mc_Entity.x == 803){
     blockFogInfluence = 0.2;
-    glowMultVertColor = 0.8;
   }
   
   txGlowThreshold = 1.0; // Off
@@ -320,7 +317,7 @@ texcoordmid=midcoord;
   vIsLava=0.0;
   if (mc_Entity.x == 701){
     vIsLava=1.0;
-    vColorOnly=1.10;
+    //vColorOnly=1.10;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
@@ -437,7 +434,6 @@ uniform vec3 upPosition;
 
 // Glow Pass Varyings --
 varying float blockFogInfluence;
-varying float glowMultVertColor;
 varying float txGlowThreshold;
 // -- -- -- -- -- -- -- --
 
@@ -643,8 +639,8 @@ void main() {
 #ifdef NETHER
     float colorRed = outCd.r;
     outCd.rgb = rgb2hsv(outCd.rgb);
-    outCd.g = mix( outCd.g, min(1.0,outCd.g*1.4), min(1.0, abs(colorRed-.5)*2.0) );
-    outCd.b = mix( outCd.b, min(1.0,outCd.b*1.3), min(1.0, abs(colorRed-.5)*2.0) );
+    outCd.g = mix( outCd.g, min(1.0,outCd.g*1.4), min(1.0, abs(1.0-colorRed-.5)*20.0) );
+    outCd.b = mix( outCd.b, min(1.0,outCd.b*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
     outCd.rgb = hsv2rgb(outCd.rgb);
 #endif
     
@@ -666,7 +662,7 @@ void main() {
     //}else if( isEyeInWater == 3 ){ // Snow
       //outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
     }else{
-      outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 );
+      outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2+glowInf );
     }
 
     
@@ -704,10 +700,10 @@ void main() {
       float cdMaxVal = max( txCd.r, max( txCd.g, txCd.b) );
       float txGlow = smoothstep(.35,.65, cdMaxVal)*3.0*(1.0-depthEnd*.7);
       cdFogMix = mix( outCd.rgb+outCd.rgb*txGlow, cdFogMix, blockFogInfluence*.45+.55);
-      outCd.rgb = mix( outCd.rgb*endFogCd*(facingMult*.5+.5), cdFogMix, min(1.0,depthEnd*depthEnd+(1.0-blockFogInfluence)+glowMultVertColor));
+      outCd.rgb = mix( outCd.rgb*endFogCd*(facingMult*.5+.5), cdFogMix, min(1.0,depthEnd*depthEnd+(1.0-blockFogInfluence)));
       glowCd = addToGlowPass(glowCd, outCd.rgb*txGlow*(1.0-blockFogInfluence)*(depthEnd));
       
-      outCd.rgb *= min(1.0, dot(vWorldNormal,vec3(0,1,0))*.25+.75+glowMultVertColor*.7);
+      outCd.rgb *= min(1.0, dot(vWorldNormal,vec3(0,1,0))*.25+.75);
 #endif
     
     /*
@@ -724,12 +720,12 @@ void main() {
     */
     
     // TODO : Why I turn this off?
-    /*if( glowMultVertColor > 0.0 ){
+    //if( glowMultVertColor > 0.0 ){
       //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
       //float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
-      float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
-      glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*glowMultVertColor*(depth*.5+.5));
-    }*/
+      //float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
+      //glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.5+.5));
+    //}
     
     
     
@@ -749,8 +745,8 @@ void main() {
 #endif
 
 #ifdef NETHER
-    outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.8,1.3,1.2), vec3(1.0), (depthBias)*.6+.4);
-    outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.035, .65, depthBias+glowInf));
+    outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
+    outCd.rgb = mix( fogColor, outCd.rgb*lightCd, smoothstep(.015, .45, depthBias+glowInf));
 #else
     outCd.rgb *= mix(1.0, toCamNormalDot*.5+.5, depth*.7+.3);
 #endif
@@ -799,6 +795,8 @@ void main() {
 #else
     glowHSV.z *= vGlowMultiplier*.7;
 #endif
+
+    outCd.rgb+=glowHSV.z;
 
 
     float outDepth = min(.9999999,gl_FragCoord.w);
