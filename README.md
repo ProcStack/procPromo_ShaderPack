@@ -22,9 +22,17 @@ Sure most of the look could have been achieved in a shader pack + texture pack c
 ---
 
 ### Under the hood
+#### Options
+ - `DetailBluring` - How much texture bluring is going on
+ - `EdgeShading` - Edge's highlighting's influencicity
+ - `GlowBrightness` - Change how much snow blindess you get while playing the game
+ - `SolidLeaves` - Don't like the solid leaves? Turn off those bubblicious gum blocks 
+
+#### Tech things
 Texture bluring along side an ever growing set of custom block and entity textures.
 <br>A bluring/glow pass driven by a glow atlas texture.
 <br>Edge highlights generated from depth and normal buffer data
+
 
 ---
 
