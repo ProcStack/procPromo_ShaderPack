@@ -1,14 +1,13 @@
 # ProcStack's psPromo v0.1
-## Inpired by Mojang's promo art style for Minecraft
+### Optifine Shader Pack
+*Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
+<br> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
+<br> Softer details, edges highlights, sharper shadows, and glowing effects.*
 
-### The Style; Vanilla+
-Cartoonized Vibes
-Softer defails, edges highlights, shadows, and glowing effects.
+<img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;"/>
 
-<p align="center">
-<img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;">
-(More in '/show')
-</p>
+*(More screenshots in [/show](/show/ReadMe.md))*
+
      
 ---
 
