@@ -24,12 +24,13 @@ Sure most of the look could have been achieved in a shader pack + texture pack c
 ### Under the hood
 Texture bluring along side an ever growing set of custom block and entity textures.
 <br>A bluring/glow pass driven by a glow atlas texture.
-<br>Edge highlights generated depth and normal buffer data
+<br>Edge highlights generated from depth and normal buffer data
 
 ---
 
 ### Inpiration Sources
-Textures  were generated from Minecraft using `texturedump v1.18.1` in Forge
+Any Alt Textures from the atlases were generated from Minecraft using `texturedump v1.18.1` in Forge
+<br>Then recreated or heavily modified and painted over.
 <br>Asside from serveral custom blocks and entities, noise map, and glow map; all other art is acredited to Mojang.
 
 
