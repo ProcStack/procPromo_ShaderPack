@@ -28,10 +28,13 @@ Texture bluring along side an ever growing set of custom block and entity textur
 
 ---
 
-### Inpiration Sources
-Any Alt Textures from the atlases were generated from Minecraft using `texturedump v1.18.1` in Forge
+### Edu & Inpiration
+Mojang's Promotional Art style'n'vibe!
+<br>Their ads and splash images in the launcher
+
+<br>Any Alt Textures from the atlases were generated from Minecraft using `texturedump v1.18.1` in Forge
 <br>Then recreated or heavily modified and painted over.
-<br>Asside from serveral custom blocks and entities, noise map, and glow map; all other art is acredited to Mojang.
+<br>A stop-gap until I can get the detail bluring logic working more universally
 
 
 #### Shadow Inspiration and Learning Model
