@@ -30,8 +30,8 @@ Sure most of the look could have been achieved in a shader pack + texture pack c
 
 #### Tech things
 Texture bluring along side an ever growing set of custom block and entity textures.
-<br>A bluring/glow pass driven by a glow atlas texture.
-<br>Edge highlights generated from depth and normal buffer data
+<br>A two-pass glow/bluring driven by a glow texture atlas.
+<br>Edge highlights created from depth and normal buffer data
 
 
 ---
