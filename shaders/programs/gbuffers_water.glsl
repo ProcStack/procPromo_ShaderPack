@@ -121,9 +121,9 @@ void main() {
   }
   
   // Water
-  if (mc_Entity.x == 703){
-    color.rgb=vec3(.35,.35,.85);
-  }
+  //if (mc_Entity.x == 703){
+    //color.rgb=vec3(.35,.35,.85);
+  //}
   // Flowing Water
   if (mc_Entity.x == 704){
     txlquart = texelSize*8.0;
