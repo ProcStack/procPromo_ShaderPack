@@ -620,7 +620,8 @@ void main() {
 
 #ifdef OVERWORLD
     
-    float sunPhaseMult = max(0.0,dot( sunVecNorm, upVecNorm));
+    float sunPhaseMult = 1.0-max(0.0,dot( sunVecNorm, upVecNorm)*.8+.2);
+    sunPhaseMult = 1.0-(sunPhaseMult*sunPhaseMult*sunPhaseMult);
     
     float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
     float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
@@ -798,7 +799,6 @@ void main() {
 #endif
 
     outCd.rgb+=glowHSV.z;
-
 
     float outDepth = min(.9999999,gl_FragCoord.w);
     
