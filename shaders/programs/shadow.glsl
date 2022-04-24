@@ -9,7 +9,7 @@
 
 varying vec2 texcoord;
 
-varying vec4 color;
+//varying vec4 color;
 
 void main() {
 
@@ -19,7 +19,7 @@ void main() {
 
 
 	texcoord = gl_MultiTexCoord0.xy;
-	color = gl_Color;
+	//color = gl_Color;
 }
 
 #endif
@@ -29,11 +29,11 @@ void main() {
 uniform sampler2D tex;
 
 varying vec2 texcoord;
-varying vec4 color;
+//varying vec4 color;
 
 void main() {
 
-  vec4 shadowCd = texture2D(tex,texcoord.xy) * color;
+  vec4 shadowCd = texture2D(tex,texcoord.xy);// * color;
 
 	gl_FragData[0] = shadowCd;
 }

@@ -4,4 +4,16 @@
 
 #define FSH
 
-#include "/programs/gbuffers_shadow.glsl"
+//#include "/programs/gbuffers_shadow.glsl"
+
+uniform sampler2D tex;
+
+varying vec2 texcoord;
+//varying vec4 color;
+
+void main() {
+
+  vec4 shadowCd = texture2D(tex,texcoord.xy);// * color;
+
+	gl_FragData[0] = shadowCd;
+}

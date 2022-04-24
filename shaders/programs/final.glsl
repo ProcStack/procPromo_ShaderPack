@@ -226,7 +226,7 @@ void main() {
 
   
   vec3 outGlowCd = max(blurMidCd, blurLowCd)*glowInf;
-  outCd.rgb += outGlowCd;//+outCd.rgb*(edgePerc-.3)*.25 * GlowBrightness;//*(outGlowCd*.5+.5);
+  outCd.rgb += outGlowCd+outCd.rgb*(edgePerc-.3)*.25 * GlowBrightness;//*(outGlowCd*.5+.5);
 
 
 	gl_FragColor = vec4(outCd.rgb,1.0);

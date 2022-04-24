@@ -765,7 +765,7 @@ void main() {
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
     // Snow glow when in a cold biome
-    float frozenSnowGlow = 1.0-(0.0,smoothstep(.0,.2,BiomeTemp));
+    float frozenSnowGlow = 1.0-smoothstep(.0,.2,BiomeTemp);
     glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.8*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
     //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
     //cdBrightness *= cdBrightness;
@@ -773,8 +773,8 @@ void main() {
     outCd.rgb *= 1.0+frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
     outCd.rgb *= 1.0-rainStrength*.5;
     
-    //float skyBrightMultFit = 1.5-skyBrightnessMult*.5*(1.0-frozenSnowGlow);
-    //outCd.rgb *= skyBrightMultFit;
+    float skyBrightMultFit = 1.3-skyBrightnessMult*.3*(1.0-frozenSnowGlow);
+    outCd.rgb *= skyBrightMultFit;
     outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
 #endif
     
