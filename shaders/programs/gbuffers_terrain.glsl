@@ -620,6 +620,8 @@ void main() {
 
 #ifdef OVERWORLD
     
+    float sunPhaseMult = max(0.0,dot( sunVecNorm, upVecNorm));
+    
     float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
     float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
     moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
@@ -628,7 +630,7 @@ void main() {
     diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5, 0.0, 1.0) );
 
     surfaceShading *= mix( .55*moonPhaseMult, dot(sunVecNorm,vNormal)*.15+.05, dayNight*.5+.5 );
-    surfaceShading *= max(0.0,dot( sunVecNorm, upVecNorm));
+    surfaceShading *= sunPhaseMult;
     surfaceShading *= (1.0-rainStrength)*.5+.5;
 #endif
     
@@ -771,9 +773,9 @@ void main() {
     outCd.rgb *= 1.0+frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
     outCd.rgb *= 1.0-rainStrength*.5;
     
-    float skyBrightMultFit = 1.5-skyBrightnessMult*.5*(1.0-frozenSnowGlow);
-    outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult);
+    //float skyBrightMultFit = 1.5-skyBrightnessMult*.5*(1.0-frozenSnowGlow);
     //outCd.rgb *= skyBrightMultFit;
+    outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
 #endif
     
     
