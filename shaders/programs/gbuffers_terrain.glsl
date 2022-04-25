@@ -76,7 +76,6 @@ varying float vDetailBluringMult;
 varying float vMultiTexelMap;
 
 varying float vAltTextureMap;
-varying float vGlowMultiplier;
 
 varying float vColorOnly;
 varying float vIsLava;
@@ -300,7 +299,6 @@ texcoordmid=midcoord;
 
   // General Alt Texture Reads
   vAltTextureMap=1.0;
-  vGlowMultiplier=1.0;
   vec2 prevTexcoord = texcoord.zw;
   texcoord.zw = texcoord.st;
   if (mc_Entity.x == 901 || mc_Entity.x == 801){
@@ -317,7 +315,7 @@ texcoordmid=midcoord;
   vIsLava=0.0;
   if (mc_Entity.x == 701){
     vIsLava=1.0;
-    vColorOnly=1.10;
+    vColorOnly=0.70;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
@@ -465,7 +463,6 @@ varying vec4 shadowPos;
 varying vec3 shadowOffset;
 varying float vAlphaMult;
 varying float vAltTextureMap;
-varying float vGlowMultiplier;
 
 varying float vColorOnly;
 varying float vIsLava;
@@ -584,7 +581,7 @@ void main() {
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
     float depthBias = biasToOne(depth, 4.5);
-    
+    float depthDetailing = (1.0-depthBias*.3);
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
     vec3 lightCd = lightBaseCd.rgb;//*vLightingMult; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5)*vLightingMult;
@@ -605,8 +602,8 @@ void main() {
     
     // Set base color
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
-    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
+    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*depthDetailing);
 
 
 
@@ -635,10 +632,12 @@ void main() {
     surfaceShading *= (1.0-rainStrength)*.5+.5;
 #endif
     
+    // Close up Radial Highlights on blocks
     //outCd.rgb += mix(fogColor,vec3(lightLuma),gl_FragCoord.w) * surfaceShading;// -.2;
 
-    // Nether Logic
+    // Nether Warming Logic
 #ifdef NETHER
+    // Reds drive a stronger color tone in blocks
     float colorRed = outCd.r;
     outCd.rgb = rgb2hsv(outCd.rgb);
     outCd.g = mix( outCd.g, min(1.0,outCd.g*1.4), min(1.0, abs(1.0-colorRed-.5)*20.0) );
@@ -721,7 +720,7 @@ void main() {
     noiseCd = mix( noiseCd, noiseY, abs(vWorldNormal.y));
     */
     
-    // TODO : Why I turn this off?
+    // TODO : Do I want ambient glow outside of the glow mask atlas?
     //if( glowMultVertColor > 0.0 ){
       //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
       //float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
@@ -747,8 +746,8 @@ void main() {
 #endif
 
 #ifdef NETHER
-    outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
-    outCd.rgb = mix( fogColor, outCd.rgb*lightCd, smoothstep(.015, .45, depthBias+glowInf));
+    //outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
+    outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf));
 #else
     outCd.rgb *= mix(1.0, toCamNormalDot*.5+.5, depth*.7+.3);
 #endif
@@ -767,14 +766,14 @@ void main() {
 #ifdef OVERWORLD
     // Snow glow when in a cold biome
     float frozenSnowGlow = 1.0-smoothstep(.0,.2,BiomeTemp);
-    glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.8*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
+    glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.3*(1.0-sunPhaseMult)*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
     //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
     //cdBrightness *= cdBrightness;
     //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
-    outCd.rgb *= 1.0+frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
-    outCd.rgb *= 1.0-rainStrength*.5;
+    outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight)*(1.0-rainStrength)*skyBrightnessMult;
+    outCd.rgb *= 1.0-rainStrength*.5*skyBrightnessMult;
     
-    float skyBrightMultFit = 1.3-skyBrightnessMult*.3*(1.0-frozenSnowGlow);
+    float skyBrightMultFit = 1.1-skyBrightnessMult*.1*(1.0-frozenSnowGlow);
     outCd.rgb *= skyBrightMultFit;
     outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
 #endif
@@ -783,33 +782,32 @@ void main() {
 
     //outCd.rgb *= skyBrightMultFit;
     
-    glowCd = outCd.rgb;
+    glowCd = outCd.rgb+outCd.rgb*glowInf;
     //glowCd += vec3(1.0-distMix);
     //glowCd *= skyBrightMultFit;
 
 
     vec3 glowHSV = rgb2hsv(glowCd);
-    //glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
-    glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
+    glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
 
 #ifdef NETHER
-    glowHSV.z *= vGlowMultiplier;
+    //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness;// * lightLuma;
+    //glowHSV.z *= 1.0+vIsLava*.5;
+    outCd.rgb += outCd.rgb*lightCd*min(1.0,vIsLava+glowInf);
 #else
-    glowHSV.z *= vGlowMultiplier*.7;
+    //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
+    glowHSV.z *= .7+vIsLava*.5;
 #endif
 
-    outCd.rgb+=glowHSV.z;
+    outCd.rgb*=1.0+glowHSV.z;
 
-    float outDepth = min(.9999999,gl_FragCoord.w);
+    float outDepth = min(.9999,gl_FragCoord.w);
+
     
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
-    //gl_FragData[3] = vec4(vec3(diffuseSun, outDepth, 0.0), 1.0);
     gl_FragData[3] = vec4(vec3(blockShading, outDepth, 0.0), 1.0);
-    //gl_FragData[3] = vec4(vec3(blockShading), 1.0);
-    //gl_FragData[3] = vec4(diffuseLight, 1.0);
-    //gl_FragData[3] = vec4(vec3(blockShading), 1.0);
     gl_FragData[4] = vec4( glowHSV, 1.0);
 
 	//}

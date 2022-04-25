@@ -216,16 +216,14 @@ void main() {
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgePerc);// * (shadow*.3+.7);
 #endif
 
-  float glowInf = depth * ((depth==1.0) ? 0.0 : 1.0);
 #ifdef OVERWORLD
-  glowInf=1.0;
   float sunEdgeInf = dot( sunVecNorm, avgNormal )*.5+.5;
   outCd.rgb += outCd.rgb * (edgePerc*sunEdgeInf*.5);// * (shadow*.3+.7);
 #endif
   
 
   
-  vec3 outGlowCd = max(blurMidCd, blurLowCd)*glowInf;
+  vec3 outGlowCd = max(blurMidCd, blurLowCd);
   outCd.rgb += outGlowCd+outCd.rgb*(edgePerc-.3)*.25 * GlowBrightness;//*(outGlowCd*.5+.5);
 
 
