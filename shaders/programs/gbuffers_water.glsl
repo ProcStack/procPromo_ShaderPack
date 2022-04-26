@@ -141,9 +141,9 @@ void main() {
   // Nether Portal
   if (mc_Entity.x == 705){
     vTextureInf = 0.0;
-    vTextureGlow = 1.5;
+    vTextureGlow = 0.5;
     avgValue = texture2D(texture, mc_midTexCoord.st).xyz;
-    color.rgb=avgValue;
+    color.rgb*=avgValue*.5+.5;
     vMinAlpha = .5;
   }
   

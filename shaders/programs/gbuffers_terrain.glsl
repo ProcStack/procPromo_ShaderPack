@@ -315,16 +315,17 @@ texcoordmid=midcoord;
   vIsLava=0.0;
   if (mc_Entity.x == 701){
     vIsLava=1.0;
-    vColorOnly=0.70;
+    vColorOnly=1.70;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   if (mc_Entity.x == 702){
     vIsLava=1.0;
-    //vColorOnly=0.10;
+    //vColorOnly=0.30;
     //vColorOnly=1.30;
-    color.rgb = avgColor.rgb;//mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+    color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
+  
 
   // Amethyst Block
   vLightingMult=1.0;
@@ -678,11 +679,9 @@ void main() {
       fogInf *= fogInf;
     
       float lightMax = max( lightCd.r, max( lightCd.g, lightCd.b ) );
-      //float facingMultOrig=clamp( dot(normalize(-gl_FragCoord.xyz), vNormal)*.7+.5, 0.0, 1.0);
       float facingMultOrig=clamp( dot(normalize(vLocalPos.xyz), vWorldNormal)*.7+.5, 0.0, 1.0);
       
       
-      //vec2 rotUV = rotToUV(vAnimFogNormal);
       vec2 rotUV = rotToUV(vec3(-vLocalPos.x, -vAnimFogNormal.y, -vLocalPos.z));
       rotUV.y = (rotUV.y-.5)*.5+.5;
       screenSpace = (screenSpace)*(1.0-depthEnd)*.5;
@@ -802,7 +801,6 @@ void main() {
     outCd.rgb*=1.0+glowHSV.z;
 
     float outDepth = min(.9999,gl_FragCoord.w);
-
     
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);

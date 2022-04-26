@@ -18,6 +18,7 @@ uniform ivec2 eyeBrightnessSmooth;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
 uniform vec3 cameraPosition;
+uniform int blockEntityId;
 
 uniform vec2 texelSize;
 
@@ -29,7 +30,6 @@ uniform int worldTime;
 
 attribute vec4 mc_Entity;
 attribute vec2 mc_midTexCoord;
-attribute vec4 at_tangent; 
 in vec3 at_velocity; // vertex offset to previous frame
 
 // Glow Pass Varyings --
@@ -56,7 +56,7 @@ varying float sunDot;
 varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
-varying mat3 tbnMatrix;
+varying vec3 vScreenUV;
 varying vec2 vTexelSize;
 
 varying vec3 sunVecNorm;
@@ -90,7 +90,7 @@ void main() {
 	vec3 normal = gl_NormalMatrix * gl_Normal;
 	vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
 	lmtexcoord.xy = gl_MultiTexCoord0.xy;
-  vWorldNormal = gl_Normal;
+  vWorldNormal = mat3(gbufferModelViewInverse) * gl_Normal;
   vAnimFogNormal = gl_NormalMatrix*vec3(1.0,0.0,0.0);
   // -- -- -- -- -- -- -- --
   
@@ -99,11 +99,16 @@ void main() {
 	upVecNorm = normalize(upPosition);
 	dayNight = dot(sunVecNorm,upVecNorm);
 
-vLocalPos = gl_Vertex;
   vPos = gl_ProjectionMatrix * gl_Vertex;
+  vPos = ftransform();
 	gl_Position = vPos;
 
-  vPos = vec4(position,1.0);
+  vLocalPos = vec4(position,1.0);
+  vPos = vec4(position.xyz,1.0);
+  //vPos = gbufferProjectionInverse * gbufferModelViewInverse * gl_Vertex;
+
+  
+  vScreenUV = mat3(gbufferModelViewInverse) * gl_Normal;
   
 	color = gl_Color;
 
@@ -173,11 +178,7 @@ texcoordmid=midcoord;
   sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
 
   
-	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-	tbnMatrix = mat3(tangent.x, binormal.x, vNormal.x,
-					 tangent.y, binormal.y, vNormal.y,
-					 tangent.z, binormal.z, vNormal.z);
+
            
            
   // -- -- -- -- -- -- -- --
@@ -202,51 +203,14 @@ texcoordmid=midcoord;
   
 		position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
     
-    float wtMult = (worldTime*.1);//*.01+1.;
-    float rotVal = 0;
-    vec4 posVal = vec4( -.5, 0, 0, 1 );
-    
-    // rotVal = 90*3.14159265358979323/180;
-    rotVal = -1.5707963267948966;
-    //rotVal = wtMult;
-    /*mat4 xRotMat = mat4( 
-                vec4( 1, 0, 0, 0 ),
-                vec4( 0, cos(rotVal), -sin(rotVal), 0 ),
-                vec4( 0, sin(rotVal), cos(rotVal), 0 ),
-                posVal
-              );
-    mat4 yRotMat = mat4( 
-                vec4( cos(rotVal), 0, sin(rotVal), 0 ),
-                vec4( 0, 1, 0, 0 ),
-                vec4( -sin(rotVal), 0, cos(rotVal), 0 ),
-                posVal
-              );
-    mat4 zRotMat = mat4( 
-                vec4( cos(rotVal), -sin(rotVal), 0, 0 ),
-                vec4( sin(rotVal), cos(rotVal), 0, 0 ),
-                vec4( 0, 0, 1, 0 ),
-                posVal
-              );*/
+
 
   
 		shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
-		//vec3 rainingShadowPos = mat3(yRotMat) * position.xyz + yRotMat[3].xyz;
-		//vec3 rainingShadowPos =  mat3(xRotMat) * position.xyz + xRotMat[3].xyz;
-		//vec3 rainingShadowPos =  mat3(zRotMat) * zRotMat[3].xyz;
-		//vec3 rainingShadowPos =  mat3(xRotMat) * position.xyz + xRotMat[3].xyz;
+
     
-    //shadowPos.xy = mix( shadowPos.xy, rainingShadowPos.xy, clamp(position.z+2,0,1) );
-    
-debug = vec3(position.xyz);
-//debug = shadowPos.xyz;
     vec3 shadowProjDiag = diagonal3(shadowProjection);
     float spdLength = length( shadowProjDiag );
-    vec3 projRot = (shadowProjDiag);
-    projRot.x = cos( shadowProjDiag.x+wtMult ) + sin( shadowProjDiag.z+wtMult );
-    projRot.z = cos( shadowProjDiag.z+wtMult ) + sin( shadowProjDiag.x+wtMult );
-    //projRot = normalize(projRot)*spdLength;
-    projRot = shadowProjDiag;
-		//shadowPos.xyz = projRot * shadowPos.xyz + shadowProjection[3].xyz;
 		shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
     
 	//}
@@ -292,10 +256,6 @@ debug = vec3(position.xyz);
     vAltTextureMap=1.0;
     //vColorOnly=.0;
   }
-  
-
-
-
 
 
 
@@ -368,6 +328,7 @@ uniform int fogMode;
 uniform vec3 fogColor;
 uniform vec3 sunPosition;
 uniform vec3 cameraPosition;
+uniform int blockEntityId;
 uniform int isEyeInWater;
 uniform float BiomeTemp;
 uniform int moonPhase;
@@ -428,9 +389,9 @@ varying float sunDot;
 varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
+varying vec3 vScreenUV;
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
-varying mat3 tbnMatrix;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
@@ -560,15 +521,10 @@ void main() {
     outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
     outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
     //outCd = mix( vec4(outCd.rgb,1.0),  vec4(outCd.rgb,1.0), vIsLava);
-
-    
-    // Surface Normals
-    vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
-    normalCd = normalize( normalCd*tbnMatrix );
     
     // Sun/Moon Lighting
-    float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.0,.91,1.0)),vNormal);
-    float surfaceShading = 1.0-abs(toCamNormalDot);
+    //float toCamNormalDot = dot(normalize(-vLocalPos.xyz*vec3(1.0,.91,1.0)),vNormal);
+    //float surfaceShading = 1.0-abs(toCamNormalDot);
 
 #ifdef OVERWORLD
     
@@ -578,9 +534,9 @@ void main() {
     
     diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5, 0.0, 1.0) );
 
-    surfaceShading *= mix( .55*moonPhaseMult, dot(sunVecNorm,normalCd)*.15+.05, dayNight*.5+.5 );
-    surfaceShading *= max(0.0,dot( sunVecNorm, upVecNorm));
-    surfaceShading *= (1.0-rainStrength)*.5+.5;
+    //surfaceShading *= mix( .55*moonPhaseMult, dot(sunVecNorm,vNormal)*.15+.05, dayNight*.5+.5 );
+    //surfaceShading *= max(0.0,dot( sunVecNorm, upVecNorm));
+    //surfaceShading *= (1.0-rainStrength)*.5+.5;
 #endif
     
     //float envBrightness = eyeBrightnessSmooth.y/240.0;
@@ -592,27 +548,49 @@ void main() {
 
     
     
-    
-    
-    
-    
   outCd.rgb *= lightCd;
 
     
     
-    glowCd = outCd.rgb*0.0;
+    float glowValueMult = 1.0;
+    
+    if(blockEntityId == 706){
+      //outCd.rgb = vNormal.xyz;
+      
+      // Screen Space UVing
+      vec2 screenSpace = (gl_FragCoord.xy);
+      screenSpace = (screenSpace*texelSize)-.5;
+      
+      float dotToCam = dot( vNormal, normalize(vPos.xyz))*.3;
+      
+      vec2 uvProj = screenSpace.yx;
+      //uvProj *= (1.0-depthBias)*.1+.8 ;
+      uvProj.x += dotToCam;
+      
+      float pxVal = uvProj.x*-100.0;
+      float pyVal = uvProj.y*10.0;
+      uvProj.x += sin( pxVal + pyVal + worldTime*.1)*.007;
+      uvProj += vec2(worldTime*.002,worldTime*.0015);
+      uvProj = fract(uvProj);
+      
+      
+      outCd = texture2D(texture, uvProj);
+      glowValueMult = outCd.r*.4;
+      outCd = outCd * color ;
+      glowCd += outCd.rgb*glowValueMult;
+    }
 
 
     vec3 glowHSV = rgb2hsv(glowCd);
     //glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
     //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
-    //glowHSV.z *= vGlowMultiplier*0.0;
+    glowHSV.z *= vGlowMultiplier * glowValueMult;
 
 
 
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
-    gl_FragData[2] = vec4(normalCd*.5+.5, 1.0);
+    gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
     //gl_FragData[3] = vec4(vec3(blockShading), 1.0);
     gl_FragData[3] = vec4(diffuseLight, 1.0);
     gl_FragData[4] = vec4( glowHSV, 1.0);
