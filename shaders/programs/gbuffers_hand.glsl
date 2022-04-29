@@ -223,11 +223,11 @@ void main() {
     float distMix = min(1.0,gl_FragCoord.w);
     vec3 fogCg = vec3(fogColor.rbg)*.2+.7;
     if( isEyeInWater == 1 ){ // Water
-      outCd.rgb *= fogCg;//mix( outCd.rgb, outCd.rgb*mix(fogColor, vec3(1,1,1),distMix*.7+.3), (1.0-distMix) );
+      outCd.rgb *= mix( outCd.rgb, outCd.rgb*mix(fogColor, vec3(1,1,1),distMix*.7+.3), (1.0-distMix) );
     }else if( isEyeInWater == 2 ){ // Lava
       outCd.rgb *= fogCg;//mix( outCd.rgb, fogColor, (1.0-distMix) );
-    }else if( isEyeInWater == 3 ){ // Snow
-      outCd.rgb *= fogCg;
+    //}else if( isEyeInWater == 3 ){ // Snow
+    //  outCd.rgb *= fogCg;
     }
 
   //vec3 cdDeltas = vec3( outCd.r-max(outCd.g,outCd.b), outCd.g-max(outCd.r,outCd.b), outCd.b-max(outCd.r,outCd.g) );

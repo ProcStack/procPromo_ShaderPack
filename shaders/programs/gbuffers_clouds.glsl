@@ -138,20 +138,22 @@ void main() {
   vec3 camToPos = normalize( vLocalPos.xyz - cameraPosition);
   float sunMoonGlow = dot(camToPos, sunVecNorm);
   // Sun Glow Logic
-  float sunGlow = sunMoonGlow*max(0.0,abs(sunMoonGlow)-.6)*2.5;
+  float sunGlow = sunMoonGlow*max(0.0,abs(sunMoonGlow)-.3);
   sunGlow = max(0.0,sunGlow)*sunGlowMult;
   // Moon Glow Logic
   float moonGlow = sunMoonGlow*max(0.0,abs(sunMoonGlow)-.8);
   moonGlow = max(0.0,-moonGlow)*moonPhaseMult;
   sunMoonGlow = mix( moonGlow, sunGlow, clamp(dayNight+.5,0.0,1.0));
-  sunMoonGlow = sunMoonGlow*sunMoonGlow * rainStrFitInverseFit;
-  outCd.rgb += vec3( sunMoonGlow );
+  //sunMoonGlow = sunMoonGlow*sunMoonGlow * rainStrFitInverseFit;
+  outCd.rgb += vec3( sunMoonGlow*.8 );
   
   // Opacity Logic
   outCd.a *= color.a*.5+.5;
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
-  glowHSV.z *= outCd.a*.1*(depth*.9+.1);
+  glowHSV.z *= outCd.a*.2*(depth*.9+.1);
+  glowHSV.z *= glowHSV.z*.5+.5;
+  float glowReach = depth;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
   toNorm=normalize(toNorm)*.5+.5;
@@ -160,7 +162,7 @@ void main() {
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
   gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.5, 1.0);
   gl_FragData[2] = vec4(toNorm, 1.0);
-  gl_FragData[3] = vec4(glowHSV, 1.0);
+  gl_FragData[3] = vec4(glowHSV, glowReach);
     
 }
 

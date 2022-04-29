@@ -147,7 +147,7 @@ color.a=1.0;
 #ifdef FSH
 
 
-/* RENDERTARGETS: 0,1,2,6 */
+/* RENDERTARGETS: 0,1,2,7,6 */
 
 //#include "shaders.settings"
 #include "/utils/mathFuncs.glsl"
@@ -164,7 +164,7 @@ uniform sampler2D normals;
 uniform int fogMode;
 uniform vec3 sunPosition;
 uniform vec4 spriteBounds; 
-
+uniform vec4 entityColor;
 
 varying vec4 color;
 varying vec4 texcoord;
@@ -245,11 +245,9 @@ void main() {
   
   vec4 outCd = txCd;
   outCd.rgb *= lightCd.rgb * color.rgb;
-/*outCd.rgb = rgb2hsv(outCd.rgb);
-outCd.g = floor(outCd.g*10.0)*.1;
-outCd.b = floor(outCd.b*10.0)*.1;
-outCd.rgb = hsv2rgb(outCd.rgb);*/
-
+  
+  vec3 colorMix = min(vec3(1.0),entityColor.rgb*1.5);
+  outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.5+entityColor.g*.3) );
   
   
   vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
@@ -265,7 +263,8 @@ outCd.rgb = hsv2rgb(outCd.rgb);*/
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
 	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(vec3(0.0),1.0);
+	gl_FragData[3] = vec4(vec3(1.0),1.0);
+	gl_FragData[4] = vec4(vec3(0.0),1.0);
 
 }
 #endif

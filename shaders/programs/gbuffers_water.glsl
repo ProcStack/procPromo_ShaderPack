@@ -53,6 +53,7 @@ void main() {
 
   texelSize = vec2(1.0/viewWidth,1.0/viewHeight);
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	texcoord =  gl_MultiTexCoord0;
 
 	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 

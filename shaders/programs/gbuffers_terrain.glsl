@@ -80,6 +80,7 @@ varying float vAltTextureMap;
 varying float vColorOnly;
 varying float vIsLava;
 varying float vLightingMult;
+varying float vCdGlow;
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
@@ -206,24 +207,7 @@ texcoordmid=midcoord;
     // rotVal = 90*3.14159265358979323/180;
     rotVal = -1.5707963267948966;
     //rotVal = wtMult;
-    /*mat4 xRotMat = mat4( 
-                vec4( 1, 0, 0, 0 ),
-                vec4( 0, cos(rotVal), -sin(rotVal), 0 ),
-                vec4( 0, sin(rotVal), cos(rotVal), 0 ),
-                posVal
-              );
-    mat4 yRotMat = mat4( 
-                vec4( cos(rotVal), 0, sin(rotVal), 0 ),
-                vec4( 0, 1, 0, 0 ),
-                vec4( -sin(rotVal), 0, cos(rotVal), 0 ),
-                posVal
-              );
-    mat4 zRotMat = mat4( 
-                vec4( cos(rotVal), -sin(rotVal), 0, 0 ),
-                vec4( sin(rotVal), cos(rotVal), 0, 0 ),
-                vec4( 0, 0, 1, 0 ),
-                posVal
-              );*/
+
 
   
 		shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
@@ -251,6 +235,7 @@ texcoordmid=midcoord;
   // -- -- -- -- -- -- -- --
   // Shadow Prep
 
+  //position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
   //shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
   //vec3 shadowProjDiag = diagonal3(shadowProjection);
   //shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
@@ -287,6 +272,7 @@ texcoordmid=midcoord;
     vColorOnly=.001;
     vAltTextureMap=1.0;
     //vColorOnly=.0;
+    avgColor=color*.5;
   }
   
 
@@ -307,15 +293,15 @@ texcoordmid=midcoord;
     vColorOnly=.001;
     //color.rgb=vec3(1.0);
     vAltTextureMap = 0.0;
-
+    avgColor*=color;
   }
   
   
   // Lava
   vIsLava=0.0;
   if (mc_Entity.x == 701){
-    vIsLava=1.0;
-    vColorOnly=1.70;
+    vIsLava=.57;
+    //vColorOnly=1.10;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
@@ -324,6 +310,10 @@ texcoordmid=midcoord;
     //vColorOnly=0.30;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+  }
+  vCdGlow=0.0;
+  if (mc_Entity.x == 707){
+    vCdGlow=0.02;
   }
   
 
@@ -392,6 +382,7 @@ uniform sampler2D colortex5; // Minecraft Vanilla Glow Atlas
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int fogMode;
 uniform vec3 fogColor;
+uniform vec3 skyColor;
 uniform vec3 sunPosition;
 uniform vec3 cameraPosition;
 uniform int isEyeInWater;
@@ -468,6 +459,7 @@ varying float vAltTextureMap;
 varying float vColorOnly;
 varying float vIsLava;
 varying float vLightingMult;
+varying float vCdGlow;
 
 
 
@@ -495,7 +487,7 @@ void main() {
 	//if (gl_FragData[0].a > 0.0 ) {
 		float diffuseSun = sunInfMult/255.;
 #ifdef OVERWORLD
-		if (color.a > 0.0001 && shadowPos.x < 1e10) {
+		//if (color.a > 0.0001 && shadowPos.x < 1e10) {
       float distort = calcDistort(shadowPos.xy);
       vec2 spCoord = shadowPos.xy / distort;
       if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
@@ -518,7 +510,7 @@ void main() {
         }
         diffuseSun *= shadowAvg;
 			}
-		}
+		//}
 #endif
 
 
@@ -556,8 +548,8 @@ void main() {
     //   Future me; asign to variable first
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
-      if(vColorOnly>.0){
-        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, texelSize* DetailBluring*(1.0-vIsLava));
+      if(vColorOnly>.0 && vIsLava<.1){
+        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, texelSize* DetailBluring);
       }else{
         txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
@@ -567,9 +559,6 @@ void main() {
       txCd = texture2D(texture, tuv);
     }
 
-      //txCd = texture2D(colortex4, texcoord.zw* vec2( .25, .25 )+vec2( 0.0, 0.546875 ));
-      //txCd = diffuseNoLimit( texture, tuv, texelSize*DetailBluring*2.0 );
-      //txCd = texture2D(texture, tuv);
     if (txCd.a < .2){
       discard;
     }
@@ -580,14 +569,12 @@ void main() {
     //float screenDewarp = length(screenSpace)*.5;
     float screenDewarp = length(screenSpace)*0.7071067811865476; //length(vec2(.5,.5))
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
-    float depth = min(1.0, max(0.0, gl_FragCoord.w));
+    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
     float depthBias = biasToOne(depth, 4.5);
-    float depthDetailing = (1.0-depthBias*.3);
+    float depthDetailing = clamp(1.175-depthBias*1.25, 0.0, 1.0);
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
-    vec3 lightCd = lightBaseCd.rgb;//*vLightingMult; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5)*vLightingMult;
-    lightCd.rgb *= LightingBrightness;
-    //vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
+    vec3 lightCd = lightBaseCd.rgb;//*vLightingMult; 
     
 #ifdef OVERWORLD
     vec4 blockLumVal =  vec4(lightCd,1.0);
@@ -603,14 +590,13 @@ void main() {
     
     // Set base color
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
-    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*depthDetailing);
-
-
-
+    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
+    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);
     
-    
-    //outCd.rgb = mix( avgColor.rgb*color.rgb, outCd.rgb, depthBias*.5+.5);
+    float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
+    outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
+
     
     // Sun/Moon Lighting
     float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.0,.91,1.0)),vNormal);
@@ -630,18 +616,18 @@ void main() {
 
     surfaceShading *= mix( .55*moonPhaseMult, dot(sunVecNorm,vNormal)*.15+.05, dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
-    surfaceShading *= (1.0-rainStrength)*.5+.5;
+    surfaceShading *= 1.0-(rainStrength*.9+.1);
 #endif
     
     // Close up Radial Highlights on blocks
-    //outCd.rgb += mix(fogColor,vec3(lightLuma),gl_FragCoord.w) * surfaceShading;// -.2;
+    outCd.rgb += outCd.rgb*fogColor * gl_FragCoord.w * surfaceShading;// -.2;
 
     // Nether Warming Logic
 #ifdef NETHER
     // Reds drive a stronger color tone in blocks
     float colorRed = outCd.r;
     outCd.rgb = rgb2hsv(outCd.rgb);
-    outCd.g = mix( outCd.g, min(1.0,outCd.g*1.4), min(1.0, abs(1.0-colorRed-.5)*20.0) );
+    outCd.g = mix( outCd.g, min(1.0,outCd.g*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
     outCd.b = mix( outCd.b, min(1.0,outCd.b*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
     outCd.rgb = hsv2rgb(outCd.rgb);
 #endif
@@ -781,6 +767,8 @@ void main() {
 
     //outCd.rgb *= skyBrightMultFit;
     
+    glowInf += luma(outCd.rgb)*vCdGlow;
+    
     glowCd = outCd.rgb+outCd.rgb*glowInf;
     //glowCd += vec3(1.0-distMix);
     //glowCd *= skyBrightMultFit;
@@ -805,7 +793,7 @@ void main() {
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
-    gl_FragData[3] = vec4(vec3(blockShading, outDepth, 0.0), 1.0);
+    gl_FragData[3] = vec4(vec3(blockShading, lightBaseCd.r, 0.0), 1.0);
     gl_FragData[4] = vec4( glowHSV, 1.0);
 
 	//}

@@ -1,3 +1,9 @@
+
+
+const bool generateShadowMipmap = true;
+const bool shadowHardwareFiltering = true;
+
+
 // Modified from Chocapic13's HighPerformance Toaster shader pack
 //  (I'm still learning this shadow stuffs)
 

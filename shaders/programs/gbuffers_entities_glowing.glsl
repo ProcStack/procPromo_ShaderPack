@@ -84,7 +84,7 @@ void main() {
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 0,1,2,6 */
+/* RENDERTARGETS: 0,1,2,7,6 */
 
 #define gbuffers_entities
 
@@ -205,24 +205,17 @@ void main() {
   vec4 outCd = txCd * color;
   //vec4 outCd =  txCd;
 
-  //outCd.rgb*=vec3(1.5);
-  //outCd.rgb = txCd.rgb;//color.aaa;  
   
   
-  vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
-  normalCd = normalize( normalCd*tbnMatrix );
-  float highlights = dot(normalize(sunPosition),normalCd);
-  highlights = (highlights-.5)*0.3;
-  //outCd.rgb += vec3( highlights );
-  //outCd.rgb = vec3( sunDot );
-  //outCd.rgb=vPos.xyz;
   vec3 glowHSV = rgb2hsv(outCd.rgb);
   glowHSV.b*=.01;
+
 
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
 	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(glowHSV,1.0);
+	gl_FragData[3] = vec4(vec3(1.0),1.0);
+	gl_FragData[4] = vec4(glowHSV,1.0);
 
 }
 

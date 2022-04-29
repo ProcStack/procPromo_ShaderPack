@@ -14,6 +14,8 @@
   - Move more generic math to vert stages
 - GAT DARM MIN/MAX TEXTURE BOUNDS
 - Move Final Pass to a composite# pass for bloom/glow passes
+- Remove dev testing & commented code
+- Add more comments
 
 
 #### Terrain-
