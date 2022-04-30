@@ -115,26 +115,26 @@ vLocalPos = gl_Vertex;
 
 
 
-  vTexelSize = vec2(1.0/viewWidth,1.0/viewHeight);                                   
+  vTexelSize = texelSize;//vec2(1.0/1024.,1.0/1024.);                                   
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
 
 	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord,0.0,1.0)).st;
 texcoordmid=midcoord;
-  vec2 texelhalfbound = texelSize*16.0;
+  vec2 texelhalfbound = vTexelSize*16.0;
   texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
   
   
-  vec2 txlquart = texelSize*8.0;
+  vec2 txlquart = vTexelSize*8.0;
     avgColor = texture2D(texture, mc_midTexCoord);
-    avgColor += texture2D(texture, mc_midTexCoord+txlquart);
-    avgColor += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-    avgColor += texture2D(texture, mc_midTexCoord-txlquart);
-    avgColor += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
-    avgColor *= .2;
+    //avgColor += texture2D(texture, mc_midTexCoord+txlquart);
+    //avgColor += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
+    //avgColor += texture2D(texture, mc_midTexCoord-txlquart);
+    //avgColor += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
+    //avgColor *= .2;
 
 /*
-  vec2 txlquart = texelSize*8.0;
+  vec2 txlquart = vTexelSize*8.0;
   float avgDiv=0;
   vec4 curAvgCd = texture2D(texture, mc_midTexCoord);
   avgDiv = curAvgCd.a;
@@ -434,6 +434,7 @@ varying vec4 texcoord;
 varying vec2 texcoordmid;
 varying vec4 texcoordminmax;
 varying vec4 lmcoord;
+varying vec2 vTexelSize;
 
 varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
@@ -526,7 +527,7 @@ void main() {
     //float blockShading = max( diffuseSun, (sin( color.a*PI*.5 )*.5+.5) );
     float blockShading = diffuseSun * (sin( color.a*PI*.5 )*.5+.5);
     
-		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*texelSize).xyz;// *.5+.5;
+		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*vTexelSize).xyz;// *.5+.5;
 		vec3 diffuseLight = mix(lightCol.rgb*.5+.5, vec3(1,1,1),.7) ;
 		diffuseLight *= max(lightmapcd, vec3(blockShading) ) ;
     
@@ -549,10 +550,10 @@ void main() {
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
       if(vColorOnly>.0 && vIsLava<.1){
-        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, texelSize* DetailBluring);
+        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, vTexelSize* DetailBluring);
       }else{
-        txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
-        //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
+        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
+        //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
       }
       //txCd = texture2D(texture, tuv);
     }else{
@@ -565,7 +566,7 @@ void main() {
     
     // Screen Space UVing and Depth
     vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
-    screenSpace = (screenSpace*texelSize)-.5;
+    screenSpace = (screenSpace*vTexelSize)-.5;
     //float screenDewarp = length(screenSpace)*.5;
     float screenDewarp = length(screenSpace)*0.7071067811865476; //length(vec2(.5,.5))
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));

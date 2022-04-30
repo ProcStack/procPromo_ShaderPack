@@ -300,8 +300,6 @@ void main() {
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0;
   outCd.rgb += outCd.rgb*edgeOutsidePerc*skyBrightnessMult;
   
-  
-  
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif
