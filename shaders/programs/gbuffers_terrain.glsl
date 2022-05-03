@@ -127,11 +127,11 @@ texcoordmid=midcoord;
   
   vec2 txlquart = vTexelSize*8.0;
     avgColor = texture2D(texture, mc_midTexCoord);
-    //avgColor += texture2D(texture, mc_midTexCoord+txlquart);
-    //avgColor += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-    //avgColor += texture2D(texture, mc_midTexCoord-txlquart);
-    //avgColor += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
-    //avgColor *= .2;
+    avgColor += texture2D(texture, mc_midTexCoord+txlquart);
+    avgColor += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
+    avgColor += texture2D(texture, mc_midTexCoord-txlquart);
+    avgColor += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
+    avgColor *= .2;
 
 /*
   vec2 txlquart = vTexelSize*8.0;
@@ -190,7 +190,7 @@ texcoordmid=midcoord;
   #endif
 
 	gl_Position = toClipSpace3(position);
-	float diffuseSun = clamp(  (dot(normal,sunVec)*.8+.2)  *lightCol.a,0.0,1.0);
+	float diffuseSun = clamp(  (dot(normal,sunVec)*.6+.4)  *lightCol.a,0.0,1.0);
 
 
 	shadowPos.x = 1e30;
@@ -502,12 +502,12 @@ void main() {
         for( int x=0; x<boxSamplesCount; ++x){
           projectedShadowPosition = vec3(spCoord+boxSamples[x]*.001, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
         
-          shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
+          shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .15);
         }
         for( int x=0; x<boxSamplesCount; ++x){
           projectedShadowPosition = vec3(spCoord+boxSamples[x]*.0015, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
         
-          shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .05);
+          shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
         }
         diffuseSun *= shadowAvg;
 			}
@@ -520,7 +520,7 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
     
     
-    diffuseSun = smoothstep(.4,.8,diffuseSun); 
+    diffuseSun = smoothstep(.0,.65,diffuseSun); 
     // Mute Shadows during Rain
     diffuseSun = mix( diffuseSun*.6+.6, 1.0, rainStrength);
     
