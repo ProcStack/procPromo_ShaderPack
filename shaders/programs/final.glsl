@@ -255,13 +255,16 @@ void main() {
     float depthBlurInf;
     vec2 depthBlurReach;
     vec4 depthBlurCd;
-  if( isEyeInWater == 1 ){
+  if( isEyeInWater >= 1 ){
     depthBlurInf = smoothstep( .92, 1.0, depth);//biasToOne(depthBase);
     
     depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 7.0 );
     depthBlurCd = boxSample( colortex0, uv, depthBlurReach, .5 );
     
-    depthBlurCd.rgb *= mix( fogColor, vec3(1.0), depthCos);
+    float eyeWaterInf = (1.0-isEyeInWater*.3);
+    depthBlurCd.rgb *= mix( fogColor, vec3(1.0), (depthCos*(depthCos+.5))*eyeWaterInf);
+    blurMidCd*=depthBase;
+    blurLowCd*=depthBase;
     
     baseCd = depthBlurCd;
     outCd = depthBlurCd;
