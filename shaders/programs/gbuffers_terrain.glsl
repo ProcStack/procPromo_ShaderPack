@@ -257,11 +257,7 @@ texcoordmid=midcoord;
     txGlowThreshold = .7;
     blockFogInfluence = 0.6;
   }
-                                                    
-                                                     
-                            
-   
-  
+
   
   // Leaves
   if (mc_Entity.x == 810 && SolidLeaves){
@@ -275,12 +271,6 @@ texcoordmid=midcoord;
     avgColor=color*.5;
   }
   
-
-
-
-
-
-
 
 
   // General Alt Texture Reads
@@ -314,6 +304,9 @@ texcoordmid=midcoord;
   vCdGlow=0.0;
   if (mc_Entity.x == 707){
     vCdGlow=0.02;
+  }
+  if (mc_Entity.x == 805){
+    vCdGlow=0.1;
   }
   
 
@@ -640,7 +633,7 @@ void main() {
 #endif
     
     // Lighting influence
-    outCd.rgb *=  lightLuma+glowInf;
+    outCd.rgb *=  lightLuma+glowInf + vCdGlow;
   //outCd.rgb *= lightCd;
 
     // -- -- -- -- -- -- --
@@ -797,7 +790,11 @@ void main() {
 
     float outDepth = min(.9999,gl_FragCoord.w);
     
-    
+    /*vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
+    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
+    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);*/
+
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

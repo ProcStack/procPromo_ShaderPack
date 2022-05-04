@@ -286,6 +286,10 @@ void main() {
   float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
   float skyBrightnessInf = skyBrightnessMult*.5+.5;
   
+#ifdef NETHER
+  skyBrightnessInf = 1.0;
+#endif
+
   // -- -- -- -- -- -- -- 
   // -- Rain Influence  -- --
   // -- -- -- -- -- -- -- -- --
@@ -303,6 +307,10 @@ void main() {
   float reachOffset = min(.4,isEyeInWater*.2) + rainStrength*.2;
   float reachMult = depthCos*(.6+reachOffset)+.4-reachOffset;//1.0;//depthBase*.5+.5 ;
   reachMult = reachMult * (1.0+rainStrength);
+
+#ifdef NETHER
+  reachMult *= 2.65;
+#endif
   
   vec3 avgNormal = normalCd.rgb;
   float edgeInsidePerc;
@@ -329,17 +337,18 @@ void main() {
 	//const vec3 moonlight = vec3(0.5, 0.9, 1.8) * Moonlight;
   //edgeInsidePerc = smoothstep(.0,.8,min(1.0,edgeInsidePerc));
 #ifdef NETHER
-  edgeInsidePerc *= .5;
+  //edgeInsidePerc *= .85;
 #endif
 
   float edgeInsideOutsidePerc = max(edgeInsidePerc,edgeOutsidePerc);
   
   
   // -- -- -- -- -- -- -- -- --
-  // -- Sun & Moon Influence -- --
+  // -- Sun & Moon Edge Influence -- --
   // -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
-/*    float sunNightInf = abs(dayNight)*.3;
+/*
+    float sunNightInf = abs(dayNight)*.3;
     float sunInf = dot( avgNormal, sunVecNorm ) * max(0.0, dayNight);
     float moonInf = dot( avgNormal, vec3(1.0-sunVecNorm.x, sunVecNorm.yz) ) * max(0.0, -dayNight);
     //vec3 colorHSV = rgb2hsv(outCd.rgb);
@@ -353,7 +362,8 @@ void main() {
   //outCd.rgb = hsv2rgb(colorHSV);
     //outCd.rgb = mix( baseCd.rgb, mix(baseCd.rgb*1.5,outCd.rgb,shadow)*edgeInsideOutsidePerc, EdgeShading*.25+.5);
   //outCd.rgb = mix( outCd.rgb, hsv2rgb(colorHSV), EdgeShading*.25+.75);
-    //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);*/
+    //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);
+*/
 #endif
 
 
@@ -365,6 +375,10 @@ void main() {
 #ifdef NETHER
   //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
+  
+  edgeInsidePerc *= .8;
+  edgeOutsidePerc *= 3.5;
+  
 #endif
 
 #ifdef OVERWORLD
@@ -382,9 +396,12 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
   vec3 outGlowCd = max(blurMidCd, blurLowCd);
   outCd.rgb += outGlowCd * GlowBrightness;
-  outCd.rgb += outCd.rgb*edgeInsidePerc*skyBrightnessInf*abs(dotToCam)*2.0*rainInf;
-  outCd.rgb += outCd.rgb*edgeOutsidePerc*skyBrightnessInf*rainInf;
   
+  float edgeCdInf = step(depthBase, .9999);
+  edgeCdInf *= skyBrightnessInf * rainInf;
+  outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
+  outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;
+
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif
