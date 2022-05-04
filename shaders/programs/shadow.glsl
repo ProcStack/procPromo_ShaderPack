@@ -35,6 +35,7 @@ void main() {
 
   vec4 shadowCd = texture2D(tex,texcoord.xy);// * color;
 
+
 	gl_FragData[0] = shadowCd;
 }
 

@@ -66,6 +66,7 @@ uniform sampler2D gnormal;
 uniform sampler2D composite;
 uniform vec3 sunPosition;
 uniform int isEyeInWater;
+uniform vec2 texelSize;
 uniform float aspectRatio;
 uniform float viewWidth;
 uniform float viewHeight;
@@ -73,6 +74,7 @@ uniform float near;
 uniform float far;
 uniform vec3 fogColor;
 uniform vec3 skyColor; 
+uniform float rainStrength;
 
 
 const float eyeBrightnessHalflife = 4.0f;
@@ -88,6 +90,47 @@ varying float dayNight;
 varying vec2 res;
 
   
+// -- -- -- -- -- -- -- --
+// -- Box Blur Sampler  -- --
+// -- -- -- -- -- -- -- -- -- --
+vec4 boxSample( sampler2D tex, vec2 uv, vec2 reachMult, float blend ){
+
+  vec2 curUVOffset;
+  vec4 curCd;
+  
+  vec4 blendCd = texture2D(tex, uv);
+  
+  curUVOffset = reachMult * vec2( -1.0, -1.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  curUVOffset = reachMult * vec2( -1.0, 0.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  curUVOffset = reachMult * vec2( -1.0, 1.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  
+  curUVOffset = reachMult * vec2( 0.0, -1.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  curUVOffset = reachMult * vec2( 0.0, 1.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  
+  curUVOffset = reachMult * vec2( 1.0, -1.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  curUVOffset = reachMult * vec2( 1.0, 0.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  curUVOffset = reachMult * vec2( 1.0, 1.0 );
+  curCd = texture2D(tex, uv+curUVOffset);
+  blendCd = mix( blendCd, curCd, blend);
+  
+  return blendCd;
+}
+
+
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Depth & Normal LookUp & Blending -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -119,6 +162,7 @@ void edgeLookUp(  sampler2D txDepth, sampler2D txNormal,
   //avgNormal = mix( avgNormal, curNormal, max(edgeOut, step(0.005, depthOut)*.5 ) );
   avgNormal = (mix( avgNormal, curNormal, .5*curInf ));
 }
+
 
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Sample Depth & Normals; 3x3 - -- -- --
@@ -173,26 +217,28 @@ void main() {
   // -- Color, Depth, Normal,   -- -- --
   // --   Shadow, & Glow Reads  -- -- -- --
   // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  vec4 baseCd = texture2D(colortex0, texcoord);
+  vec2 uv = texcoord;
+  vec4 baseCd = texture2D(colortex0, uv);
   vec4 outCd = baseCd;
-  float depthBase = texture2D(colortex1, texcoord).r;
-  vec4 normalCd = texture2D(colortex2, texcoord);
-  vec2 shadowCd = texture2D(gaux1, texcoord).xy;
+  float depthBase = texture2D(colortex1, uv).r;
+  vec4 normalCd = texture2D(colortex2, uv);
+  vec2 shadowCd = texture2D(gaux1, uv).xy;
 
-  //vec4 light = texture2D(colortex4, texcoord);
+  //vec4 light = texture2D(colortex4, uv);
+  
   
   // -- -- -- -- -- -- -- --
   // -- Glow Passes -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
-  vec3 blurMidCd = texture2D(gaux2, texcoord*.4).rgb;
-  vec3 blurLowCd = texture2D(gaux3, texcoord*.3).rgb;
+  vec3 blurMidCd = texture2D(gaux2, uv*.4).rgb;
+  vec3 blurLowCd = texture2D(gaux3, uv*.3).rgb;
   
   // -- -- -- -- -- -- -- --
   // -- Depth Tweaks - -- -- --
   // -- -- -- -- -- -- -- -- -- --
   float depth = 1.0-depthBase;//biasToOne(depthBase);
   //depth = min(1.0, depth*depth*min(1.0,1.5-depth));
-  depth = cos(depth*PI*.5);//*-.5+.5;
+  float depthCos = cos(depth*PI*.5);//*-.5+.5;
   
   // -- -- -- -- -- 
   // -- Shadows  -- --
@@ -202,8 +248,26 @@ void main() {
   //shadowDepth = 1.0-(1.0-shadowDepth)*(1.0-shadowDepth);
   //shadowDepth *= shadowDepth;
 
-  // Sky Brightness
-  float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
+
+  // -- -- -- -- -- -- -- --
+  // -- Depth Blur -- -- -- --
+  // -- -- -- -- -- -- -- -- -- --
+    float depthBlurInf;
+    vec2 depthBlurReach;
+    vec4 depthBlurCd;
+  if( isEyeInWater == 1 ){
+    depthBlurInf = smoothstep( .92, 1.0, depth);//biasToOne(depthBase);
+    
+    depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 7.0 );
+    depthBlurCd = boxSample( colortex0, uv, depthBlurReach, .5 );
+    
+    depthBlurCd.rgb *= mix( fogColor, vec3(1.0), depthCos);
+    
+    baseCd = depthBlurCd;
+    outCd = depthBlurCd;
+    
+  }
+  
   
   // -- -- -- -- --
   // -- To Cam - -- --
@@ -212,34 +276,51 @@ void main() {
   normalCd.rgb = normalCd.rgb*2.0-1.0;
   // Dot To Camera
   //float dotToCam = dot(normalCd.rgb,vec3(0.0,0.0,1.0));
-  float dotToCam = dot(normalCd.rgb,normalize(vec3(-(texcoord-.5),1.0)));
+  float dotToCam = dot(normalCd.rgb,normalize(vec3(-(uv-.5),1.0)));
   float dotToCamClamp = max(0.0, dotToCam);
   dotToCamClamp = smoothstep(.2,1.0, dotToCamClamp);
 
+  // -- -- -- -- -- -- -- 
+  // -- Sky Influence  -- --
+  // -- -- -- -- -- -- -- -- --
+  float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
+  float skyBrightnessInf = skyBrightnessMult*.5+.5;
+  
+  // -- -- -- -- -- -- -- 
+  // -- Rain Influence  -- --
+  // -- -- -- -- -- -- -- -- --
+  float rainInf = (1.0-rainStrength*2.0);
+  rainInf = mix( 1.0, rainInf, skyBrightnessMult);
+  
+  // -- -- -- -- -- -- -- -- -- -- -- -- --
+  // -- == == == == == == == == == == == --
+  // -- -- -- -- -- -- -- -- -- -- -- -- --
+  
   // -- -- -- -- -- -- -- --
   // -- Edge Detection -- -- --
   // -- -- -- -- -- -- -- -- -- --
   float edgeDistanceThresh = .005;
-  float reachOffset = min(.4,isEyeInWater*.2);
-  float reachMult = depth*(.6+reachOffset)+.4-reachOffset;//1.0;//depthBase*.5+.5 ;
+  float reachOffset = min(.4,isEyeInWater*.2) + rainStrength*.2;
+  float reachMult = depthCos*(.6+reachOffset)+.4-reachOffset;//1.0;//depthBase*.5+.5 ;
+  reachMult = reachMult * (1.0+rainStrength);
   
   vec3 avgNormal = normalCd.rgb;
   float edgeInsidePerc;
   float edgeOutsidePerc;
-  findEdges( colortex1, colortex2, texcoord, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
+  findEdges( colortex1, colortex2, uv, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
   //avgNormal = normalize(mix(normalCd.rgb, avgNormal, .3));
 
-  //findEdges( colortex1, colortex2, texcoord, res*5.5*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
+  //findEdges( colortex1, colortex2, uv, res*5.5*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
   //avgNormal = normalize(mix(normalCd.rgb, avgNormal, .3));
   //edgeInsidePerc = (edgeInsidePerc+avgNormalEdge.w)*.5;
   
-  //edgeInsidePerc *= ((shadow*.5+.5)*min(1.0,depth+.3));
-  //edgeInsidePerc *= min(1.0,depth+.3);//*(shadow*.3+.8);
-  //edgeInsidePerc *= 1.0-(1.0-depth)*(1.0-depth);
+  //edgeInsidePerc *= ((shadow*.5+.5)*min(1.0,depthCos+.3));
+  //edgeInsidePerc *= min(1.0,depthCos+.3);//*(shadow*.3+.8);
+  //edgeInsidePerc *= 1.0-(1.0-depthCos)*(1.0-depthCos);
   edgeInsidePerc *= 1.0-min(1.0,max(0,isEyeInWater)*.5);
   edgeInsidePerc *= dotToCamClamp*1.5-reachOffset*4.5;
   //edgeInsidePerc *= abs(dotToCam);
-  edgeInsidePerc *= min(1.0,depth*4.5);
+  edgeInsidePerc *= min(1.0,depthCos*4.5);
   edgeInsidePerc = clamp(edgeInsidePerc,0.0,1.0);
   edgeOutsidePerc = min(edgeOutsidePerc,depthBase*.3+.1);
   edgeOutsidePerc = clamp(edgeOutsidePerc,0.0,1.0);
@@ -254,29 +335,33 @@ void main() {
   float edgeInsideOutsidePerc = max(edgeInsidePerc,edgeOutsidePerc);
   
   
-  // -- -- -- -- -- -- -- --
-  // -- End Shadow (?) -- -- --
-  // -- -- -- -- -- -- -- -- -- --
-#ifdef THE_END
-/*
-    float sunNightInf = abs(dayNight)*.3;
+  // -- -- -- -- -- -- -- -- --
+  // -- Sun & Moon Influence -- --
+  // -- -- -- -- -- -- -- -- -- -- --
+#ifdef OVERWORLD
+/*    float sunNightInf = abs(dayNight)*.3;
     float sunInf = dot( avgNormal, sunVecNorm ) * max(0.0, dayNight);
     float moonInf = dot( avgNormal, vec3(1.0-sunVecNorm.x, sunVecNorm.yz) ) * max(0.0, -dayNight);
-    vec3 colorHSV = rgb2hsv(outCd.rgb);
+    //vec3 colorHSV = rgb2hsv(outCd.rgb);
     
     float sunMoonValue = max(0.0, sunInf+moonInf) * edgeInsideOutsidePerc * sunNightInf * shadow;
     //float sunMoonValue = max(0.0, sunInf+moonInf) * sunNightInf;// * edgeInsideOutsidePerc;// * shadow;
     
     //colorHSV.b += sunMoonValue;
-    colorHSV.b += sunMoonValue;//-(shadow*.2+depthBase*.2)*EdgeShading;
+  //colorHSV.b += sunMoonValue;//-(shadow*.2+depthBase*.2)*EdgeShading;
     //colorHSV.b *= 1.0*(shadow+.2);//+depthBase*.2)*EdgeShading;
-    outCd.rgb = hsv2rgb(colorHSV);
+  //outCd.rgb = hsv2rgb(colorHSV);
     //outCd.rgb = mix( baseCd.rgb, mix(baseCd.rgb*1.5,outCd.rgb,shadow)*edgeInsideOutsidePerc, EdgeShading*.25+.5);
-    outCd.rgb = mix( outCd.rgb, hsv2rgb(colorHSV), EdgeShading*.25+.75);
-    //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);
-*/
+  //outCd.rgb = mix( outCd.rgb, hsv2rgb(colorHSV), EdgeShading*.25+.75);
+    //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);*/
 #endif
 
+
+
+  // -- -- -- -- -- -- -- -- -- -- -- -- --
+  // -- World Specific Edge Colorization -- --
+  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+  
 #ifdef NETHER
   //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
@@ -297,8 +382,8 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
   vec3 outGlowCd = max(blurMidCd, blurLowCd);
   outCd.rgb += outGlowCd * GlowBrightness;
-  outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0;
-  outCd.rgb += outCd.rgb*edgeOutsidePerc*skyBrightnessMult;
+  outCd.rgb += outCd.rgb*edgeInsidePerc*skyBrightnessInf*abs(dotToCam)*2.0*rainInf;
+  outCd.rgb += outCd.rgb*edgeOutsidePerc*skyBrightnessInf*rainInf;
   
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

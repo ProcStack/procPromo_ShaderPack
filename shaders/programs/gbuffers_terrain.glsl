@@ -486,30 +486,36 @@ void main() {
   float shadowDist = 0.0;
   
 	//if (gl_FragData[0].a > 0.0 ) {
-		float diffuseSun = sunInfMult/255.;
+		float diffuseSun = 1.0;
 #ifdef OVERWORLD
 		//if (color.a > 0.0001 && shadowPos.x < 1e10) {
       float distort = calcDistort(shadowPos.xy);
       vec2 spCoord = shadowPos.xy / distort;
       if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
         float diffthresh = 0.0006*shadowDistance/45.;
-        if (shadowPos.w > -1.0) diffthresh = 0.0004*512./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
+        if (shadowPos.w > -1.0) diffthresh = 0.0004*1024./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
 
         vec3 projectedShadowPosition = vec3(spCoord, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
         
         float shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
+        vec2 posOffset;
         
         for( int x=0; x<boxSamplesCount; ++x){
-          projectedShadowPosition = vec3(spCoord+boxSamples[x]*.001, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
+          posOffset = boxSamples[x]*.001;
+          projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.2) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
         
           shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .15);
         }
         for( int x=0; x<boxSamplesCount; ++x){
-          projectedShadowPosition = vec3(spCoord+boxSamples[x]*.0015, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
+          posOffset = boxSamples[x]*.002;
+          projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.5) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
         
           shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
         }
-        diffuseSun *= shadowAvg;
+        
+        float sunMoonShadowInf = smoothstep( .4, .5, abs(dot(sunVecNorm, vNormal)));
+        //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))-.5)*1.0);
+        diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf );
 			}
 		//}
 #endif
@@ -790,6 +796,7 @@ void main() {
     outCd.rgb*=1.0+glowHSV.z;
 
     float outDepth = min(.9999,gl_FragCoord.w);
+    
     
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);

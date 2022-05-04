@@ -8,9 +8,13 @@
 
 #extension GL_EXT_gpu_shader4 : enable
 
+#include "/shaders.settings"
 #include "/utils/shadowCommon.glsl"
 
+attribute vec4 mc_Entity;
+
 varying vec2 texcoord;
+varying float vIsLeaves;
 
 
 void main() {
@@ -21,4 +25,11 @@ void main() {
 
 
 	texcoord = gl_MultiTexCoord0.xy;
+  
+  vIsLeaves=0.0;
+  
+  // Leaves
+  if (mc_Entity.x == 810 && SolidLeaves){
+    vIsLeaves = 1.0;
+  }
 }
