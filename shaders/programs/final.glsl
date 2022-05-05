@@ -401,6 +401,7 @@ void main() {
   outCd.rgb += outGlowCd * GlowBrightness;
   
   float edgeCdInf = step(depthBase, .9999);
+  // TODO : Check skyBrightness for inner edges when in caves
   edgeCdInf *= skyBrightnessInf * rainInf;
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
   outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;

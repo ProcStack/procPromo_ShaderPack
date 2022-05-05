@@ -622,16 +622,26 @@ void main() {
     // Close up Radial Highlights on blocks
     outCd.rgb += outCd.rgb*fogColor * gl_FragCoord.w * surfaceShading;// -.2;
 
+    outCd.rgb = rgb2hsv(outCd.rgb);
+    
     // Nether Warming Logic
 #ifdef NETHER
     // Reds drive a stronger color tone in blocks
     float colorRed = outCd.r;
-    outCd.rgb = rgb2hsv(outCd.rgb);
     outCd.g = mix( outCd.g, min(1.0,outCd.g*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
     outCd.b = mix( outCd.b, min(1.0,outCd.b*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
-    outCd.rgb = hsv2rgb(outCd.rgb);
+
 #endif
+
     
+    vec3 texHSV = rgb2hsv(txCd.rgb);
+    
+    //outCd.r = texHSV.r;
+    //outCd.g = texHSV.g;
+    outCd.b = texHSV.b;
+    
+    outCd.rgb = hsv2rgb(outCd.rgb);
+        
     // Lighting influence
     outCd.rgb *=  lightLuma+glowInf + vCdGlow;
   //outCd.rgb *= lightCd;
