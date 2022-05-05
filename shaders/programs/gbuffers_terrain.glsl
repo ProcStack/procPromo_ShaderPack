@@ -125,13 +125,25 @@ texcoordmid=midcoord;
   texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
   
   
-  vec2 txlquart = vTexelSize*8.0;
-    avgColor = texture2D(texture, mc_midTexCoord);
-    avgColor += texture2D(texture, mc_midTexCoord+txlquart);
-    avgColor += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-    avgColor += texture2D(texture, mc_midTexCoord-txlquart);
-    avgColor += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
-    avgColor *= .2;
+  vec2 txlquart = vec2( .0025 );
+  vec4 tmpCd;
+  float avgDiv = 0.0;
+  tmpCd = texture2D(texture, mc_midTexCoord);
+    avgColor = tmpCd;
+    avgDiv += tmpCd.a;
+  tmpCd = texture2D(texture, mc_midTexCoord+txlquart);
+    avgColor += tmpCd;
+    avgDiv += tmpCd.a;
+  tmpCd = texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
+    avgColor += tmpCd;
+    avgDiv += tmpCd.a;
+  tmpCd = texture2D(texture, mc_midTexCoord-txlquart);
+    avgColor += tmpCd;
+    avgDiv += tmpCd.a;
+  tmpCd = texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
+    avgColor += tmpCd;
+    avgDiv += tmpCd.a;
+    avgColor = avgColor / avgDiv;
 
 /*
   vec2 txlquart = vTexelSize*8.0;
@@ -246,6 +258,8 @@ texcoordmid=midcoord;
   
   vAlphaMult=1.0;
   vColorOnly=0.0;
+  vIsLava=0.0;
+  vCdGlow=0.0;
 
   blockFogInfluence = 1.0;
   if (mc_Entity.x == 803){
@@ -288,25 +302,41 @@ texcoordmid=midcoord;
   
   
   // Lava
-  vIsLava=0.0;
   if (mc_Entity.x == 701){
-    vIsLava=.57;
+    vIsLava=.7;
+#ifdef NETHER
+    vCdGlow=.1;
+#else
+    vCdGlow=.05;
+#endif
     //vColorOnly=1.10;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   if (mc_Entity.x == 702){
     vIsLava=1.0;
+#ifdef NETHER
+    vCdGlow=.1;
+#else
+    vCdGlow=.05;
+#endif
     //vColorOnly=0.30;
     //vColorOnly=1.30;
     color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
-  vCdGlow=0.0;
+  
+  // Fire / Soul Fire
   if (mc_Entity.x == 707){
-    vCdGlow=0.02;
+#ifdef NETHER
+    vCdGlow=0.15;
+#endif
+    //avgColor = vec4( .8, .6, .4, 1.0 );
   }
+  // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if (mc_Entity.x == 805){
+#ifdef NETHER
     vCdGlow=0.1;
+#endif
   }
   
 
@@ -518,7 +548,6 @@ void main() {
   // -- Lighting & Diffuse - --
   // -- -- -- -- -- -- -- -- -- --
     
-    
     diffuseSun = smoothstep(.0,.65,diffuseSun); 
     // Mute Shadows during Rain
     diffuseSun = mix( diffuseSun*.6+.6, 1.0, rainStrength);
@@ -538,14 +567,13 @@ void main() {
     vec2 luv = lmcoord.st;
 
     float glowInf = texture2D(colortex5, tuv).x;
+    glowInf *= glowInf;
     vec3 glowCd = vec3(0,0,0);
 
 
     // -- -- -- -- -- -- --
     
     vec4 txCd;
-    // Why was #if breaking?????
-    //   Future me; asign to variable first
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
       if(vColorOnly>.0 && vIsLava<.1){
@@ -572,23 +600,26 @@ void main() {
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
     float depthBias = biasToOne(depth, 4.5);
     float depthDetailing = clamp(1.175-depthBias*1.25, 0.0, 1.0);
+    //depthDetailing = max( 0.0, depthDetailing +  );
+
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
     vec3 lightCd = lightBaseCd.rgb;//*vLightingMult; 
     
+    vec4 blockLumVal =  vec4(1,1,1,1);
+    
 #ifdef OVERWORLD
-    vec4 blockLumVal =  vec4(lightCd,1.0);
+    blockLumVal =  vec4(lightCd,1.0);
 #endif
 #ifdef NETHER
-    vec4 blockLumVal =  vec4(fogColor*.4+.4,1);
-#endif
-#ifdef THE_END
-    vec4 blockLumVal =  vec4(1,1,1,1);
+    blockLumVal =  vec4(fogColor*.4+.4,1);
 #endif
 
     float lightLuma = luma(blockLumVal.rgb);
     
-    // Set base color
+    // -- -- -- -- -- -- --
+    // -- Set base color -- --
+    // -- -- -- -- -- -- -- -- --
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
     //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
     outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
@@ -598,7 +629,9 @@ void main() {
     outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
 
     
-    // Sun/Moon Lighting
+    // -- -- -- -- -- -- -- --
+    // -- Sun/Moon Lighting -- --
+    // -- -- -- -- -- -- -- -- ----
     float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.0,.91,1.0)),vNormal);
     float surfaceShading = 1.0-abs(toCamNormalDot);
 
@@ -619,12 +652,25 @@ void main() {
     surfaceShading *= 1.0-(rainStrength*.9+.1);
 #endif
     
-    // Close up Radial Highlights on blocks
-    outCd.rgb += outCd.rgb*fogColor * gl_FragCoord.w * surfaceShading;// -.2;
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+    // -- Close up Radial Highlights on blocks - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+    
+    depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*5.0)))*2.0) );
 
+    outCd.rgb += outCd.rgb*fogColor * gl_FragCoord.w * surfaceShading * depthDetailing;// -.2;
+
+
+    // -- -- -- -- -- -- 
+
+    // -- -- -- -- -- -- 
+    // -- RGB -> HSV  -- --
+    // -- -- -- -- -- -- -- --
     outCd.rgb = rgb2hsv(outCd.rgb);
     
-    // Nether Warming Logic
+    // -- -- -- -- -- -- -- -- -- -- -- 
+    // -- HSV; Nether Warming Logic  -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef NETHER
     // Reds drive a stronger color tone in blocks
     float colorRed = outCd.r;
@@ -633,22 +679,34 @@ void main() {
 
 #endif
 
-    
-    vec3 texHSV = rgb2hsv(txCd.rgb);
+    // -- -- -- -- -- -- -- -- -- -- -- -- --
+    // -- HSV; Sampled Texture Influence - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+    //vec3 texHSV = rgb2hsv( (txCd.rgb+avgColor.rgb)*.5 );
+    vec3 texHSV = rgb2hsv( txCd.rgb );
     
     //outCd.r = texHSV.r;
     //outCd.g = texHSV.g;
-    outCd.b = texHSV.b;
     
+    
+    outCd.b = mix(outCd.b, texHSV.b, depthDetailing);
+    
+    // -- -- -- -- -- -- 
+    // -- HSV -> RGB  -- --
+    // -- -- -- -- -- -- -- --
     outCd.rgb = hsv2rgb(outCd.rgb);
-        
-    // Lighting influence
+
+    // -- -- -- -- -- -- 
+
+
+    // -- -- -- -- -- -- -- -- --
+    // -- Lighting influence - -- --
+    // -- -- -- -- -- -- -- -- -- -- --
     outCd.rgb *=  lightLuma+glowInf + vCdGlow;
   //outCd.rgb *= lightCd;
 
     // -- -- -- -- -- -- --
-    
-    // TODO : Update isEyeInWater to not be ifs
+
     float distMix = min(1.0,gl_FragCoord.w);
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
@@ -716,12 +774,16 @@ void main() {
     */
     
     // TODO : Do I want ambient glow outside of the glow mask atlas?
-    //if( glowMultVertColor > 0.0 ){
-      //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
-      //float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
-      //float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
-      //glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.5+.5));
-    //}
+    //      | - Yes, prevent need for upkeep
+    //      | - No glow mask
+    /*
+    if( glowMultVertColor > 0.0 ){
+      float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
+      float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
+      float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
+      glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.5+.5));
+    }
+    */
     
     
     
@@ -742,7 +804,7 @@ void main() {
 
 #ifdef NETHER
     //outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
-    outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf));
+    outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf*.5));
 #else
     outCd.rgb *= mix(1.0, toCamNormalDot*.5+.5, depth*.7+.3);
 #endif
@@ -803,7 +865,18 @@ void main() {
     /*vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
     //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
     outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
-    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);*/
+    //outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);*/
+
+
+    
+    // -- -- -- -- -- -- -- -- -- -- -- -- --
+    // -- Texture Overides from Settings - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+    if( GreyWorld ){
+      float ssLength = length(screenSpace);
+      ssLength *= ssLength * ssLength;
+      outCd.rgb = mix( vec3(lightLuma), lightCd, ssLength );
+    }
 
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);

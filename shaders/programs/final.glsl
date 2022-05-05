@@ -134,14 +134,15 @@ vec4 boxSample( sampler2D tex, vec2 uv, vec2 reachMult, float blend ){
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Depth & Normal LookUp & Blending -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-void edgeLookUp(  sampler2D txDepth, sampler2D txNormal,
+void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
                   vec2 uv, vec2 uvOffset,
                   float depthRef, vec3 normalRef, float thresh,
                   inout float depthOut, inout vec3 avgNormal, inout float edgeOut ){
 
-
-  float curDepth = texture2D(txDepth, uv+uvOffset).r;
-  vec3 curNormal = texture2D(txNormal, uv+uvOffset*1.5).rgb*2.0-1.0;
+  vec2 uvDepthLimit = uv+uvOffset;//limitUVs(uv+uvOffset);
+  vec2 uvNormalLimit = uv+uvOffset*1.5;//limitUVs(uv+uvOffset*1.5);
+  float curDepth = texture2D(txDepth, uvDepthLimit).r;
+  vec3 curNormal = texture2D(txNormal, uvNormalLimit).rgb*2.0-1.0;
   
   float curInf = step( abs(curDepth - depthRef), thresh );
 
@@ -161,13 +162,14 @@ void edgeLookUp(  sampler2D txDepth, sampler2D txNormal,
     
   //avgNormal = mix( avgNormal, curNormal, max(edgeOut, step(0.005, depthOut)*.5 ) );
   avgNormal = (mix( avgNormal, curNormal, .5*curInf ));
+  
 }
 
 
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Sample Depth & Normals; 3x3 - -- -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-void findEdges( sampler2D txDepth, sampler2D txNormal,
+void findEdges( sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
                 vec2 uv, vec2 txRes,
                 float depthRef, vec3 normalRef, float thresh,
                 inout vec3 avgNormal, inout float edgeInsidePerc, inout float edgeOutsidePerc ){
@@ -179,23 +181,23 @@ void findEdges( sampler2D txDepth, sampler2D txNormal,
   
   vec2 curUVOffset;
   curUVOffset = uvOffsetReach * vec2( -1.0, -1.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   curUVOffset = uvOffsetReach * vec2( -1.0, 0.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   curUVOffset = uvOffsetReach * vec2( -1.0, 1.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   
   curUVOffset = uvOffsetReach * vec2( 0.0, -1.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   curUVOffset = uvOffsetReach * vec2( 0.0, 1.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   
   curUVOffset = uvOffsetReach * vec2( 1.0, -1.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   curUVOffset = uvOffsetReach * vec2( 1.0, 0.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   curUVOffset = uvOffsetReach * vec2( 1.0, 1.0 );
-  edgeLookUp( txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
   
 
   depthOut *= step(0.05, depthOut); 
@@ -239,6 +241,11 @@ void main() {
   float depth = 1.0-depthBase;//biasToOne(depthBase);
   //depth = min(1.0, depth*depth*min(1.0,1.5-depth));
   float depthCos = cos(depth*PI*.5);//*-.5+.5;
+  
+  // -- -- -- -- -- -- -- --
+  // -- Screen Space - -- -- --
+  // -- -- -- -- -- -- -- -- -- --
+  
   
   // -- -- -- -- -- 
   // -- Shadows  -- --
@@ -318,16 +325,9 @@ void main() {
   vec3 avgNormal = normalCd.rgb;
   float edgeInsidePerc;
   float edgeOutsidePerc;
-  findEdges( colortex1, colortex2, uv, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
-  //avgNormal = normalize(mix(normalCd.rgb, avgNormal, .3));
+  findEdges( colortex0, colortex1, colortex2, uv, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
 
-  //findEdges( colortex1, colortex2, uv, res*5.5*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
-  //avgNormal = normalize(mix(normalCd.rgb, avgNormal, .3));
-  //edgeInsidePerc = (edgeInsidePerc+avgNormalEdge.w)*.5;
-  
-  //edgeInsidePerc *= ((shadow*.5+.5)*min(1.0,depthCos+.3));
-  //edgeInsidePerc *= min(1.0,depthCos+.3);//*(shadow*.3+.8);
-  //edgeInsidePerc *= 1.0-(1.0-depthCos)*(1.0-depthCos);
+
   edgeInsidePerc *= 1.0-min(1.0,max(0,isEyeInWater)*.5);
   edgeInsidePerc *= dotToCamClamp*1.5-reachOffset*4.5;
   //edgeInsidePerc *= abs(dotToCam);
@@ -402,10 +402,10 @@ void main() {
   
   float edgeCdInf = step(depthBase, .9999);
   // TODO : Check skyBrightness for inner edges when in caves
-  edgeCdInf *= skyBrightnessInf * rainInf;
+  //edgeCdInf *= (skyBrightnessInf*.5+.5) * rainInf;
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
   outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;
-
+  
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif

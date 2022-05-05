@@ -1,4 +1,8 @@
 
+vec2 limitUVs(vec2 uv){
+  return clamp( uv, vec2(0.0), vec2(1.0) );
+}
+
 const int boxSamplesCount = 8;
 const vec2 boxSamples[8] = vec2[8](
                               vec2( -1.0, -1.0 ),
