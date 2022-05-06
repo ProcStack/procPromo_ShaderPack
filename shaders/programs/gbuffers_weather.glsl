@@ -65,19 +65,15 @@ void main() {
   vec2 luv = lmtexcoord.zw;
   vec4 lightCd = texture2D(lightmap, luv);
   
-  outCd*=txCd;
+  //outCd.a*=mix( 1.0, txCd.a, step(.9999, color.a) );
+  outCd*=mix( vec4(1.0), txCd, step(.9999, color.a) );
   outCd.rgb*=lightCd.rgb;
+  
   
 	gl_FragData[0] = outCd;
   //gl_FragData[1] = vec4(vec3( gl_FragCoord.w ), 1.0);
 	//gl_FragData[2] = vec4(vNormal.xyz*.5+.5, 1.0);
 	gl_FragData[2] = vec4(vec3(0.0), 1.0);
-/*
-	if (fogMode == GL_EXP) {
-		gl_FragData[0].rgb = mix(gl_FragData[0].rgb, gl_Fog.color.rgb, 1.0 - clamp(exp(-gl_Fog.density * gl_FogFragCoord), 0.0, 1.0));
-	} else if (fogMode == GL_LINEAR) {
-		gl_FragData[0].rgb = mix(gl_FragData[0].rgb, gl_Fog.color.rgb, clamp((gl_FogFragCoord - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0));
-	}*/
 }
 #endif
 
