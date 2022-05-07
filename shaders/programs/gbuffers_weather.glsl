@@ -65,8 +65,10 @@ void main() {
   vec2 luv = lmtexcoord.zw;
   vec4 lightCd = texture2D(lightmap, luv);
   
-  //outCd.a*=mix( 1.0, txCd.a, step(.9999, color.a) );
-  outCd*=mix( vec4(1.0), txCd, step(.9999, color.a) );
+  // Minihud is Weather
+  //   Weather is All!
+  //outCd*=mix( vec4(1.0), txCd, step(.9999, color.a) );
+  outCd.rgba*=txCd.rgba;
   outCd.rgb*=lightCd.rgb;
   
   

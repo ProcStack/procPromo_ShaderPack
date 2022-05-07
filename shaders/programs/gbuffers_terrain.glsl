@@ -102,7 +102,7 @@ void main() {
 	upVecNorm = normalize(upPosition);
 	dayNight = dot(sunVecNorm,upVecNorm);
 
-vLocalPos = gl_Vertex;
+  vLocalPos = gl_Vertex;
   vPos = gl_ProjectionMatrix * gl_Vertex;
 	gl_Position = vPos;
 
@@ -120,30 +120,35 @@ vLocalPos = gl_Vertex;
 
 
 	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord,0.0,1.0)).st;
-texcoordmid=midcoord;
+  texcoordmid=midcoord;
   vec2 texelhalfbound = vTexelSize*16.0;
   texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
   
   
-  vec2 txlquart = vec2( .0025 );
+  vec2 txlquart = vec2( 0.0019455252918287938 ); // (1/1028*2)
+  vec3 mixColor;
   vec4 tmpCd;
   float avgDiv = 0.0;
   tmpCd = texture2D(texture, mc_midTexCoord);
-    avgColor = tmpCd;
-    avgDiv += tmpCd.a;
+    mixColor = tmpCd.rgb * tmpCd.a;
+  /*  avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord+txlquart);
-    avgColor += tmpCd;
+    mixColor += tmpCd.rgb * tmpCd.a;
     avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-    avgColor += tmpCd;
+    mixColor += tmpCd.rgb * tmpCd.a;
     avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord-txlquart);
-    avgColor += tmpCd;
+    mixColor += tmpCd.rgb * tmpCd.a;
     avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
-    avgColor += tmpCd;
+    mixColor += tmpCd.rgb * tmpCd.a;
     avgDiv += tmpCd.a;
-    avgColor = avgColor / avgDiv;
+    mixColor = mixColor / avgDiv;*/
+    
+    mixColor = mix( vec3(length(color.rgb)), mixColor, step(.1, length(mixColor)) );
+
+avgColor = vec4( mixColor, 1.0);
 
 /*
   vec2 txlquart = vTexelSize*8.0;
@@ -303,11 +308,11 @@ texcoordmid=midcoord;
   
   // Lava
   if (mc_Entity.x == 701){
-    vIsLava=.7;
+    vIsLava=.8;
 #ifdef NETHER
-    vCdGlow=.1;
+    //vCdGlow=.1;
 #else
-    vCdGlow=.05;
+     vCdGlow=.05;
 #endif
     //vColorOnly=1.10;
     //vColorOnly=1.30;
@@ -316,7 +321,7 @@ texcoordmid=midcoord;
   if (mc_Entity.x == 702){
     vIsLava=1.0;
 #ifdef NETHER
-    vCdGlow=.1;
+    //vCdGlow=.1;
 #else
     vCdGlow=.05;
 #endif
@@ -328,14 +333,14 @@ texcoordmid=midcoord;
   // Fire / Soul Fire
   if (mc_Entity.x == 707){
 #ifdef NETHER
-    vCdGlow=0.15;
+    //vCdGlow=0.15;
 #endif
     //avgColor = vec4( .8, .6, .4, 1.0 );
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if (mc_Entity.x == 805){
 #ifdef NETHER
-    vCdGlow=0.1;
+    //vCdGlow=0.1;
 #endif
   }
   
@@ -592,10 +597,10 @@ void main() {
     }
     
     // Screen Space UVing and Depth
-    vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
-    screenSpace = (screenSpace*vTexelSize)-.5;
+    vec2 screenSpace = (vPos.xy/vPos.z);
     //float screenDewarp = length(screenSpace)*.5;
-    float screenDewarp = length(screenSpace)*0.7071067811865476; //length(vec2(.5,.5))
+    //float screenDewarp = length(screenSpace)*0.7071067811865476; //length(vec2(.5,.5))
+    float screenDewarp = length(screenSpace)*1.4142135623730951; //length(vec2(1.0,1.0))
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
     float depthBias = biasToOne(depth, 4.5);
@@ -612,7 +617,9 @@ void main() {
     blockLumVal =  vec4(lightCd,1.0);
 #endif
 #ifdef NETHER
-    blockLumVal =  vec4(fogColor*.4+.4,1);
+    //blockLumVal =  vec4( mix((fogColor*.4+.4), lightCd, depth), 1.0);
+    //blockLumVal =  vec4( lightCd, 1.0);
+    blockLumVal =  vec4( (fogColor*.4+.4), 1.0);
 #endif
 
     float lightLuma = luma(blockLumVal.rgb);
@@ -622,9 +629,9 @@ void main() {
     // -- -- -- -- -- -- -- -- --
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
     //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
+    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
     outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);
-    
+
     float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
     outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
 
@@ -702,7 +709,7 @@ void main() {
     // -- -- -- -- -- -- -- -- --
     // -- Lighting influence - -- --
     // -- -- -- -- -- -- -- -- -- -- --
-    outCd.rgb *=  lightLuma+glowInf + vCdGlow;
+    outCd.rgb *=  lightLuma + glowInf + vCdGlow;
   //outCd.rgb *= lightCd;
 
     // -- -- -- -- -- -- --

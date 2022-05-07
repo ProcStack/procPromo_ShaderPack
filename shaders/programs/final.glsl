@@ -149,7 +149,7 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   curDepth = ( abs(curDepth - depthRef)*3.0 );
   //curDepth *=curDepth;
   //curDepth = min(0.5, curDepth );
-  curDepth = smoothstep(0.0, 0.5, curDepth );
+  curDepth = smoothstep(0.0, .65, curDepth );
 
   depthOut = max( depthOut, curDepth );
   
@@ -319,7 +319,7 @@ void main() {
   reachMult = reachMult * (1.0+rainStrength);
 
 #ifdef NETHER
-  reachMult *= 2.65;
+  reachMult *= 1.75;
 #endif
   
   vec3 avgNormal = normalCd.rgb;
@@ -339,9 +339,7 @@ void main() {
   
 	//const vec3 moonlight = vec3(0.5, 0.9, 1.8) * Moonlight;
   //edgeInsidePerc = smoothstep(.0,.8,min(1.0,edgeInsidePerc));
-#ifdef NETHER
-  //edgeInsidePerc *= .85;
-#endif
+
 
   float edgeInsideOutsidePerc = max(edgeInsidePerc,edgeOutsidePerc);
   
@@ -380,7 +378,7 @@ void main() {
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
   
   edgeInsidePerc *= .8;
-  edgeOutsidePerc *= 3.5;
+  edgeOutsidePerc *= 2.5;
   
 #endif
 
