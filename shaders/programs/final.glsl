@@ -75,6 +75,7 @@ uniform float far;
 uniform vec3 fogColor;
 uniform vec3 skyColor; 
 uniform float rainStrength;
+uniform int worldTime;
 
 
 const float eyeBrightnessHalflife = 4.0f;
@@ -260,16 +261,20 @@ void main() {
   // -- Depth Blur -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
     float depthBlurInf;
+    float depthBlurTime;
     vec2 depthBlurReach;
+    vec2 depthBlurUV;
     vec4 depthBlurCd;
   if( isEyeInWater >= 1 ){
     depthBlurInf = smoothstep( .92, 1.0, depth);//biasToOne(depthBase);
     
-    depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 7.0 );
-    depthBlurCd = boxSample( colortex0, uv, depthBlurReach, .5 );
+    depthBlurTime = worldTime*.1;
+    depthBlurUV = uv + vec2( sin(uv.x*20.0+depthBlurTime), cos(uv.y*20.0+depthBlurTime) )*.0015*depthBlurInf;
+    depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 );
+    depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .4 );
     
     float eyeWaterInf = (1.0-isEyeInWater*.3);
-    depthBlurCd.rgb *= mix( fogColor, vec3(1.0), (depthCos*(depthCos+.5))*eyeWaterInf);
+    depthBlurCd.rgb *= mix( fogColor, vec3(1.0), (depthCos*.9+.1)*eyeWaterInf);
     blurMidCd*=depthBase;
     blurLowCd*=depthBase;
     

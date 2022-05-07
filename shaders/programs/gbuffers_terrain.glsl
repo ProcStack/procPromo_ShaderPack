@@ -82,11 +82,13 @@ varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
 
+// Chocapic13 HighPerformance Toaster
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
     return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }
+//
 
 
 void main() {
@@ -210,52 +212,13 @@ avgColor = vec4( mixColor, 1.0);
 	float diffuseSun = clamp(  (dot(normal,sunVec)*.6+.4)  *lightCol.a,0.0,1.0);
 
 
-	shadowPos.x = 1e30;
-	//skip shadow position calculations if far away
-	//normal based rejection is useless in vertex shader
-	//if (gl_Position.z < shadowDistance + 28.0){
-  
-		position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-    
-    float wtMult = (worldTime*.1);//*.01+1.;
-    float rotVal = 0;
-    vec4 posVal = vec4( -.5, 0, 0, 1 );
-    
-    // rotVal = 90*3.14159265358979323/180;
-    rotVal = -1.5707963267948966;
-    //rotVal = wtMult;
-
-
-  
-		shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
-		//vec3 rainingShadowPos = mat3(yRotMat) * position.xyz + yRotMat[3].xyz;
-		//vec3 rainingShadowPos =  mat3(xRotMat) * position.xyz + xRotMat[3].xyz;
-		//vec3 rainingShadowPos =  mat3(zRotMat) * zRotMat[3].xyz;
-		//vec3 rainingShadowPos =  mat3(xRotMat) * position.xyz + xRotMat[3].xyz;
-    
-    //shadowPos.xy = mix( shadowPos.xy, rainingShadowPos.xy, clamp(position.z+2,0,1) );
-    
-    
-    vec3 shadowProjDiag = diagonal3(shadowProjection);
-    float spdLength = length( shadowProjDiag );
-    vec3 projRot = (shadowProjDiag);
-    projRot.x = cos( shadowProjDiag.x+wtMult ) + sin( shadowProjDiag.z+wtMult );
-    projRot.z = cos( shadowProjDiag.z+wtMult ) + sin( shadowProjDiag.x+wtMult );
-    //projRot = normalize(projRot)*spdLength;
-    projRot = shadowProjDiag;
-		shadowPos.xyz = projRot * shadowPos.xyz + shadowProjection[3].xyz;
-    
-	//}
-
-
-
   // -- -- -- -- -- -- -- --
+  
   // Shadow Prep
-
-  //position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-  //shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
-  //vec3 shadowProjDiag = diagonal3(shadowProjection);
-  //shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+  position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+  shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
+  vec3 shadowProjDiag = diagonal3(shadowProjection);
+  shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
 
 
   // -- -- -- -- -- -- -- --
@@ -598,9 +561,7 @@ void main() {
     
     // Screen Space UVing and Depth
     vec2 screenSpace = (vPos.xy/vPos.z);
-    //float screenDewarp = length(screenSpace)*.5;
-    //float screenDewarp = length(screenSpace)*0.7071067811865476; //length(vec2(.5,.5))
-    float screenDewarp = length(screenSpace)*1.4142135623730951; //length(vec2(1.0,1.0))
+    float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
     float depthBias = biasToOne(depth, 4.5);
@@ -654,7 +615,7 @@ void main() {
     
     diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5, 0.0, 1.0) );
 
-    surfaceShading *= mix( .55*moonPhaseMult, dot(sunVecNorm,vNormal)*.15+.05, dayNight*.5+.5 );
+    surfaceShading *= mix( moonPhaseMult, dot(sunVecNorm,vNormal), dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
     surfaceShading *= 1.0-(rainStrength*.9+.1);
 #endif
@@ -665,7 +626,7 @@ void main() {
     
     depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*5.0)))*2.0) );
 
-    outCd.rgb += outCd.rgb*fogColor * gl_FragCoord.w * surfaceShading * depthDetailing;// -.2;
+    outCd.rgb += outCd.rgb * gl_FragCoord.w * surfaceShading * depthDetailing; // *fogColor; // -.2;
 
 
     // -- -- -- -- -- -- 
@@ -696,7 +657,7 @@ void main() {
     //outCd.g = texHSV.g;
     
     
-    outCd.b = mix(outCd.b, texHSV.b, depthDetailing);
+    //outCd.b = mix(outCd.b, texHSV.b, depthBias);
     
     // -- -- -- -- -- -- 
     // -- HSV -> RGB  -- --
@@ -768,6 +729,7 @@ void main() {
 #endif
     
     /*
+    // World Space Position influenced animated Noise
     vec3 worldPos = fract(abs(cameraPosition+vLocalPos.xyz)*.01);
     worldPos = fract( worldPos+texture2D( noisetex, worldPos.xz).rgb );
     vec3 noiseInit = texture2D( noisetex, tuv).rgb;
