@@ -29,7 +29,6 @@ varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 normal;
-varying mat3 tbnMatrix;
 
 void main() {
 
@@ -66,12 +65,6 @@ color.a=1.0;
   sunDot = dot( normal.xyz, normalize(localSunPos) );
   sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
 
-  
-	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-	tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-					 tangent.y, binormal.y, normal.y,
-					 tangent.z, binormal.z, normal.z);
   
   
   
@@ -178,7 +171,6 @@ varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 normal;
-varying mat3 tbnMatrix;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
@@ -254,9 +246,7 @@ void main() {
   outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.5+entityColor.g*.3) );
   
   
-  vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
-  normalCd = normalize( normalCd*tbnMatrix );
-  float highlights = dot(normalize(sunPosition),normalCd);
+  float highlights = dot(normalize(sunPosition),normal.xyz);
   highlights = (highlights-.5)*0.3;
   //outCd.rgb += vec3( highlights );
   //outCd.rgb = vec3( sunDot );

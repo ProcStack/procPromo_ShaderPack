@@ -400,14 +400,19 @@ void main() {
   // -- -- -- -- -- -- -- --
   // -- Glow Mixing -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
+  float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
+  
   vec3 outGlowCd = max(blurMidCd, blurLowCd);
-  outCd.rgb += outGlowCd * GlowBrightness;
+  outCd.rgb += outGlowCd * GlowBrightness;// * lavaSnowFogInf;
   
   float edgeCdInf = step(depthBase, .9999);
   // TODO : Check skyBrightness for inner edges when in caves
   //edgeCdInf *= (skyBrightnessInf*.5+.5) * rainInf;
+  edgeCdInf *= lavaSnowFogInf;
+
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
   outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;
+  
   
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

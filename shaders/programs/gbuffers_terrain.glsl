@@ -82,13 +82,13 @@ varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
 
-// Chocapic13 HighPerformance Toaster
+// -- Chocapic13 HighPerformance Toaster --
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
     return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }
-//
+// -- -- -- -- -- --
 
 
 void main() {
@@ -273,7 +273,7 @@ avgColor = vec4( mixColor, 1.0);
   if (mc_Entity.x == 701){
     vIsLava=.8;
 #ifdef NETHER
-    //vCdGlow=.1;
+    vCdGlow=.1;
 #else
      vCdGlow=.05;
 #endif
@@ -296,7 +296,7 @@ avgColor = vec4( mixColor, 1.0);
   // Fire / Soul Fire
   if (mc_Entity.x == 707){
 #ifdef NETHER
-    //vCdGlow=0.15;
+    vCdGlow=0.15;
 #endif
     //avgColor = vec4( .8, .6, .4, 1.0 );
   }
@@ -454,18 +454,6 @@ varying float vLightingMult;
 varying float vCdGlow;
 
 
-
-// Sildurs
-//faster and actually more precise than pow 2.2
-vec3 toLinear(vec3 sRGB){
-	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
-}
-
-const int GL_LINEAR = 9729;
-const int GL_EXP = 2048;
-
-
-
 void main() {
   
 
@@ -475,41 +463,41 @@ void main() {
   //
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy);
   float shadowDist = 0.0;
-  
-	//if (gl_FragData[0].a > 0.0 ) {
-		float diffuseSun = 1.0;
+  float diffuseSun = 1.0;
 #ifdef OVERWORLD
-		//if (color.a > 0.0001 && shadowPos.x < 1e10) {
-      float distort = calcDistort(shadowPos.xy);
-      vec2 spCoord = shadowPos.xy / distort;
-      if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
-        float diffthresh = 0.0006*shadowDistance/45.;
-        if (shadowPos.w > -1.0) diffthresh = 0.0004*1024./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
+  float distort = calcDistort(shadowPos.xy);
+  vec2 spCoord = shadowPos.xy / distort;
+  if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
+    float diffthresh = 0.0006*shadowDistance/45.;
+    if (shadowPos.w > -1.0) diffthresh = 0.0004*1024./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
 
-        vec3 projectedShadowPosition = vec3(spCoord, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
-        
-        float shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
-        vec2 posOffset;
-        
-        for( int x=0; x<boxSamplesCount; ++x){
-          posOffset = boxSamples[x]*.001;
-          projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.2) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
-        
-          shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .15);
-        }
-        for( int x=0; x<boxSamplesCount; ++x){
-          posOffset = boxSamples[x]*.002;
-          projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.5) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
-        
-          shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
-        }
-        
-        float sunMoonShadowInf = smoothstep( .4, .5, abs(dot(sunVecNorm, vNormal)));
-        //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))-.5)*1.0);
-        diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf );
-			}
-		//}
+    vec3 projectedShadowPosition = vec3(spCoord, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
+    
+    float shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
+    vec2 posOffset;
+    
+    // Modded for multi sampling the shadow
+    // TODO : Unroll these damn it
+    for( int x=0; x<boxSamplesCount; ++x){
+      posOffset = boxSamples[x]*.001;
+      projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.2) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
+    
+      shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .15);
+    }
+    
+    for( int x=0; x<boxSamplesCount; ++x){
+      posOffset = boxSamples[x]*.002;
+      projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.5) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
+    
+      shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
+    }
+    
+    float sunMoonShadowInf = smoothstep( .4, .5, abs(dot(sunVecNorm, vNormal)));
+    //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))-.5)*1.0);
+    diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf );
+  }
 #endif
+  // -- -- -- -- -- -- -- --
 
 
   // -- -- -- -- -- -- -- --
@@ -527,6 +515,7 @@ void main() {
 		vec3 diffuseLight = mix(lightCol.rgb*.5+.5, vec3(1,1,1),.7) ;
 		diffuseLight *= max(lightmapcd, vec3(blockShading) ) ;
     
+    float isLava = vIsLava;
     
     vec2 tuv = texcoord.st;
     if( vAltTextureMap > .5 ){
@@ -542,6 +531,7 @@ void main() {
     // -- -- -- -- -- -- --
     
     vec4 txCd;
+    // TODO : There's gotta be a better way to do this if
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
       if(vColorOnly>.0 && vIsLava<.1){
@@ -682,7 +672,10 @@ void main() {
       outCd.rgb *=  1.0+lightLuma+glowInf;
       outCd.rgb = mix( outCd.rgb*(fogColor*.2+.8), outCd.rgb*fogColor*( 1.0-smoothDepth*.5 ), max(0.0,( 1.0-smoothDepth )-glowInf*5.0) );
     }else if( isEyeInWater > 1 ){ // Lava
-      outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
+      depthBias = depthBias*.1; // depth;
+      depth *= .5;
+      
+      outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.01) );
     //}else if( isEyeInWater == 3 ){ // Snow
       //outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
     }else{
@@ -696,14 +689,17 @@ void main() {
 // -- -- -- -- -- -- -- -- -- -- -- --
 
 #ifdef THE_END
-      float depthEnd = min(1.0, gl_FragCoord.w*38.0-screenDewarp);
+      float depthEnd = min(1.0, gl_FragCoord.w*48.0-screenDewarp);
       float fogInf = min(1.0, gl_FragCoord.w*64.0-screenDewarp);
       fogInf *= fogInf;
     
       float lightMax = max( lightCd.r, max( lightCd.g, lightCd.b ) );
+      
+      // Dot Normal Stuff
       float facingMultOrig=clamp( dot(normalize(vLocalPos.xyz), vWorldNormal)*.7+.5, 0.0, 1.0);
       
       
+      // Texture to 360 Display Fog
       vec2 rotUV = rotToUV(vec3(-vLocalPos.x, -vAnimFogNormal.y, -vLocalPos.z));
       rotUV.y = (rotUV.y-.5)*.5+.5;
       screenSpace = (screenSpace)*(1.0-depthEnd)*.5;
@@ -712,16 +708,20 @@ void main() {
       float timeOffset = (worldTime*0.00004166666)*80.0;
       vec3 ssNoiseInit = texture2D( noisetex, fract(screenSpace)).rgb;
       vec3 ssNoiseCd = texture2D( noisetex, fract(screenSpace+(ssNoiseInit.rg-.5+timeOffset*.5)*.5+(ssNoiseInit.br-.5)*.2)).rgb;
+      
+      // Display Fog Depth Colorizer
       float fogNoise = ssNoiseCd.r*ssNoiseCd.g*ssNoiseCd.b;
       vec3 endFogCd = vec3(.75,.5,.75);
       endFogCd = mix( endFogCd*fogNoise + (ssNoiseCd-.3)*.7, endFogCd, depthEnd*.7+.3);
       
+      // Dot Normal Stuff
       float facingMult = mix( 1.0, facingMultOrig, max(0.0, (1.0-depthEnd*.5)-lightMax) );
       vec3 cdFogMix = outCd.rgb*mix( endFogCd*facingMult, vec3( facingMult ), min(1.0,fogInf+lightMax*.2));
       
       float cdMaxVal = max( txCd.r, max( txCd.g, txCd.b) );
       float txGlow = smoothstep(.35,.65, cdMaxVal)*3.0*(1.0-depthEnd*.7);
-      cdFogMix = mix( outCd.rgb+outCd.rgb*txGlow, cdFogMix, blockFogInfluence*.45+.55);
+      cdFogMix = mix( outCd.rgb+outCd.rgb*txGlow, cdFogMix, blockFogInfluence*.25+.75);
+      
       outCd.rgb = mix( outCd.rgb*endFogCd*(facingMult*.5+.5), cdFogMix, min(1.0,depthEnd*depthEnd+(1.0-blockFogInfluence)));
       glowCd = addToGlowPass(glowCd, outCd.rgb*txGlow*(1.0-blockFogInfluence)*(depthEnd));
       
@@ -797,7 +797,7 @@ void main() {
     //cdBrightness *= cdBrightness;
     //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
     outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight)*(1.0-rainStrength)*skyBrightnessMult;
-    outCd.rgb *= 1.0-rainStrength*.5*skyBrightnessMult;
+    outCd.rgb *= 1.0-rainStrength*.35*skyBrightnessMult*(1.0-vIsLava);
     
     float skyBrightMultFit = 1.1-skyBrightnessMult*.1*(1.0-frozenSnowGlow);
     outCd.rgb *= skyBrightMultFit;
@@ -808,7 +808,7 @@ void main() {
 
     //outCd.rgb *= skyBrightMultFit;
     
-    glowInf += luma(outCd.rgb)*vCdGlow;
+    glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
     
     glowCd = outCd.rgb+outCd.rgb*glowInf;
     //glowCd += vec3(1.0-distMix);
@@ -816,7 +816,8 @@ void main() {
 
 
     vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
+    glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness ;
+
 
 #ifdef NETHER
     //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness;// * lightLuma;
@@ -828,6 +829,14 @@ void main() {
 #endif
 
     outCd.rgb*=1.0+glowHSV.z;
+
+
+    // -- -- -- -- -- -- -- -- -- -- 
+    // -- Lava & Powda Snow Fog - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- --
+    float lavaSnowFogInf = 1.0-min(1.0, max(0.0,waterLavaSnow-1.0) );
+    glowHSV.z *= lavaSnowFogInf;
+    outCd.rgb = mix( fogColor.rgb, outCd.rgb, lavaSnowFogInf);
 
     float outDepth = min(.9999,gl_FragCoord.w);
     
