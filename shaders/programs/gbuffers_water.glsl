@@ -229,7 +229,7 @@ void main() {
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.30,depth));
-      outCd.rgb *= fogColor* ( 1.5-smoothDepth*.5 );
+      outCd.rgb *= fogColor*lightCd.rgb* ( 1.3-(1.0-smoothDepth)*.5 );
       //outCd.a = min(1.0, outCd.a+(1.0-smoothDepth)*.5);
     }else if( isEyeInWater >= 2 ){ // Lava
       outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );

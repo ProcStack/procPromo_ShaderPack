@@ -260,18 +260,15 @@ void main() {
   // -- -- -- -- -- -- -- --
   // -- Depth Blur -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
-    float depthBlurInf;
-    float depthBlurTime;
-    vec2 depthBlurReach;
-    vec2 depthBlurUV;
-    vec4 depthBlurCd;
-  if( isEyeInWater >= 1 ){
-    depthBlurInf = smoothstep( .92, 1.0, depth);//biasToOne(depthBase);
+  if( UnderWaterBlur && isEyeInWater >= 1 ){
+    float depthBlurInf = smoothstep( .5, 1.0, depth);//biasToOne(depthBase);
     
-    depthBlurTime = worldTime*.1;
-    depthBlurUV = uv + vec2( sin(uv.x*20.0+depthBlurTime), cos(uv.y*20.0+depthBlurTime) )*.0015*depthBlurInf;
-    depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 );
-    depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .4 );
+    float depthBlurTime = worldTime*.9;
+    float depthBlurWarpMag = .008;
+    
+    vec2 depthBlurUV = uv + vec2( sin(uv.x*20.0+depthBlurTime + depth), cos(uv.y*20.0+depthBlurTime + depth) )*depthBlurWarpMag*depthBlurInf;
+    vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 );
+    vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
     
     float eyeWaterInf = (1.0-isEyeInWater*.3);
     depthBlurCd.rgb *= mix( fogColor, vec3(1.0), (depthCos*.9+.1)*eyeWaterInf);
@@ -412,7 +409,6 @@ void main() {
 
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
   outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;
-  
   
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

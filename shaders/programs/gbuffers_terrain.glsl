@@ -669,8 +669,9 @@ void main() {
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
-      outCd.rgb *=  1.0+lightLuma+glowInf;
-      outCd.rgb = mix( outCd.rgb*(fogColor*.2+.8), outCd.rgb*fogColor*( 1.0-smoothDepth*.5 ), max(0.0,( 1.0-smoothDepth )-glowInf*5.0) );
+      //outCd.rgb *=  1.0+lightLuma+glowInf;
+      outCd.rgb *=  lightLuma*.85+.15;
+      outCd.rgb = mix( outCd.rgb*(fogColor*.1+.9), outCd.rgb*fogColor*( 1.0-smoothDepth*.5 ), max(0.0,( 1.0-smoothDepth )-glowInf*5.0) );
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
