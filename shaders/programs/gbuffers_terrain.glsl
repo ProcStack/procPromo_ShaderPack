@@ -456,12 +456,56 @@ varying float vCdGlow;
 
 void main() {
   
+    vec2 tuv = texcoord.st;
+    if( vAltTextureMap > .5 ){
+      tuv = texcoord.zw;
+    }
+    vec2 luv = lmcoord.st;
+
+    float glowInf = texture2D(colortex5, tuv).x;
+    glowInf *= glowInf;
+    vec3 glowCd = vec3(0,0,0);
+
+    float isLava = vIsLava;
+
+    // -- -- -- -- -- -- --
+    
+    vec4 txCd;
+    // TODO : There's gotta be a better way to do this if
+    if( DetailBluring > 0 ){
+      // Block's pre-modified, no need to blur again
+      if(vColorOnly>.0 && vIsLava<.1){
+        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, vTexelSize* DetailBluring);
+      }else{
+        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
+        //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
+      }
+      //txCd = texture2D(texture, tuv);
+    }else{
+      txCd = texture2D(texture, tuv);
+    }
+
+    if (txCd.a < .2){
+      discard;
+    }
+    
+    
+    
+    // Screen Space UVing and Depth
+    vec2 screenSpace = (vPos.xy/vPos.z);
+    float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
+    //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
+    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
+    float depthBias = biasToOne(depth, 4.5);
+    float depthDetailing = clamp(1.175-depthBias*1.25, 0.0, 1.0);
+    //depthDetailing = max( 0.0, depthDetailing +  );
+    
+    
 
   // -- -- -- -- -- -- -- --
   // Modded shadow lookup Chocapic13's HighPerformance Toaster
   //  (I'm still learning this shadow stuffs)
   //
-	gl_FragData[0] = texture2D(texture, lmtexcoord.xy);
   float shadowDist = 0.0;
   float diffuseSun = 1.0;
 #ifdef OVERWORLD
@@ -494,7 +538,8 @@ void main() {
     
     float sunMoonShadowInf = smoothstep( .4, .5, abs(dot(sunVecNorm, vNormal)));
     //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))-.5)*1.0);
-    diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf );
+    float shadowDepthInf = clamp( (depth*40.0), 0.0, 1.0 );
+    diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf * shadowDepthInf );
   }
 #endif
   // -- -- -- -- -- -- -- --
@@ -515,48 +560,8 @@ void main() {
 		vec3 diffuseLight = mix(lightCol.rgb*.5+.5, vec3(1,1,1),.7) ;
 		diffuseLight *= max(lightmapcd, vec3(blockShading) ) ;
     
-    float isLava = vIsLava;
     
-    vec2 tuv = texcoord.st;
-    if( vAltTextureMap > .5 ){
-      tuv = texcoord.zw;
-    }
-    vec2 luv = lmcoord.st;
-
-    float glowInf = texture2D(colortex5, tuv).x;
-    glowInf *= glowInf;
-    vec3 glowCd = vec3(0,0,0);
-
-
-    // -- -- -- -- -- -- --
     
-    vec4 txCd;
-    // TODO : There's gotta be a better way to do this if
-    if( DetailBluring > 0 ){
-      // Block's pre-modified, no need to blur again
-      if(vColorOnly>.0 && vIsLava<.1){
-        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, vTexelSize* DetailBluring);
-      }else{
-        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
-        //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
-      }
-      //txCd = texture2D(texture, tuv);
-    }else{
-      txCd = texture2D(texture, tuv);
-    }
-
-    if (txCd.a < .2){
-      discard;
-    }
-    
-    // Screen Space UVing and Depth
-    vec2 screenSpace = (vPos.xy/vPos.z);
-    float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
-    //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
-    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
-    float depthBias = biasToOne(depth, 4.5);
-    float depthDetailing = clamp(1.175-depthBias*1.25, 0.0, 1.0);
-    //depthDetailing = max( 0.0, depthDetailing +  );
 
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
