@@ -81,6 +81,7 @@ varying float vColorOnly;
 varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
+varying float vDepthAvgColorInf;
 
 // -- Chocapic13 HighPerformance Toaster --
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
@@ -259,6 +260,8 @@ avgColor = vec4( mixColor, 1.0);
   vAltTextureMap=1.0;
   vec2 prevTexcoord = texcoord.zw;
   texcoord.zw = texcoord.st;
+  vDepthAvgColorInf = 1.0;
+
   if (mc_Entity.x == 901 || mc_Entity.x == 801){
 
     texcoord.zw = texcoord.st;
@@ -266,8 +269,11 @@ avgColor = vec4( mixColor, 1.0);
     //color.rgb=vec3(1.0);
     vAltTextureMap = 0.0;
     avgColor*=color;
+    vDepthAvgColorInf=0.3;
   }
-  
+  if(mc_Entity.x == 801 || mc_Entity.x == 8011){
+    vDepthAvgColorInf =  0.0;
+  }
   
   // Lava
   if (mc_Entity.x == 701){
@@ -298,13 +304,15 @@ avgColor = vec4( mixColor, 1.0);
 #ifdef NETHER
     vCdGlow=0.15;
 #endif
-    //avgColor = vec4( .8, .6, .4, 1.0 );
+    //avgColor = vec4( .8, .6, .0, 1.0 );
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if (mc_Entity.x == 805){
 #ifdef NETHER
     //vCdGlow=0.1;
 #endif
+    vCdGlow=0.01;
+    vDepthAvgColorInf = 0.0;
   }
   
 
@@ -379,6 +387,7 @@ uniform vec3 cameraPosition;
 uniform int isEyeInWater;
 uniform float BiomeTemp;
 uniform int moonPhase;
+uniform float nightVision;
 
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
@@ -452,6 +461,7 @@ varying float vColorOnly;
 varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
+varying float vDepthAvgColorInf;
 
 
 void main() {
@@ -497,8 +507,8 @@ void main() {
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
     float depthBias = biasToOne(depth, 4.5);
-    float depthDetailing = clamp(1.175-depthBias*1.25, 0.0, 1.0);
-    //depthDetailing = max( 0.0, depthDetailing +  );
+    float depthDetailing = clamp(1.195-depthBias*1.25, 0.0, 1.0);
+
     
     
 
@@ -585,7 +595,7 @@ void main() {
     // -- -- -- -- -- -- -- -- --
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
     //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing*vDepthAvgColorInf);
     outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);
 
     float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
@@ -646,7 +656,7 @@ void main() {
     // -- HSV; Sampled Texture Influence - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     //vec3 texHSV = rgb2hsv( (txCd.rgb+avgColor.rgb)*.5 );
-    vec3 texHSV = rgb2hsv( txCd.rgb );
+    //vec3 texHSV = rgb2hsv( txCd.rgb );
     
     //outCd.r = texHSV.r;
     //outCd.g = texHSV.g;
@@ -670,13 +680,15 @@ void main() {
 
     // -- -- -- -- -- -- --
 
+    vec3 toFogColor = mix(fogColor, vec3(1.0), nightVision);
+      
     float distMix = min(1.0,gl_FragCoord.w);
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
       //outCd.rgb *=  1.0+lightLuma+glowInf;
-      outCd.rgb *=  lightLuma*.85+.15;
-      outCd.rgb = mix( outCd.rgb*(fogColor*.1+.9), outCd.rgb*fogColor*( 1.0-smoothDepth*.5 ), max(0.0,( 1.0-smoothDepth )-glowInf*5.0) );
+      outCd.rgb *=  1.0+lightLuma*.5;//+.5;
+      //outCd.rgb = mix( outCd.rgb*(fogColor*.1+.9), outCd.rgb*fogColor*( 1.0-smoothDepth*.5 ), max(0.0,( 1.0-smoothDepth )-glowInf*5.0) );
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
@@ -846,12 +858,6 @@ void main() {
 
     float outDepth = min(.9999,gl_FragCoord.w);
     
-    /*vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing);
-    //outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);*/
-
-
     
     // -- -- -- -- -- -- -- -- -- -- -- -- --
     // -- Texture Overides from Settings - -- --
@@ -861,7 +867,7 @@ void main() {
       ssLength *= ssLength * ssLength;
       outCd.rgb = mix( vec3(lightLuma), lightCd, ssLength );
     }
-
+    
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( outDepth ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

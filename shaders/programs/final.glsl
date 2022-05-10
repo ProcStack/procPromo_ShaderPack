@@ -76,6 +76,7 @@ uniform vec3 fogColor;
 uniform vec3 skyColor; 
 uniform float rainStrength;
 uniform int worldTime;
+uniform float nightVision;
 
 
 const float eyeBrightnessHalflife = 4.0f;
@@ -267,7 +268,7 @@ void main() {
     float depthBlurWarpMag = .008;
     
     vec2 depthBlurUV = uv + vec2( sin(uv.x*20.0+depthBlurTime + depth), cos(uv.y*20.0+depthBlurTime + depth) )*depthBlurWarpMag*depthBlurInf;
-    vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 );
+    vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 * (1.0-nightVision));
     vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
     
     float eyeWaterInf = (1.0-isEyeInWater*.3);
