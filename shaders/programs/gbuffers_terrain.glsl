@@ -271,8 +271,13 @@ avgColor = vec4( mixColor, 1.0);
     avgColor*=color;
     vDepthAvgColorInf=0.3;
   }
-  if(mc_Entity.x == 801 || mc_Entity.x == 8011){
+  if(mc_Entity.x == 801 || mc_Entity.x == 8011 || mc_Entity.x == 8012){
     vDepthAvgColorInf =  0.0;
+  }
+  if(mc_Entity.x == 907){
+    vDepthAvgColorInf =  0.0;
+    vAltTextureMap = 1.0;
+    vColorOnly=.001;
   }
   
   // Lava
