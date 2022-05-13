@@ -1,7 +1,7 @@
 
 #ifdef VSH
 
-#include "/utils/shadowCommon.glsl"
+#include "utils/shadowCommon.glsl"
 const float eyeBrightnessHalflife = 4.0f;
 
 #define SEPARATE_AO
@@ -46,8 +46,6 @@ varying vec4 lmtexcoord;
 varying vec4 texcoord;
 varying vec2 texcoordmid;
 varying vec4 texcoordminmax;
-varying vec4 color;
-varying vec4 avgColor;
 varying vec4 lmcoord;
 varying vec2 texmidcoord;
 
@@ -57,27 +55,32 @@ varying vec2 vtexcoord;
 varying float sunInfMult;    
 varying float sunDot;
 
-varying vec4 vPos;
-varying vec4 vLocalPos;
-varying vec3 vNormal;
-varying vec2 vTexelSize;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
 varying vec4 shadowPos;
 varying vec3 shadowOffset;
-varying vec3 vWorldNormal;
-varying vec3 vAnimFogNormal;
+
+varying vec4 vPos;
+varying vec4 vLocalPos;
+varying vec3 vNormal;
+varying vec2 vTexelSize;
+
+varying vec4 vColor;
+varying vec4 vAvgColor;
+varying float vColorOnly;
 
 varying float vAlphaMult;
+
+varying vec3 vWorldNormal;
+varying vec3 vAnimFogNormal;
 
 varying float vDetailBluringMult;
 varying float vMultiTexelMap;
 
 varying float vAltTextureMap;
 
-varying float vColorOnly;
 varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
@@ -111,7 +114,7 @@ void main() {
 
   vPos = vec4(position,1.0);
   
-	color = gl_Color;
+	vColor = gl_Color;
 
 
   vec4 textureUV = gl_MultiTexCoord0;
@@ -128,50 +131,52 @@ void main() {
   texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
   
   
+  float avgBlend = .3;
+  
   vec2 txlquart = vec2( 0.0019455252918287938 ); // (1/1028*2)
   vec3 mixColor;
   vec4 tmpCd;
   float avgDiv = 0.0;
   tmpCd = texture2D(texture, mc_midTexCoord);
-    mixColor = tmpCd.rgb * tmpCd.a;
-  /*  avgDiv += tmpCd.a;
+    mixColor = tmpCd.rgb;
+    avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord+txlquart);
-    mixColor += tmpCd.rgb * tmpCd.a;
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-    mixColor += tmpCd.rgb * tmpCd.a;
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord-txlquart);
-    mixColor += tmpCd.rgb * tmpCd.a;
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   tmpCd = texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
-    mixColor += tmpCd.rgb * tmpCd.a;
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-    mixColor = mixColor / avgDiv;*/
+    //mixColor = mixColor / avgDiv;
     
-    mixColor = mix( vec3(length(color.rgb)), mixColor, step(.1, length(mixColor)) );
+    mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
 
-avgColor = vec4( mixColor, 1.0);
+vAvgColor = vec4( mixColor, 1.0);
 
 /*
   vec2 txlquart = vTexelSize*8.0;
   float avgDiv=0;
   vec4 curAvgCd = texture2D(texture, mc_midTexCoord);
   avgDiv = curAvgCd.a;
-  avgColor = curAvgCd;
+  vAvgColor = curAvgCd;
   curAvgCd += texture2D(texture, mc_midTexCoord+txlquart);
   avgDiv += curAvgCd.a;
-  avgColor += curAvgCd;
+  vAvgColor += curAvgCd;
   curAvgCd += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
   avgDiv += curAvgCd.a;
-  avgColor += curAvgCd;
+  vAvgColor += curAvgCd;
   curAvgCd += texture2D(texture, mc_midTexCoord-txlquart);
   avgDiv += curAvgCd.a;
-  avgColor += curAvgCd;
+  vAvgColor += curAvgCd;
   curAvgCd += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
   avgDiv += curAvgCd.a;
-  avgColor += curAvgCd;
-  avgColor *= 1.0/avgDiv;
+  vAvgColor += curAvgCd;
+  vAvgColor *= 1.0/avgDiv;
 */
 
 	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
@@ -246,12 +251,12 @@ avgColor = vec4( mixColor, 1.0);
   if (mc_Entity.x == 810 && SolidLeaves){
     //shadowPos.w = -2.0;
     //diffuseSun = diffuseSun*0.35+0.4;
-    //color.rgb *= 1.1;
+    //vColor.rgb *= 1.1;
     vAlphaMult=0.0;
     vColorOnly=.001;
     vAltTextureMap=1.0;
     //vColorOnly=.0;
-    avgColor=color*.5;
+    vAvgColor=vColor*.5;
   }
   
 
@@ -266,9 +271,9 @@ avgColor = vec4( mixColor, 1.0);
 
     texcoord.zw = texcoord.st;
     vColorOnly=.001;
-    //color.rgb=vec3(1.0);
+    //vColor.rgb=vec3(1.0);
     vAltTextureMap = 0.0;
-    avgColor*=color;
+    vAvgColor*=vColor;
     vDepthAvgColorInf=0.3;
   }
   if(mc_Entity.x == 801 || mc_Entity.x == 8011 || mc_Entity.x == 8012){
@@ -290,7 +295,7 @@ avgColor = vec4( mixColor, 1.0);
 #endif
     //vColorOnly=1.10;
     //vColorOnly=1.30;
-    color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+    vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   if (mc_Entity.x == 702){
     vIsLava=1.0;
@@ -301,7 +306,7 @@ avgColor = vec4( mixColor, 1.0);
 #endif
     //vColorOnly=0.30;
     //vColorOnly=1.30;
-    color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+    vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   
   // Fire / Soul Fire
@@ -309,7 +314,7 @@ avgColor = vec4( mixColor, 1.0);
 #ifdef NETHER
     vCdGlow=0.15;
 #endif
-    //avgColor = vec4( .8, .6, .0, 1.0 );
+    //vAvgColor = vec4( .8, .6, .0, 1.0 );
     
     vDepthAvgColorInf =  0.0;
   }
@@ -329,24 +334,24 @@ avgColor = vec4( mixColor, 1.0);
     texcoord.zw = texcoord.st;
     vColorOnly=0.50;
     vLightingMult = 1.2;
-    avgColor.rgb = vec3(.35,.15,.7);
-    //color.rgb = mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .7 );
+    vAvgColor.rgb = vec3(.35,.15,.7);
+    //vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .7 );
   }
   // Amethyst Clusters
   if (mc_Entity.x == 910){
     texcoord.zw = texcoord.st;
     //vColorOnly=0.100;
     vLightingMult = 1.2;
-    //color.rgb = avgColor.rgb;//mix( avgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+    //vColor.rgb = vAvgColor.rgb;//mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   
 
-  //color.a = diffuseSun * gl_MultiTexCoord1.y;
+  //vColor.a = diffuseSun * gl_MultiTexCoord1.y;
   sunInfMult = diffuseSun * gl_MultiTexCoord1.y;
-//color.a=1.0;//
+//vColor.a=1.0;//
                                                                               
-  //color = mix( gl_Color, color, eyeBrightnessSmooth.y/240.0);
-  //color = gl_Color;
+  //vColor = mix( gl_Color, vColor, eyeBrightnessSmooth.y/240.0);
+  //vColor = gl_Color;
 
 }
 
@@ -364,7 +369,7 @@ avgColor = vec4( mixColor, 1.0);
 #ifdef FSH
 
 
-/* RENDERTARGETS: 0,1,2,7,6 */
+/* RENDERTARGETS: 0,1,2,7,6,9 */
 
 #define gbuffers_terrain
 /* --
@@ -374,9 +379,9 @@ const int gnormalFormat = RGB10_A2;
  -- */
 
 #include "/shaders.settings"
-#include "/utils/shadowCommon.glsl"
-#include "/utils/mathFuncs.glsl"
-#include "/utils/texSamplers.glsl"
+#include "utils/shadowCommon.glsl"
+#include "utils/mathFuncs.glsl"
+#include "utils/texSamplers.glsl"
 
 
 
@@ -435,8 +440,7 @@ varying float txGlowThreshold;
 // -- -- -- -- -- -- -- --
 
 varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 avgColor;
+varying vec4 vColor;
 varying vec4 texcoord;
 varying vec2 texcoordmid;
 varying vec4 texcoordminmax;
@@ -450,12 +454,6 @@ varying vec2 vtexcoord;
 varying float sunInfMult;
 varying float sunDot;
 
-varying vec4 vPos;
-varying vec4 vLocalPos;
-varying vec3 vNormal;
-varying vec3 vWorldNormal;
-varying vec3 vAnimFogNormal;
-
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
@@ -464,6 +462,14 @@ varying vec3 shadowOffset;
 varying float vAlphaMult;
 varying float vAltTextureMap;
 
+varying vec4 vPos;
+varying vec4 vLocalPos;
+varying vec3 vNormal;
+varying vec3 vWorldNormal;
+varying vec3 vAnimFogNormal;
+
+
+varying vec4 vAvgColor;
 varying float vColorOnly;
 varying float vIsLava;
 varying float vLightingMult;
@@ -484,6 +490,7 @@ void main() {
     vec3 glowCd = vec3(0,0,0);
 
     float isLava = vIsLava;
+    vec4 avgShading = vAvgColor;
 
     // -- -- -- -- -- -- --
     
@@ -570,8 +577,8 @@ void main() {
     // Mute Shadows during Rain
     diffuseSun = mix( diffuseSun*.6+.6, 1.0, rainStrength);
     
-    //float blockShading = max( diffuseSun, (sin( color.a*PI*.5 )*.5+.5) );
-    float blockShading = diffuseSun * (sin( color.a*PI*.5 )*.5+.5);
+    //float blockShading = max( diffuseSun, (sin( vColor.a*PI*.5 )*.5+.5) );
+    float blockShading = diffuseSun * (sin( vColor.a*PI*.5 )*.5+.5);
     
 		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*vTexelSize).xyz;// *.5+.5;
 		vec3 diffuseLight = mix(lightCol.rgb*.5+.5, vec3(1,1,1),.7) ;
@@ -600,10 +607,10 @@ void main() {
     // -- -- -- -- -- -- --
     // -- Set base color -- --
     // -- -- -- -- -- -- -- -- --
-    vec4 outCd = vec4(txCd.rgb,1.0) * vec4(color.rgb,1.0);
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*depthDetailing);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgColor.rgb,1.0), depthDetailing*vDepthAvgColorInf);
-    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vIsLava);
+    vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
+    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(vColor.rgb,1.0), vColorOnly*depthDetailing);
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), depthDetailing*vDepthAvgColorInf);
+    outCd = mix( outCd,  vec4(avgShading.rgb,1.0), vIsLava);
 
     float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
     outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
@@ -662,7 +669,7 @@ void main() {
     // -- -- -- -- -- -- -- -- -- -- -- -- --
     // -- HSV; Sampled Texture Influence - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    //vec3 texHSV = rgb2hsv( (txCd.rgb+avgColor.rgb)*.5 );
+    //vec3 texHSV = rgb2hsv( (txCd.rgb+avgShading.rgb)*.5 );
     //vec3 texHSV = rgb2hsv( txCd.rgb );
     
     //outCd.r = texHSV.r;
@@ -806,7 +813,7 @@ void main() {
 
     
     //outCd.rgb = mix( outCd.rgb,vec3( txCd.a,txCd.a,txCd.a), step(screenSpace.y,0.0));
-    //outCd.rgb = mix( outCd.rgb, (texture2D(texture, tuv) * blockLumVal * vec4(color.rgb,1.0)).rgb, step(screenSpace.x,0.0));
+    //outCd.rgb = mix( outCd.rgb, (texture2D(texture, tuv) * blockLumVal * vec4(vColor.rgb,1.0)).rgb, step(screenSpace.x,0.0));
     
     //blockShading = max( blockShading, lightLuma );// lightLuma is lightCd
     
@@ -863,8 +870,6 @@ void main() {
     glowHSV.z *= lavaSnowFogInf;
     outCd.rgb = mix( fogColor.rgb, outCd.rgb, lavaSnowFogInf);
 
-    float outDepth = min(.9999,gl_FragCoord.w);
-    
     
     // -- -- -- -- -- -- -- -- -- -- -- -- --
     // -- Texture Overides from Settings - -- --
@@ -875,11 +880,16 @@ void main() {
       outCd.rgb = mix( vec3(lightLuma), lightCd, ssLength );
     }
     
+    float outDepth = min(.9999,gl_FragCoord.w);
+    float outEffectGlow = 0.0;
+    
     gl_FragData[0] = outCd;
-    gl_FragData[1] = vec4(vec3( outDepth ), 1.0);
+    gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
+    // [ Sun/Moon Strength, Light Map, Spectral Glow ]
     gl_FragData[3] = vec4(vec3(blockShading, lightBaseCd.r, 0.0), 1.0);
     gl_FragData[4] = vec4( glowHSV, 1.0);
+    gl_FragData[5] = vec4( 0.0);
 
 	//}
 }

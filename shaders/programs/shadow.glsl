@@ -5,7 +5,7 @@
 
 #extension GL_EXT_gpu_shader4 : enable
 
-#include "/utils/shadowCommon.glsl"
+#include "utils/shadowCommon.glsl"
 
 varying vec2 texcoord;
 

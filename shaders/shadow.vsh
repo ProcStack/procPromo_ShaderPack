@@ -9,7 +9,7 @@
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/shaders.settings"
-#include "/utils/shadowCommon.glsl"
+#include "/programs/utils/shadowCommon.glsl"
 
 attribute vec4 mc_Entity;
 

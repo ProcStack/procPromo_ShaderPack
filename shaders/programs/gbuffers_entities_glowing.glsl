@@ -8,6 +8,8 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 sunPosition;
+uniform float far;
+uniform float near;
 
 uniform float viewWidth;
 uniform float viewHeight;
@@ -21,7 +23,7 @@ in vec3 at_velocity; // vertex offset to previous frame
 varying vec2 texelSize;
 varying vec4 texcoord;
 varying vec4 color;
-varying vec4 lmcoord;
+varying vec4 vLightcoord;
 varying vec2 texmidcoord;
 
 varying vec4 vtexcoordam; // .st for add, .pq for mul
@@ -31,26 +33,32 @@ varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 normal;
-varying mat3 tbnMatrix;
+varying float vDepth;
 
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec3 toCamPos = gl_Vertex.xyz*.01;
+	vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
+  position.xyz = position.xyz+normalize(position.xyz)*near*1.50;
 
-  
   vPos = gl_ProjectionMatrix * position;
+  
+  //vPos.xyz*=.1;
 	gl_Position = vPos;
   
   vPos = gl_ModelViewMatrix * gl_Vertex;
+
+  vDepth = clamp(length(vPos.xyz)/far, 0.0, 1.0);
+  
+  vPos = gl_ProjectionMatrix * vPos;
 
 	color = gl_Color;
 
 
   texelSize = vec2(1.0/viewWidth,1.0/viewHeight);
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+	vLightcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
 	gl_FogFragCoord = gl_Position.z;
 
@@ -76,36 +84,44 @@ void main() {
   
 	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
 	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-	tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-					 tangent.y, binormal.y, normal.y,
-					 tangent.z, binormal.z, normal.z);
+
   
 }
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 0,1,2,7,6 */
+/* RENDERTARGETS: 0,1,2,7,6,9 */
 
 #define gbuffers_entities
+
+/* GAUX1FORMAT:RGB16_A2 */
+/* GAUX3FORMAT:RGB16_A2 */
 
 /* --
 const int gcolorFormat = RGBA8;
 const int gdepthFormat = RGBA16; //it's to inacurrate otherwise
 const int gnormalFormat = RGB10_A2;
+const int colortex9Format = RGBA16F;
  -- */
 
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
+uniform sampler2D colortex7;
 uniform int fogMode;
+uniform float fogStart;
+uniform float fogEnd;
+uniform float far;
+
 uniform vec3 sunPosition;
 uniform vec4 spriteBounds; 
+uniform float isGlowing;
 
-//#include "/utils/texSamplers.glsl"
+//#include "utils/texSamplers.glsl"
 
 varying vec4 color;
 varying vec4 texcoord;
-varying vec4 lmcoord;
+varying vec4 vLightcoord;
 
 varying vec2 texelSize;
 varying vec2 texmidcoord;
@@ -116,7 +132,7 @@ varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 normal;
-varying mat3 tbnMatrix;
+varying float vDepth;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
@@ -197,25 +213,43 @@ void main() {
   vec2 tuv = texcoord.st;
   //vec4 txCd = texture2D(texture, tuv);;
   vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
-  //vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, 1.0 );
   
-  vec2 luv = lmcoord.st;
-  vec4 lightCd = texture2D(lightmap, luv);
+  vec2 luv = vLightcoord.st;
+  //vec4 lightCd = texture2D(lightmap, luv);
   
-  vec4 outCd = txCd * color;
-  //vec4 outCd =  txCd;
-
-  
+  vec4 outCd = txCd * color;//vec4(color.rgb,1.0);
   
   vec3 glowHSV = rgb2hsv(outCd.rgb);
-  glowHSV.b*=.01;
 
+  vec4 outData = vec4(0.0);
+  float outDepth = min(.9999,gl_FragCoord.w);
+  outDepth = vDepth;
+  
+  
+  float outEffectGlow = 1.0;
+  outData.x = glowHSV.b;
+  outData.y = glowHSV.z;
+  outData.z = outDepth;
+  outData.w = outCd.a; // 1.0;
+  
+  
+  
+  outData.x=glowHSV.x;
+  outData.y=outDepth;
+  outData.z=glowHSV.z;
+  outData.w = outCd.a; // 1.0;
 
+  glowHSV.z *= .0;
+  
+  
+  
 	gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
+  gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(vec3(1.0),1.0);
+    // [ Sun/Moon Strength, Light Map, Spectral Glow ]
+  gl_FragData[3] = outData;
 	gl_FragData[4] = vec4(glowHSV,1.0);
+  gl_FragData[5] = outData;
 
 }
 

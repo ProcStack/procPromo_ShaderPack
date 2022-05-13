@@ -46,7 +46,7 @@ const float eyeBrightnessHalflife = 4.0f;
  -- */
  
 #include "/shaders.settings"
-#include "/utils/mathFuncs.glsl"
+#include "utils/mathFuncs.glsl"
 
 uniform sampler2D colortex0; // Diffuse Pass
 uniform sampler2D colortex1; // Depth Pass
@@ -58,7 +58,7 @@ uniform sampler2D gaux1;
 uniform sampler2D gaux2; // 40% Res Glow Pass
 uniform sampler2D gaux3; // 20% Res Glow Pass
 uniform sampler2D gaux4; // 20% Res Glow Pass
-uniform sampler2D colortex8; // Known working from terrain gbuffer
+uniform sampler2D colortex9; // Known working from terrain gbuffer
 
 uniform sampler2D gcolor;
 uniform sampler2D gdepth;
@@ -224,9 +224,13 @@ void main() {
   vec2 uv = texcoord;
   vec4 baseCd = texture2D(colortex0, uv);
   vec4 outCd = baseCd;
-  float depthBase = texture2D(colortex1, uv).r;
+  vec2 depthEffGlowBase = texture2D(colortex1, uv).rg;
+  float depthBase = depthEffGlowBase.r;
+  float effGlowBase = depthEffGlowBase.g;
+  
   vec4 normalCd = texture2D(colortex2, uv);
-  vec2 shadowCd = texture2D(gaux1, uv).xy;
+  vec3 dataCd = texture2D(gaux1, uv).xyz;
+  vec4 spectralDataCd = texture2D(colortex9, uv);
 
   //vec4 light = texture2D(colortex4, uv);
   
@@ -252,8 +256,8 @@ void main() {
   // -- -- -- -- -- 
   // -- Shadows  -- --
   // -- -- -- -- -- -- --
-  //float shadow = shadowCd.x;
-  //float shadowDepth = shadowCd.y;
+  //float shadow = dataCd.x;
+  //float shadowDepth = dataCd.y;
   //shadowDepth = 1.0-(1.0-shadowDepth)*(1.0-shadowDepth);
   //shadowDepth *= shadowDepth;
 
@@ -389,7 +393,7 @@ void main() {
   float sunEdgeInf = dot( sunVecNorm, avgNormal );
   //outCd.rgb += outCd.rgb * (edgeOutsidePerc*sunEdgeInf*.5);// * (shadow*.3+.7);
   outCd.rgb+= outCd.rgb * sunEdgeInf*edgeOutsidePerc ;
-  outCd.rgb += mix( outCd.rgb, skyColor, sunEdgeInf*.5*shadowCd.r*skyBrightnessMult)*edgeOutsidePerc*shadowCd.r;
+  outCd.rgb += mix( outCd.rgb, skyColor, sunEdgeInf*.5*dataCd.r*skyBrightnessMult)*edgeOutsidePerc*dataCd.r;
 #endif
   
   
@@ -410,6 +414,15 @@ void main() {
 
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
   outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;
+  
+  float depthInfBase = spectralDataCd.g;
+  depthInfBase *= depthInfBase*depthInfBase;
+  
+  float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
+  //spectralInt *= spectralInt*spectralInt;
+  //outCd.rgb += outCd.rgb*spectralInt;
+  outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
+  //outCd.rgb = vec3( spectralDataCd.rgb );
   
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

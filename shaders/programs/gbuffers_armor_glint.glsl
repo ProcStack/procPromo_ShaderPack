@@ -44,7 +44,7 @@ const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
  -- */
  
-#include "/utils/mathFuncs.glsl"
+#include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg

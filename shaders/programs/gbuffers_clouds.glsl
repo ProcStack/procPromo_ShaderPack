@@ -56,7 +56,7 @@ const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
  -- */
  
-#include "/utils/mathFuncs.glsl"
+#include "utils/mathFuncs.glsl"
 
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;

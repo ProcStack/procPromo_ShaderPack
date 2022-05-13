@@ -1,4 +1,7 @@
 
+// Glow Color down res pass; 40% res
+//   Output - colortex10
+
 #ifdef VSH
 
 varying vec2 texcoord;
@@ -12,8 +15,6 @@ void main() {
 
 #ifdef FSH
 /* RENDERTARGETS: 5 */
-// Glow Color down res pass; 40% res
-//   Output - colortex10
 
 #ifndef GLOW_REACH
   #define GLOW_REACH 1.0
@@ -23,7 +24,7 @@ void main() {
   #define GLOW_PERC 1.0
 #endif
 
-#include "/utils/mathFuncs.glsl"
+#include "utils/mathFuncs.glsl"
 
 uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex6;

@@ -312,9 +312,9 @@ const int gnormalFormat = RGB10_A2;
 
 
 #include "/shaders.settings"
-#include "/utils/mathFuncs.glsl"
-#include "/utils/texSamplers.glsl"
-#include "/utils/shadowCommon.glsl"
+#include "utils/mathFuncs.glsl"
+#include "utils/texSamplers.glsl"
+#include "utils/shadowCommon.glsl"
 
 
 

@@ -162,8 +162,8 @@ const int gdepthFormat = RGBA16; //it's to inacurrate otherwise
 const int gnormalFormat = RGB10_A2;
  -- */
 
-#include "/utils/mathFuncs.glsl"
-#include "/utils/texSamplers.glsl"
+#include "utils/mathFuncs.glsl"
+#include "utils/texSamplers.glsl"
 
 uniform sampler2D texture;
 uniform sampler2D lightmap;
@@ -175,7 +175,7 @@ uniform vec3 sunPosition;
 uniform vec3 fogColor;
 uniform int isEyeInWater;
 
-//#include "/utils/sampler.glsl"
+//#include "utils/sampler.glsl"
 
 varying vec4 color;
 varying vec4 texcoord;

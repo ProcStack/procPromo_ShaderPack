@@ -143,7 +143,7 @@ color.a=1.0;
 /* RENDERTARGETS: 0,1,2,7,6 */
 
 //#include "shaders.settings"
-#include "/utils/mathFuncs.glsl"
+#include "utils/mathFuncs.glsl"
 
 /* --
 const int gcolorFormat = RGBA8;
@@ -254,10 +254,13 @@ void main() {
 
   //outCd.rgb = outCd.rgb-baseCd.rgb;
 
+  float outDepth = min(.9999,gl_FragCoord.w);
+  float outEffectGlow = 0.0;
+
 	gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
+  gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(vec3(1.0),1.0);
+	gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
 	gl_FragData[4] = vec4(vec3(0.0),1.0);
 
 }

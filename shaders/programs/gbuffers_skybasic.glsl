@@ -36,7 +36,7 @@ void main() {
 #ifdef FSH
 /* RENDERTARGETS: 0,1,6 */
 
-#include "/utils/mathFuncs.glsl"
+#include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
 uniform sampler2D lightmap;
