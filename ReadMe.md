@@ -1,50 +1,83 @@
-# ProcStack's psPromo v0.1
+# ProcStack's procPromo v0.1
 ### Optifine Shader Pack
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
-<br> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
-<br> Softer details, edges highlights, sharper shadows, and glowing effects.*
+<br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
+<br/> Softer details, edge highlights, sharp shadows, and glowiness.*
 
 <img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;"/>
 
 *(More screenshots in [/show](/show/ReadMe.md))*
 
-     
----
-
-### Creator's Notes
-My first shader pack for Minecraft v1.18.1, it's been quite a journey.
-<br>Since I had no footing for how to create for Optifine's environment, I looked towards 3 packs spcifically for learning from. *(Listed Below)*
-
-I wanted to create the backbone for a general purpose shader pack. Some sort of short term project that requires features for future shader pack dev.
-<br>Mojang's promotion art style feels really homely to me.
-<br>Also a great first shader pack to shoot for!
-
-Sure most of the look could have been achieved in a shader pack + texture pack combo, but decided it was less hastle to have a single pack to install and manage options for.
-
 ---
 
 ### Under the hood
-#### Options
- - `DetailBluring` - How much texture bluring is going on
- - `EdgeShading` - Edge's highlighting's influencicity
- - `GlowBrightness` - Change how much snow blindess you get while playing the game
- - `SolidLeaves` - Don't like the solid leaves? Turn off those bubblicious gum blocks 
+#### Style'n'Stuff
+<null/> - Texture details in your world will be blended together giving a softer look
+<br/> - A glow illuminating the presence of light blocks, particles, & other fitting things.
+<br/> - Edge highlights to make the environment pop that little bit more.
 
-#### Tech things
-Texture bluring along side an ever growing set of custom block and entity textures.
-<br>A two-pass glow/bluring driven by a glow texture atlas.
-<br>Edge highlights created from depth and normal buffer data
+#### Video Settings > Shaders > Shader Options
+<null/> - `DetailBluring` - How much block bluring is killing your game's vibe
+<br/> - `LightingBrightness` - Master slider for that final, whole kitten kaboodle, last touch of brightness multiplication
+<br/> - `EdgeShading` - Edge highlightings influence percent
+<br/> - `GlowBrightness` - Change how much snow blindess you get while playing the game
+
+<br/> - `SolidLeaves` - Don't like the solid leaves? Turn off those bubblicious bubble gum blocks 
+<br/> - `UnderWaterBlur` - Ever open your eyes under water? Yeah, its all blur and wobbly.  Get your Water vision Here!
+<br/> - `GreyWorld` - To heck with block colors!
+<br/>
+
+---
+---
+
+
+### Creator's Notes
+
+Ayo, I'm Kevin
+
+This is my first shader pack for Optifine,
+<br/>&nbsp; It's been quite a journey so far.
+
+I wanted to build the backbone for a general purpose shader pack.
+<br/>&nbsp; A short term project to rip appart for future shader packs.
+<br/>&nbsp; Hmm, like growing a full plant just by using clippings
+
+Mojang's promotion art has quite a homely feel to me.
+<br/>&nbsp; So heck, a solid idea to shoot for on a shader pack!
+
+Since I had no footing for Optifine's environment,
+<br/>&nbsp; I looked toward 3 packs to learn from.
+<br/>&nbsp;      <sub>(Listed Below)</sub>
+
+Gotta love personal projects though,
+<br/>&nbsp; Such a cathartic release from a long day.
+
+---
+
+### My Working Environment
+```
+  _ Nvidia 1080 GTX @ 4k display
+  _ Minecraft 1.18.1
+  _ Optifine HD U H4
+  _ Fabric 0.12.12; api 0.45.2
+  _ Optifabric 1.12.10
+  _ Minihud 0.21.5
+```
+&nbsp;      <sub>( Minihud's Shapes and Overlays are supported, yeee )</sub>
+
+If you get any insano color glitches;
+<br/>&nbsp; I'd love to see em!
 
 
 ---
 
 ### Edu & Inpiration
 Mojang's Promotional Art style'n'vibe!
-<br>Their ads and splash images in the launcher
+<br/>Their ads and splash images in the launcher
 
 <br>Any Alt Textures from the atlases were generated from Minecraft using `texturedump v1.18.1` in Forge
-<br>Then recreated or heavily modified and painted over.
-<br>A stop-gap until I can get the detail bluring logic working more universally
+<br/>Then recreated or heavily modified and painted over.
+<br/>A stop-gap until I can get the detail bluring logic working more universally
 
 
 #### Shadow Inspiration and Learning Model
