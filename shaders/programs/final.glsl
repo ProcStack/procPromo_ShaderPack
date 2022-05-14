@@ -425,6 +425,8 @@ void main() {
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   //outCd.rgb = vec3( spectralDataCd.rgb );
   
+  outCd.rgb *= LightingBrightness;
+  
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif

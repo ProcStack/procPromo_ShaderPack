@@ -16,7 +16,7 @@ void main() {
 
   vec4 shadowCd = texture2D(tex,texcoord.xy);// * color;
 
-shadowCd.a= min(1.0, shadowCd.a+vIsLeaves);
+  shadowCd.a= min(1.0, shadowCd.a+vIsLeaves);
 
   
 	gl_FragData[0] = shadowCd;
