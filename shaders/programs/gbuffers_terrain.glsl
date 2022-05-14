@@ -818,11 +818,10 @@ void main() {
     //blockShading = max( blockShading, lightLuma );// lightLuma is lightCd
     
     
-// -- -- -- -- -- -- -- -- -- -- -- -- -- --
-// Biome & Snow Glow when in a Cold Biome - -- --
-// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
-    // Snow glow when in a cold biome
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+    // Biome & Snow Glow when in a Cold Biome - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     float frozenSnowGlow = 1.0-smoothstep(.0,.2,BiomeTemp);
     glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.3*(1.0-sunPhaseMult)*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
     //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
@@ -831,6 +830,12 @@ void main() {
     outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight)*(1.0-rainStrength)*skyBrightnessMult;
     outCd.rgb *= 1.0-rainStrength*.35*skyBrightnessMult*(1.0-vIsLava);
     
+    
+    // -- -- -- -- -- -- -- -- -- -- -- 
+    // Outdoors vs Caving Lighting - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- --
+    // Brighten blocks when going spelunking
+    // TODO: Promote control to Shader Options
     float skyBrightMultFit = 1.1-skyBrightnessMult*.1*(1.0-frozenSnowGlow);
     outCd.rgb *= skyBrightMultFit;
     outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
@@ -882,7 +887,16 @@ void main() {
     
     float outDepth = min(.9999,gl_FragCoord.w);
     float outEffectGlow = 0.0;
-    
+    //outCd = textureOffset( texture, tuv, ivec2(1,2) );
+    /*
+    vec4 cdGatherRed = textureGather( texture, tuv, 0 );
+    vec4 cdGatherGreen = textureGather( texture, tuv, 1 );
+    vec4 cdGatherBlue = textureGather( texture, tuv, 2 );
+    outCd.r = ( cdGatherRed.x + cdGatherRed.y + cdGatherRed.z + cdGatherRed.w ) * .25;
+    outCd.g = ( cdGatherGreen.x + cdGatherGreen.y + cdGatherGreen.z + cdGatherGreen.w ) * .25;
+    outCd.b = ( cdGatherBlue.x + cdGatherBlue.y + cdGatherBlue.z + cdGatherBlue.w ) * .25;
+    outCd.a = 1.0;
+    */
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

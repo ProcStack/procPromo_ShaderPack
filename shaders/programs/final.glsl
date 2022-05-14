@@ -266,12 +266,13 @@ void main() {
   // -- Depth Blur -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
   if( UnderWaterBlur && isEyeInWater >= 1 ){
-    float depthBlurInf = smoothstep( .5, 1.0, depth);//biasToOne(depthBase);
+    float depthBlurInf = smoothstep( .5, 1.7, depth);//biasToOne(depthBase);
     
-    float depthBlurTime = worldTime*.9;
-    float depthBlurWarpMag = .008;
+    float depthBlurTime = worldTime*.07 + depth*2.0;
+    float depthBlurWarpMag = .006;
+    float uvMult = 20.0 + 10.0*depth;
     
-    vec2 depthBlurUV = uv + vec2( sin(uv.x*20.0+depthBlurTime + depth), cos(uv.y*20.0+depthBlurTime + depth) )*depthBlurWarpMag*depthBlurInf;
+    vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
     vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 * (1.0-nightVision));
     vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
     
