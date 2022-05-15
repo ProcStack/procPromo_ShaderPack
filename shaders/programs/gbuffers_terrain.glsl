@@ -320,11 +320,11 @@ vAvgColor = vec4( mixColor, 1.0);
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if (mc_Entity.x == 805){
+    vCdGlow=0.02;
 #ifdef NETHER
-    //vCdGlow=0.1;
+    vCdGlow=0.1;
 #endif
-    vCdGlow=0.01;
-    vDepthAvgColorInf = 0.0;
+    vDepthAvgColorInf = 0.20;
   }
   
 

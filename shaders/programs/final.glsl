@@ -266,10 +266,10 @@ void main() {
   // -- Depth Blur -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
   if( UnderWaterBlur && isEyeInWater >= 1 ){
-    float depthBlurInf = smoothstep( .5, 1.7, depth);//biasToOne(depthBase);
+    float depthBlurInf = smoothstep( .5, 1.5, depth);//biasToOne(depthBase);
     
-    float depthBlurTime = worldTime*.07 + depth*2.0;
-    float depthBlurWarpMag = .006;
+    float depthBlurTime = worldTime*.07 + depth*3.0;
+    float depthBlurWarpMag = .0065;
     float uvMult = 20.0 + 10.0*depth;
     
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
@@ -277,7 +277,8 @@ void main() {
     vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
     
     float eyeWaterInf = (1.0-isEyeInWater*.3);
-    depthBlurCd.rgb *= mix( fogColor, vec3(1.0), (depthCos*.9+.1)*eyeWaterInf);
+    float fogBlendDepth = (depthCos*.8+.2);
+    depthBlurCd.rgb *= mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf);
     blurMidCd*=depthBase;
     blurLowCd*=depthBase;
     
