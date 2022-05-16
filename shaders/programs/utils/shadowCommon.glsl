@@ -7,8 +7,6 @@ const bool shadowHardwareFiltering = true;
 // Modified from Chocapic13's HighPerformance Toaster shader pack
 //  (I'm still learning this shadow stuffs)
 
-const int shadowMapResolution = 2048
-; //[512 768 1024 1536 2048 3172 4096 8192 16384]
 //const float shadowMapFov = 90.0; 
 const float shadowDistance = 128.0;
 const float shadowDistanceRenderMul = -1.0; //[-1.0 1.0] Can help to increase shadow draw distance when set to -1.0, at the cost of performance

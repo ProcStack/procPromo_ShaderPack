@@ -105,25 +105,29 @@ void main() {
   float dataDepth = max(0.0, (1.0-dataCdBase.g*1.0) )*dataSpec;
   dataDepth = biasToOne(dataDepth)+.3;
   
+
   float levelBlend = .1;
   
   vec3 localCdBase = dataRGB;
   float localDepthDelta = 0.0;
   float localSpectralDelta = 0.0;
-  spectralSample( colortex9, texcoord, texelSize*2.0*dataDepth, levelBlend, dataSpec, dataCdBase.rgb,
+  spectralSample( colortex9, texcoord, texelSize*2.0*dataDepth, levelBlend,
+                  dataSpec, dataCdBase.rgb,
                   localCdBase, localDepthDelta, localSpectralDelta);
   
-  
+
   vec3 midCdBase = dataRGB;
   float midDepthDelta = 0.0;
   float midSpectralDelta = 0.0;
-  spectralSample( colortex9, texcoord, texelSize * vec2(5.0,4.0)*dataDepth, levelBlend, dataSpec, dataCdBase.rgb,
+  spectralSample( colortex9, texcoord, texelSize * vec2(5.0,4.0)*dataDepth,
+                  levelBlend, dataSpec, dataCdBase.rgb,
                   midCdBase, midDepthDelta, midSpectralDelta);
                                       
   vec3 farCdBase = dataRGB;
   float farDepthDelta = 0.0;
   float farSpectralDelta = 0.0;
-  spectralSample( colortex9, texcoord, texelSize * vec2(7.0,9.0)*dataDepth, levelBlend, dataSpec, dataCdBase.rgb,
+  spectralSample( colortex9, texcoord, texelSize * vec2(7.0,9.0)*dataDepth,
+                  levelBlend, dataSpec, dataCdBase.rgb,
                   farCdBase, farDepthDelta, farSpectralDelta);
 
 
@@ -132,12 +136,8 @@ void main() {
 
 
   vec3 boxBlurCd = dataCdBase.rgb;
-  boxBlurCd.b = layerDepthMixer;
-  //boxBlurCd.b = layerSpectralMixer;
   boxBlurCd.b = dataCdBase.b;
 
-  //boxBlurCd = mix(  dataCdBase, boxBlurCd, dataSpec );
-  
   
   boxBlurCd.x=mix(1.0, dataCdBase.b, dataSpec);
   boxBlurCd.y=dataDepth;

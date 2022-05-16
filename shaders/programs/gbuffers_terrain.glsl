@@ -248,17 +248,19 @@ vAvgColor = vec4( mixColor, 1.0);
 
   
   // Leaves
-  if (mc_Entity.x == 810 && SolidLeaves){
-    //shadowPos.w = -2.0;
-    //diffuseSun = diffuseSun*0.35+0.4;
-    //vColor.rgb *= 1.1;
-    vAlphaMult=0.0;
-    vColorOnly=.001;
-    vAltTextureMap=1.0;
-    //vColorOnly=.0;
+  if (mc_Entity.x == 810 ){
+    if(SolidLeaves){
+      //shadowPos.w = -2.0;
+      //diffuseSun = diffuseSun*0.35+0.4;
+      //vColor.rgb *= 1.1;
+      vAlphaMult=0.0;
+      vColorOnly=.001;
+      vAltTextureMap=1.0;
+      //vColorOnly=.0;
+    }
+    
     vAvgColor=vColor*.5;
   }
-  
 
 
   // General Alt Texture Reads
@@ -410,6 +412,7 @@ uniform sampler2D gaux1;
 uniform sampler2DShadow shadow;
 uniform sampler2DShadow shadowtex0;
 uniform sampler2DShadow shadowtex1;
+uniform int shadowQuality;
 
 uniform vec4 lightCol;
 uniform vec2 texelSize;
@@ -532,20 +535,27 @@ void main() {
   //
   float shadowDist = 0.0;
   float diffuseSun = 1.0;
+  
 #ifdef OVERWORLD
+
   float distort = calcDistort(shadowPos.xy);
   vec2 spCoord = shadowPos.xy / distort;
   if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
     float diffthresh = 0.0006*shadowDistance/45.;
-    if (shadowPos.w > -1.0) diffthresh = 0.0004*1024./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
+    diffthresh = 0.0004*1024./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
 
     vec3 projectedShadowPosition = vec3(spCoord, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
     
     float shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
+    
+    
+#if ShadowSampleCount > 0
+
+    // Modded for multi sampling the shadow
+    // TODO : Functionize this rolled up for loop dooky
+    
     vec2 posOffset;
     
-    // Modded for multi sampling the shadow
-    // TODO : Unroll these damn it
     for( int x=0; x<boxSamplesCount; ++x){
       posOffset = boxSamples[x]*.001;
       projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.2) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
@@ -553,6 +563,8 @@ void main() {
       shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .15);
     }
     
+#if ShadowSampleCount > 1
+
     for( int x=0; x<boxSamplesCount; ++x){
       posOffset = boxSamples[x]*.002;
       projectedShadowPosition = vec3(spCoord+posOffset, shadowPos.z-posOffset.x*.5) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
@@ -560,12 +572,18 @@ void main() {
       shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
     }
     
+    
+#endif
+#endif
+    
     float sunMoonShadowInf = smoothstep( .4, .5, abs(dot(sunVecNorm, vNormal)));
     //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))-.5)*1.0);
     float shadowDepthInf = clamp( (depth*40.0), 0.0, 1.0 );
     diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf * shadowDepthInf );
   }
+  
 #endif
+
   // -- -- -- -- -- -- -- --
 
 
