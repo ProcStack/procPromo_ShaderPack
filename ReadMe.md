@@ -15,6 +15,7 @@
 <null/> - Texture details in your world will be blended together giving a softer look
 <br/> - A glow illuminating the presence of light blocks, particles, & other fitting things.
 <br/> - Edge highlights to make the environment pop that little bit more.
+<br/>&nbsp;      <sub>( Minihud's Shapes and Overlays are supported, yeee )</sub>
 
 #### Video Settings > Shaders > Shader Options
 <null/> - `DetailBluring` - How much block bluring is killing your game's vibe
@@ -63,7 +64,6 @@ Gotta love personal projects though,
   _ Optifabric 1.12.10
   _ Minihud 0.21.5
 ```
-&nbsp;      <sub>( Minihud's Shapes and Overlays are supported, yeee )</sub>
 
 If you get any insano color glitches;
 <br/>&nbsp; I'd love to see em!
