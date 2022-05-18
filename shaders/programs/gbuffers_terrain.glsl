@@ -9,6 +9,7 @@ const float eyeBrightnessHalflife = 4.0f;
 #define ONE_TILE 0.015625
 #define THREE_TILES 0.046875
 
+#define PI 3.14159265358979323
 #include "/shaders.settings"
 
 uniform sampler2D texture;
@@ -66,6 +67,7 @@ varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
 varying vec2 vTexelSize;
+varying vec4 vUVMinMax;
 
 varying vec4 vColor;
 varying vec4 vAvgColor;
@@ -104,6 +106,7 @@ void main() {
   // -- -- -- -- -- -- -- --
   
   
+  
 	sunVecNorm = normalize(sunPosition);
 	upVecNorm = normalize(upPosition);
 	dayNight = dot(sunVecNorm,upVecNorm);
@@ -123,12 +126,28 @@ void main() {
 
   vTexelSize = texelSize;//vec2(1.0/1024.,1.0/1024.);                                   
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	//texcoord = gl_MultiTexCoord0;
 
+  
 
 	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord,0.0,1.0)).st;
   texcoordmid=midcoord;
   vec2 texelhalfbound = vTexelSize*16.0;
   texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
+  
+  
+  // Texture Atlas Min/Max UV Range
+  vec2 uvRotBase=(texcoord).xy - mc_midTexCoord;
+  vec2 uvRotated = uvRotBase;
+  uvRotated.x = cos(uvRotBase.x + PI) - sin(uvRotBase.y + PI);
+  uvRotated.y = sin(uvRotBase.x + PI) + cos(uvRotBase.y + PI);
+  uvRotated += mc_midTexCoord;
+  vUVMinMax = vec4(
+      min( uvRotated.x, uvRotBase.x ),
+      min( uvRotated.y, uvRotBase.y ),
+      max( uvRotated.x, uvRotBase.x ),
+      max( uvRotated.y, uvRotBase.y )
+    );
   
   
   float avgBlend = .3;
@@ -153,30 +172,10 @@ void main() {
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
     
-    mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
+  mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
 
-vAvgColor = vec4( mixColor, 1.0);
+  vAvgColor = vec4( mixColor, 1.0);
 
-/*
-  vec2 txlquart = vTexelSize*8.0;
-  float avgDiv=0;
-  vec4 curAvgCd = texture2D(texture, mc_midTexCoord);
-  avgDiv = curAvgCd.a;
-  vAvgColor = curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord+txlquart);
-  avgDiv += curAvgCd.a;
-  vAvgColor += curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-  avgDiv += curAvgCd.a;
-  vAvgColor += curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord-txlquart);
-  avgDiv += curAvgCd.a;
-  vAvgColor += curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
-  avgDiv += curAvgCd.a;
-  vAvgColor += curAvgCd;
-  vAvgColor *= 1.0/avgDiv;
-*/
 
 	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
@@ -402,6 +401,7 @@ uniform int isEyeInWater;
 uniform float BiomeTemp;
 uniform int moonPhase;
 uniform float nightVision;
+uniform ivec2 atlasSize; 
 
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
@@ -423,7 +423,6 @@ uniform ivec2 eyeBrightnessSmooth;
 
 
 // To Implement
-uniform vec4 spriteBounds;
 //uniform float wetness;  //rainStrength smoothed with wetnessHalfLife or drynessHalfLife
 //uniform int fogMode;
 //uniform float fogStart;
@@ -449,6 +448,7 @@ varying vec2 texcoordmid;
 varying vec4 texcoordminmax;
 varying vec4 lmcoord;
 varying vec2 vTexelSize;
+varying vec4 vUVMinMax;
 
 varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
@@ -636,11 +636,17 @@ void main() {
     
     // -- -- -- -- -- -- -- --
     // -- Sun/Moon Lighting -- --
-    // -- -- -- -- -- -- -- -- ----
+    // -- -- -- -- -- -- -- -- -- --
     float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.0,.91,1.0)),vNormal);
     float surfaceShading = 1.0-abs(toCamNormalDot);
 
     float skyBrightnessMult = 1.0;
+    
+    
+    // -- -- -- -- -- -- --
+    // -- Fog Coloring - -- --
+    // -- -- -- -- -- -- -- -- --
+    vec3 toFogColor = fogColor*lightmapcd;
 
 #ifdef OVERWORLD
     
@@ -657,7 +663,16 @@ void main() {
     surfaceShading *= mix( moonPhaseMult, dot(sunVecNorm,vNormal), dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
     surfaceShading *= 1.0-(rainStrength*.9+.1);
+    
+    toFogColor*=lightCol.rgb;
+    
 #endif
+    
+    // -- -- -- -- -- -- --
+    // -- Night Vision - -- --
+    // -- -- -- -- -- -- -- -- --
+    toFogColor = mix(toFogColor* skyBrightnessMult, vec3(1.0), nightVision);
+    
     
     // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     // -- Close up Radial Highlights on blocks - -- --
@@ -697,7 +712,6 @@ void main() {
 
     // -- -- -- -- -- -- --
 
-    vec3 toFogColor = mix(fogColor*lightmapcd*lightCol.rgb * skyBrightnessMult, vec3(1.0), nightVision);
       
     float distMix = min(1.0,gl_FragCoord.w);
     float waterLavaSnow = float(isEyeInWater);
@@ -792,9 +806,9 @@ void main() {
     
     
     // Texcoord fit to block
-    //vec2 localUV = vec2(0.0);
-    //localUV.x = (tuv.x-texcoordminmax.x) / (texcoordminmax.z-texcoordminmax.x);
-    //localUV.y = (tuv.y-texcoordminmax.y) / (texcoordminmax.w-texcoordminmax.y);
+    vec2 localUV = vec2(0.0);
+    localUV.x = (tuv.x-texcoordminmax.x) / (texcoordminmax.z-texcoordminmax.x);
+    localUV.y = (tuv.y-texcoordminmax.y) / (texcoordminmax.w-texcoordminmax.y);
     
     
 
@@ -890,6 +904,14 @@ void main() {
     outCd.b = ( cdGatherBlue.x + cdGatherBlue.y + cdGatherBlue.z + cdGatherBlue.w ) * .25;
     outCd.a = 1.0;
     */
+    //outCd.rgb = vec3( vUVMinMax.xy,0.0);
+    //outCd.r = (texcoord.x-vUVMinMax.x) / (vUVMinMax.z-vUVMinMax.x);
+    //outCd.g = (texcoord.y-vUVMinMax.y) / (vUVMinMax.w-vUVMinMax.y);
+    //outCd.rg = abs(vUVMinMax.xy);
+    //outCd.rg = localUV;
+    //outCd.rgb = vec3(step(localUV.x, 0.0));
+    //outCd.rg = tuv;
+    
     
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
