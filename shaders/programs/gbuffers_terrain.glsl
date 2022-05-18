@@ -640,17 +640,19 @@ void main() {
     float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.0,.91,1.0)),vNormal);
     float surfaceShading = 1.0-abs(toCamNormalDot);
 
+    float skyBrightnessMult = 1.0;
+
 #ifdef OVERWORLD
     
     float sunPhaseMult = 1.0-max(0.0,dot( sunVecNorm, upVecNorm)*.8+.2);
     sunPhaseMult = 1.0-(sunPhaseMult*sunPhaseMult*sunPhaseMult);
     
-    float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
+    skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
     float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
     moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
     moonPhaseMult = (moonPhaseMult*.4+.1);
     
-    diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5, 0.0, 1.0) );
+    diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5 + (10-skyBrightnessMult), 0.0, 1.0) );
 
     surfaceShading *= mix( moonPhaseMult, dot(sunVecNorm,vNormal), dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
@@ -668,38 +670,21 @@ void main() {
 
     // -- -- -- -- -- -- 
 
-    // -- -- -- -- -- -- 
-    // -- RGB -> HSV  -- --
-    // -- -- -- -- -- -- -- --
+#ifdef NETHER
+    // TODO : Remove the needlessness of this!
+    //          Since I'm mixing saturation and value,
+    //            This seems a bit overkill to convert rgb -> hsv -> rgb
+    //          Multiply the color vector evenly
     outCd.rgb = rgb2hsv(outCd.rgb);
     
-    // -- -- -- -- -- -- -- -- -- -- -- 
-    // -- HSV; Nether Warming Logic  -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- --
-#ifdef NETHER
     // Reds drive a stronger color tone in blocks
     float colorRed = outCd.r;
     outCd.g = mix( outCd.g, min(1.0,outCd.g*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
     outCd.b = mix( outCd.b, min(1.0,outCd.b*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
 
+    outCd.rgb = hsv2rgb(outCd.rgb);
 #endif
 
-    // -- -- -- -- -- -- -- -- -- -- -- -- --
-    // -- HSV; Sampled Texture Influence - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    //vec3 texHSV = rgb2hsv( (txCd.rgb+avgShading.rgb)*.5 );
-    //vec3 texHSV = rgb2hsv( txCd.rgb );
-    
-    //outCd.r = texHSV.r;
-    //outCd.g = texHSV.g;
-    
-    
-    //outCd.b = mix(outCd.b, texHSV.b, depthBias);
-    
-    // -- -- -- -- -- -- 
-    // -- HSV -> RGB  -- --
-    // -- -- -- -- -- -- -- --
-    outCd.rgb = hsv2rgb(outCd.rgb);
 
     // -- -- -- -- -- -- 
 
@@ -708,11 +693,11 @@ void main() {
     // -- Lighting influence - -- --
     // -- -- -- -- -- -- -- -- -- -- --
     outCd.rgb *=  lightLuma + glowInf + vCdGlow;
-  //outCd.rgb *= lightCd;
+
 
     // -- -- -- -- -- -- --
 
-    vec3 toFogColor = mix(fogColor, vec3(1.0), nightVision);
+    vec3 toFogColor = mix(fogColor*lightmapcd*lightCol.rgb * skyBrightnessMult, vec3(1.0), nightVision);
       
     float distMix = min(1.0,gl_FragCoord.w);
     float waterLavaSnow = float(isEyeInWater);
@@ -725,11 +710,11 @@ void main() {
       depthBias = depthBias*.1; // depth;
       depth *= .5;
       
-      outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.01) );
+      outCd.rgb = mix( outCd.rgb, toFogColor, (1.0-distMix*.01) );
     //}else if( isEyeInWater == 3 ){ // Snow
-      //outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
+      //outCd.rgb = mix( outCd.rgb, toFogColor, (1.0-distMix*.1) );
     }else{
-      outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2+glowInf );
+      outCd.rgb = mix( toFogColor, outCd.rgb, min(1.0,depth*80.0)*.8+.2+glowInf );
     }
 
     
@@ -905,6 +890,7 @@ void main() {
     outCd.b = ( cdGatherBlue.x + cdGatherBlue.y + cdGatherBlue.z + cdGatherBlue.w ) * .25;
     outCd.a = 1.0;
     */
+    
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

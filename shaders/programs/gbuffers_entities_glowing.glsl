@@ -38,11 +38,11 @@ varying float vDepth;
 void main() {
 
   vec3 toCamPos = gl_Vertex.xyz*.01;
-	vec4 position = gl_ModelViewMatrix * gl_Vertex; // vec4(toCamPos, 1.0) ;
-  //position.xyz = position.xyz+normalize(position.xyz)*near*2.50;
-  position *= .1;
+	vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
+  position.xyz = position.xyz+normalize(position.xyz)*near*2.50;
 
-  vPos = gl_ProjectionMatrix * (position+vec4(0.0,0.0,-0.010,0.0));
+  vPos = gl_ProjectionMatrix * position;
+
 	gl_Position = vPos;
   
   vDepth = clamp(length((gl_ModelViewMatrix * gl_Vertex).xyz)/far, 0.0, 1.0);

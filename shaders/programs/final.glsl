@@ -269,7 +269,7 @@ void main() {
     float depthBlurInf = smoothstep( .5, 1.5, depth);//biasToOne(depthBase);
     
     float depthBlurTime = worldTime*.07 + depth*3.0;
-    float depthBlurWarpMag = .0065;
+    float depthBlurWarpMag = .006;
     float uvMult = 20.0 + 10.0*depth;
     
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
