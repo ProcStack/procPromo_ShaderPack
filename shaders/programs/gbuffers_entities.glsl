@@ -11,6 +11,8 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 sunPosition;
 
+uniform sampler2D texture;
+
 uniform float viewWidth;
 uniform float viewHeight;
 
@@ -28,7 +30,9 @@ varying vec4 lmcoord;
 varying float sunDot;
 
 varying vec4 vPos;
-varying vec4 normal;
+varying vec4 vNormal;
+varying vec3 vAvgColor;
+varying float vAvgColorBlend;
 
 void main() {
 
@@ -41,7 +45,7 @@ void main() {
   vPos = gl_ModelViewMatrix * gl_Vertex;
 
 	color = gl_Color;
-color.a=1.0;
+  color.a=1.0;
 
 
   texelSize = vec2(1.0/64.0, 1.0/32.0);//vec2(1.0/viewWidth,1.0/viewWidth);
@@ -56,81 +60,46 @@ color.a=1.0;
 	vec2 texcoordminusmid = texcoord.xy-midcoord;
   
   
-  normal.xyz = normalize(gl_NormalMatrix * gl_Normal);
-	normal.a = 0.02;
+  vNormal.xyz = normalize(gl_NormalMatrix * gl_Normal);
+	vNormal.a = 0.02;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  sunDot = dot( normal.xyz, normalize(sunPosition) );
-  sunDot = dot( normal.xyz, normalize(localSunPos) );
+  sunDot = dot( vNormal.xyz, normalize(sunPosition) );
+  sunDot = dot( vNormal.xyz, normalize(localSunPos) );
   sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
 
   
   
+  float avgBlend = .3;
   
-  /*
+  ivec2 txlOffset = ivec2(2);
+  vec3 mixColor;
+  vec4 tmpCd;
+  float avgDiv = 0.0;
+  tmpCd = texture2D(texture, midcoord);
+    mixColor = tmpCd.rgb;
+    avgDiv += tmpCd.a;
+  tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+  tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
   
-  // Alt Texture Chests
-  vec2 translate = vec2(1.0);
-  vec2 scale = vec2(1.0);
-  if (mc_Entity.x == 902){
-    // trans 0, 0.546875
-    // size 256 256
-    translate = vec2( 0.0, 1.0-0.546875 );
-    scale = vec2( .05, .25 );
-    texcoord.st = texcoord.st*scale + translate;
-    texcoord.zw = texcoord.zw*scale + translate;
-
-    //vAltTextureMap = 0.0;
-    //texcoord.zw = prevTexcoord*scale + translate;
-    //texcoord.zw = texcoord.xy;
-    //texcoord.zw =  (gl_TextureMatrix[0] * vec4(gl_MultiTexCoord0.st*scale + translate, 0.0, 1.0)).xy;
-    vColorOnly=0.0;
-
-    //color.rgb=vec3(1.0,0.0,0.0);
-  texcoord.zw = texcoord.st;
-
-    vColorOnly=1.00;
+  vAvgColor = mixColor;
+  
+  // 
+  vAvgColorBlend = 0.0;
+  if (mc_Entity.x == 603){
+    vAvgColorBlend = 0.5;
   }
-  // Alt Texture Signs
-  if (mc_Entity.x == 903){
-    // trans .25, 0.875
-    // size 256 128
-    translate = vec2( .25, 0.875 );
-    scale = vec2( .25, .125 );
-    texcoord.zw = texcoord.st*scale + translate;
-  }
-  // Alt Texture Beds
-  if (mc_Entity.x == 904){
-    // trans .5, .75
-    // size 512 256
-    translate = vec2( .5, .75 );
-    scale = vec2( .5, .25 );
-    texcoord.zw = texcoord.st*scale + translate;
-  }
-  // Alt Texture Shulkers
-  if (mc_Entity.x == 905){
-    // trans 0, .75
-    // size 512 256
-    translate = vec2( 0.0, .75 );
-    scale = vec2( .5, .25 );
-    texcoord.zw = texcoord.st*scale + translate;
-  }
-  // Alt Texture Paintings
-  if (mc_Entity.x == 906){
-    // trans .5, 0.546875
-    // size 256 256
-    translate = vec2( .5, 0.546875 );
-    scale = vec2( .25, .25 );
-    texcoord.zw = texcoord.st*scale + translate;
-  }
-  
-  */
-  
-  
-  
-  
-  
   
   
   
@@ -170,7 +139,9 @@ varying vec2 texelSize;
 varying float sunDot;
 
 varying vec4 vPos;
-varying vec4 normal;
+varying vec4 vNormal;
+varying vec3 vAvgColor;
+varying float vAvgColorBlend;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
@@ -246,20 +217,18 @@ void main() {
   outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.5+entityColor.g*.3) );
   
   
-  float highlights = dot(normalize(sunPosition),normal.xyz);
+  float highlights = dot(normalize(sunPosition),vNormal.xyz);
   highlights = (highlights-.5)*0.3;
-  //outCd.rgb += vec3( highlights );
-  //outCd.rgb = vec3( sunDot );
-  //outCd.rgb=vPos.xyz;
 
-  //outCd.rgb = outCd.rgb-baseCd.rgb;
+
+  outCd.rgb = mix( outCd.rgb, vAvgColor*lightCd.rgb, vAvgColorBlend );
 
   float outDepth = min(.9999,gl_FragCoord.w);
   float outEffectGlow = 0.0;
-
+  
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
-	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
+	gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
 	gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
 	gl_FragData[4] = vec4(vec3(0.0),1.0);
 

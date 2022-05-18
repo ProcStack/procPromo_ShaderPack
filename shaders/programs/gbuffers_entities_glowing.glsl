@@ -38,19 +38,14 @@ varying float vDepth;
 void main() {
 
   vec3 toCamPos = gl_Vertex.xyz*.01;
-	vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
-  position.xyz = position.xyz+normalize(position.xyz)*near*1.50;
+	vec4 position = gl_ModelViewMatrix * gl_Vertex; // vec4(toCamPos, 1.0) ;
+  //position.xyz = position.xyz+normalize(position.xyz)*near*2.50;
+  position *= .1;
 
-  vPos = gl_ProjectionMatrix * position;
-  
-  //vPos.xyz*=.1;
+  vPos = gl_ProjectionMatrix * (position+vec4(0.0,0.0,-0.010,0.0));
 	gl_Position = vPos;
   
-  vPos = gl_ModelViewMatrix * gl_Vertex;
-
-  vDepth = clamp(length(vPos.xyz)/far, 0.0, 1.0);
-  
-  vPos = gl_ProjectionMatrix * vPos;
+  vDepth = clamp(length((gl_ModelViewMatrix * gl_Vertex).xyz)/far, 0.0, 1.0);
 
 	color = gl_Color;
 
@@ -226,20 +221,13 @@ void main() {
   outDepth = vDepth;
   
   
-  float outEffectGlow = 1.0;
-  outData.x = glowHSV.b;
-  outData.y = glowHSV.z;
-  outData.z = outDepth;
-  outData.w = outCd.a; // 1.0;
-  
-  
-  
   outData.x=glowHSV.x;
   outData.y=outDepth;
   outData.z=glowHSV.z;
   outData.w = outCd.a; // 1.0;
 
   glowHSV.z *= .0;
+  float outEffectGlow = 0.0;
   
   
   

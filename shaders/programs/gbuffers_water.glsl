@@ -210,7 +210,8 @@ void main() {
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);
 	float lightmapLuma = luma( texture2D(gaux1,lmtexcoord.zw*texelSize).xyz );
-  lightCd.rgb = mix(lightCd.rgb, vec3(lightmapLuma), .1);
+  //lightCd.rgb = mix(lightCd.rgb, vec3(lightmapLuma), .05);
+  lightCd.rgb = lightCd.rgb*lightmapLuma;
   
   vec4 outCd = lightCd;
   //outCd.rgb *= color.rgb;
@@ -223,18 +224,19 @@ void main() {
   
 
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
-    outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
+    //outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
+    outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 );
+
+
+
 
     float distMix = min(1.0,gl_FragCoord.w);
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.30,depth));
       outCd.rgb *= fogColor*lightCd.rgb* ( 1.3-(1.0-smoothDepth)*.5 );
-      //outCd.a = min(1.0, outCd.a+(1.0-smoothDepth)*.5);
     }else if( isEyeInWater >= 2 ){ // Lava
       outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
-    //}else if( isEyeInWater == 3 ){ // Snow
-      //outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
     }
     
     outCd.a = max( vMinAlpha, outCd.a );
@@ -251,10 +253,10 @@ void main() {
     glowHSV.z *= vTextureGlow*.7;
 #endif
 
-	gl_FragData[0] = outCd;
+    gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(glowHSV,1.0);
+    gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
+    gl_FragData[3] = vec4(glowHSV,1.0);
 
 }
 

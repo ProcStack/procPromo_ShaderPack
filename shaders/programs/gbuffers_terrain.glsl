@@ -133,26 +133,25 @@ void main() {
   
   float avgBlend = .3;
   
-  vec2 txlquart = vec2( 0.0019455252918287938 ); // (1/1028*2)
+  ivec2 txlOffset = ivec2(2);
   vec3 mixColor;
   vec4 tmpCd;
   float avgDiv = 0.0;
-  tmpCd = texture2D(texture, mc_midTexCoord);
+  tmpCd = texture2D(texture, midcoord);
     mixColor = tmpCd.rgb;
     avgDiv += tmpCd.a;
-  tmpCd = texture2D(texture, mc_midTexCoord+txlquart);
+  tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
+  tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = texture2D(texture, mc_midTexCoord-txlquart);
+  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
+  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-    //mixColor = mixColor / avgDiv;
     
     mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
 
@@ -299,8 +298,9 @@ vAvgColor = vec4( mixColor, 1.0);
     //vColorOnly=1.30;
     vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
+  // Flowing Lava
   if (mc_Entity.x == 702){
-    vIsLava=1.0;
+    vIsLava=0.9;
 #ifdef NETHER
     //vCdGlow=.1;
 #else
@@ -498,7 +498,7 @@ void main() {
     // -- -- -- -- -- -- --
     
     vec4 txCd;
-    // TODO : There's gotta be a better way to do this if
+    // TODO : There's gotta be a better way to do this...
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
       if(vColorOnly>.0 && vIsLava<.1){
@@ -522,7 +522,7 @@ void main() {
     vec2 screenSpace = (vPos.xy/vPos.z);
     float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
-    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
+    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf));
     float depthBias = biasToOne(depth, 4.5);
     float depthDetailing = clamp(1.195-depthBias*1.25, 0.0, 1.0);
 
@@ -812,18 +812,11 @@ void main() {
     //localUV.y = (tuv.y-texcoordminmax.y) / (texcoordminmax.w-texcoordminmax.y);
     
     
-// -- -- -- -- -- -- -- -- -- -- -- -- -- --
-// Mightcraft Lighting, not Shadow Pass - -- --
-// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-  //outCd.rgb *= mix(diffuseLight.rgb, vec3(1.0), lightLuma);
-#ifdef OVERWORLD
-  //outCd.rgb *= 1.0+(lightBaseCd.rgb*.3-.5);
-#endif
 
 #ifdef NETHER
     //outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
     outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf*.5));
+    outCd.rgb *= mix(1.0, toCamNormalDot, depth*.7+.3);
 #else
     outCd.rgb *= mix(1.0, toCamNormalDot*.5+.5, depth*.7+.3);
 #endif
@@ -859,9 +852,6 @@ void main() {
     outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
 #endif
     
-    
-
-    //outCd.rgb *= skyBrightMultFit;
     
     glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
     
