@@ -4,12 +4,15 @@
 
 
 ---
-#### As of 5/13/2022
+#### As of 6/10/2022
 
 ### Priorities *(From tasks below)*
 - Composite Passes; Move Edge Detection from `final.glsl` to its own `composite#.glsl` file
   - Half Res buffer scale would be good enough for edge detection
 
+#### Code Base -
+- Python Splitter Script
+  - Write utility to read code and remove #if's and other pragma
 
 
 #### General-

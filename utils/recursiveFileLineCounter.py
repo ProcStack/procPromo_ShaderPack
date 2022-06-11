@@ -11,7 +11,7 @@ import datetime
 import math
 
 # Update this as need be
-repoName="psPromo"
+repoName="procPromo"
 statProjectTitle="ProcPromo Code Stats"
 
 # Get the absolute route to base directory; repoName

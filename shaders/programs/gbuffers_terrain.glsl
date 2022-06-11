@@ -103,8 +103,9 @@ void main() {
 	lmtexcoord.xy = gl_MultiTexCoord0.xy;
   vWorldNormal = gl_Normal;
   vAnimFogNormal = gl_NormalMatrix*vec3(1.0,0.0,0.0);
-  // -- -- -- -- -- -- -- --
   
+  
+  // -- -- -- -- -- -- -- --
   
   
 	sunVecNorm = normalize(sunPosition);
@@ -198,13 +199,12 @@ void main() {
   sunDot = dot( vNormal, normalize(localSunPos) );
   sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
 
-  
-           
-           
+
+
   // -- -- -- -- -- -- -- --
 
 
-
+  // TODO : Is this needed? Left over testing other's code
 	float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
   #ifdef SEPARATE_AO
 	lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU*gl_Color.a)+0.5;
@@ -235,13 +235,13 @@ void main() {
 
   blockFogInfluence = 1.0;
   if (mc_Entity.x == 803){
-    blockFogInfluence = 0.2;
+    blockFogInfluence = 1.;
   }
   
   txGlowThreshold = 1.0; // Off
   if (mc_Entity.x == 804){
-    txGlowThreshold = .7;
-    blockFogInfluence = 0.6;
+    txGlowThreshold = 1.00;//.7;
+    blockFogInfluence = 1.0;
   }
 
   
@@ -285,13 +285,15 @@ void main() {
     vColorOnly=.001;
   }
   
+  
+  
   // Lava
   if (mc_Entity.x == 701){
     vIsLava=.8;
 #ifdef NETHER
     vCdGlow=.1;
 #else
-     vCdGlow=.05;
+     vCdGlow=.03;
 #endif
     //vColorOnly=1.10;
     //vColorOnly=1.30;
@@ -303,7 +305,7 @@ void main() {
 #ifdef NETHER
     //vCdGlow=.1;
 #else
-    vCdGlow=.05;
+    vCdGlow=.03;
 #endif
     //vColorOnly=0.30;
     //vColorOnly=1.30;
@@ -658,7 +660,7 @@ void main() {
     moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
     moonPhaseMult = (moonPhaseMult*.4+.1);
     
-    diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5 + (10-skyBrightnessMult), 0.0, 1.0) );
+    diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5 + (1-skyBrightnessMult), 0.0, 1.0) );
 
     surfaceShading *= mix( moonPhaseMult, dot(sunVecNorm,vNormal), dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
@@ -737,56 +739,43 @@ void main() {
 // End Logic; Animated Fog  - -- --
 // -- -- -- -- -- -- -- -- -- -- -- --
 
+// TODO : MOVE TO POST PROCESSING ... ya dingus
+
 #ifdef THE_END
-      float depthEnd = min(1.0, gl_FragCoord.w*48.0-screenDewarp);
-      float fogInf = min(1.0, gl_FragCoord.w*64.0-screenDewarp);
-      fogInf *= fogInf;
+      float depthEnd = min(1.0, gl_FragCoord.w*8.0-screenDewarp*.15);
+      depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
     
       float lightMax = max( lightCd.r, max( lightCd.g, lightCd.b ) );
-      
-      // Dot Normal Stuff
-      float facingMultOrig=clamp( dot(normalize(vLocalPos.xyz), vWorldNormal)*.7+.5, 0.0, 1.0);
+    
       
       
-      // Texture to 360 Display Fog
-      vec2 rotUV = rotToUV(vec3(-vLocalPos.x, -vAnimFogNormal.y, -vLocalPos.z));
-      rotUV.y = (rotUV.y-.5)*.5+.5;
-      screenSpace = (screenSpace)*(1.0-depthEnd)*.5;
-      screenSpace = vec2( screenSpace.x, -screenSpace.y);
-      screenSpace = fract( rotUV-screenSpace );
-      float timeOffset = (worldTime*0.00004166666)*80.0;
-      vec3 ssNoiseInit = texture2D( noisetex, fract(screenSpace)).rgb;
-      vec3 ssNoiseCd = texture2D( noisetex, fract(screenSpace+(ssNoiseInit.rg-.5+timeOffset*.5)*.5+(ssNoiseInit.br-.5)*.2)).rgb;
-      
-      // Display Fog Depth Colorizer
-      float fogNoise = ssNoiseCd.r*ssNoiseCd.g*ssNoiseCd.b;
       vec3 endFogCd = vec3(.75,.5,.75);
-      endFogCd = mix( endFogCd*fogNoise + (ssNoiseCd-.3)*.7, endFogCd, depthEnd*.7+.3);
       
-      // Dot Normal Stuff
-      float facingMult = mix( 1.0, facingMultOrig, max(0.0, (1.0-depthEnd*.5)-lightMax) );
-      vec3 cdFogMix = outCd.rgb*mix( endFogCd*facingMult, vec3( facingMult ), min(1.0,fogInf+lightMax*.2));
+      float timeOffset = (worldTime*0.00004166666)*90.0;
+      vec3 worldPos = fract(abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05));
+      worldPos = fract( worldPos+texture2D( noisetex, worldPos.xz).rgb );
+
+      vec3 noiseX = texture2D( noisetex, worldPos.xy + (timeOffset*vec2(1.,.5))).rgb;
+      vec3 noiseZ = texture2D( noisetex, fract(worldPos.zy*1.5+noiseX.rg + vec2(timeOffset) )).rgb;
       
-      float cdMaxVal = max( txCd.r, max( txCd.g, txCd.b) );
-      float txGlow = smoothstep(.35,.65, cdMaxVal)*3.0*(1.0-depthEnd*.7);
-      cdFogMix = mix( outCd.rgb+outCd.rgb*txGlow, cdFogMix, blockFogInfluence*.25+.75);
+      float noiseInf = min(1.0, (depthEnd+max(0.0,lightMax-.4+glowInf*.8))*.8+.1 );
       
-      outCd.rgb = mix( outCd.rgb*endFogCd*(facingMult*.5+.5), cdFogMix, min(1.0,depthEnd*depthEnd+(1.0-blockFogInfluence)));
-      glowCd = addToGlowPass(glowCd, outCd.rgb*txGlow*(1.0-blockFogInfluence)*(depthEnd));
-      
-      outCd.rgb *= min(1.0, dot(vWorldNormal,vec3(0,1,0))*.25+.75);
+      outCd.rgb *= mix(  (noiseZ*endFogCd*lightCd), vec3(1.0), noiseInf );
+
+
 #endif
     
     /*
     // World Space Position influenced animated Noise
-    vec3 worldPos = fract(abs(cameraPosition+vLocalPos.xyz)*.01);
+    //float timeOffset = (worldTime*0.00004166666)*80.0;
+    vec3 worldPos = fract(abs(cameraPosition+vLocalPos.xyz)*.08);
     worldPos = fract( worldPos+texture2D( noisetex, worldPos.xz).rgb );
     vec3 noiseInit = texture2D( noisetex, tuv).rgb;
     //vec3 noiseAnim = texture2D( softnoisetex, fract(tuv+noiseInit.rg + noiseInit.br)).rgb;
-    outCd.rgb = noiseInit;//sin( fract(worldPos.x*.1) * TAU);
+
     vec3 noiseX = texture2D( noisetex, worldPos.xy).rgb;
-    vec3 noiseZ = texture2D( noisetex, fract(worldPos.zy+noiseX.rg)).rgb;
-    vec3 noiseY = texture2D( noisetex, fract(worldPos.xz+noiseZ.br)).rgb;
+    vec3 noiseZ = texture2D( noisetex, fract(worldPos.zy+noiseX.rg + vec2(timeOffset) )).rgb;
+    vec3 noiseY = texture2D( noisetex, fract(worldPos.xz+noiseZ.br + vec2(timeOffset*.1) )).rgb;
     vec3 noiseCd = mix( noiseX, noiseZ, abs(vWorldNormal.x));
     noiseCd = mix( noiseCd, noiseY, abs(vWorldNormal.y));
     */
@@ -854,7 +843,7 @@ void main() {
     
     glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
     
-    glowCd = outCd.rgb+outCd.rgb*glowInf;
+    glowCd = outCd.rgb+(outCd.rgb+.1)*glowInf;
     //glowCd += vec3(1.0-distMix);
     //glowCd *= skyBrightMultFit;
 
