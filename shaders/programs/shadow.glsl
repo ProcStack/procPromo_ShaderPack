@@ -7,7 +7,10 @@
 
 #include "utils/shadowCommon.glsl"
 
+attribute vec4 mc_Entity;
+
 varying vec2 texcoord;
+varying float vAlphaMult;
 
 //varying vec4 color;
 
@@ -20,6 +23,15 @@ void main() {
 
 	texcoord = gl_MultiTexCoord0.xy;
 	//color = gl_Color;
+  
+  
+  vAlphaMult=1.0;
+  if (mc_Entity.x == 801){
+    float crossDot = dot( 
+    vAlphaMult=clamp( (vCrossBlockCull+.5)*10.0, 0.0, 1.0 );
+  }
+  vAlphaMult=0.0;
+  
 }
 
 #endif
@@ -30,11 +42,15 @@ uniform sampler2D tex;
 
 varying vec2 texcoord;
 //varying vec4 color;
+varying float vAlphaMult;
 
 void main() {
 
   vec4 shadowCd = texture2D(tex,texcoord.xy);// * color;
 
+  shadowCd.a*=step(.5, vAlphaMult);
+
+  shadowCd.rgb*=.0;
 
 	gl_FragData[0] = shadowCd;
 }

@@ -232,6 +232,7 @@ texcoordmid=midcoord;
   vAlphaMult=1.0;
   vColorOnly=0.0;
 
+  
   blockFogInfluence = 1.0;
   glowMultVertColor=0.0;
   if (mc_Entity.x == 803){

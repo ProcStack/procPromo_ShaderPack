@@ -10,4 +10,4 @@
 #define SolidLeaves true    //Toggle Solid Leaf Color [true false]
 #define GreyWorld false    //Toggle Greyscale Land [true false]
 
-const int shadowMapResolution = 2048; //[512 1024 2048 4096 8192]
+const int shadowMapResolution = 2048; //Size of the texture generated for shadows (Lower for speed, Higher for detail) [512 1024 2048 4096 8192]

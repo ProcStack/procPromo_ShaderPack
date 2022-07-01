@@ -36,6 +36,8 @@
   - Could run more than 5 samples for a better average
 - Impliment polsterization math
   - Better detail isolation
+- Reduce how many smoothsteps are being used
+  - Add a cheapo fit'n'clamp function maybe
 
 
 #### Shadow-

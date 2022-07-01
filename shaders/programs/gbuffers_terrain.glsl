@@ -72,6 +72,7 @@ varying vec4 vUVMinMax;
 varying vec4 vColor;
 varying vec4 vAvgColor;
 varying float vColorOnly;
+varying float vCrossBlockCull;
 
 varying float vAlphaMult;
 
@@ -166,12 +167,12 @@ void main() {
   tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+  /*tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-    avgDiv += tmpCd.a;
+    avgDiv += tmpCd.a;*/
     
   mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
 
@@ -213,7 +214,7 @@ void main() {
   #endif
 
 	gl_Position = toClipSpace3(position);
-	float diffuseSun = clamp(  (dot(normal,sunVec)*.6+.4)  *lightCol.a,0.0,1.0);
+	float diffuseSun = clamp( ( dot(normal,sunVec)*.6+.4) * lightCol.a, 0.0,1.0 );
 
 
   // -- -- -- -- -- -- -- --
@@ -232,6 +233,7 @@ void main() {
   vColorOnly=0.0;
   vIsLava=0.0;
   vCdGlow=0.0;
+  vCrossBlockCull=0.5;
 
   blockFogInfluence = 1.0;
   if (mc_Entity.x == 803){
@@ -244,6 +246,24 @@ void main() {
     blockFogInfluence = 1.0;
   }
 
+
+  if (mc_Entity.x == 801){
+    //vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(vPos.x, 0.0, vPos.z)) ));
+    vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(1.0, 0.0, 1.0)) ));
+    //vCrossBlockCull = abs( dot( normalize(vLocalPos.xyz), normalize(vec3(1.0, 0.0, 1.0)) ) );
+    vCrossBlockCull = abs( dot( normalize(vec3(vWorldNormal.x, 0.0, vWorldNormal.z)), normalize(vec3(vLocalPos.x, 0.0, vLocalPos.z)) ) );
+    //vCrossBlockCull =  dot( normalize(vLocalPos.xyz), normalize(vec3(1.0, 0.0, 1.0)) )*.5+.5;
+    
+    //vAlphaMult=clamp( (vCrossBlockCull+.5)*10.0, 0.0, 1.0 );
+    //vAlphaMult=step(.5, vCrossBlockCull);
+    
+    float alphaStep = abs(vCrossBlockCull-.5)-.2;
+
+    vCrossBlockCull=step( .0, alphaStep );
+    //vCrossBlockCull=step( .5, vCrossBlockCull );
+    vAlphaMult=vCrossBlockCull;
+    
+  }
   
   // Leaves
   if (mc_Entity.x == 810 ){
@@ -251,7 +271,6 @@ void main() {
       //shadowPos.w = -2.0;
       //diffuseSun = diffuseSun*0.35+0.4;
       //vColor.rgb *= 1.1;
-      vAlphaMult=0.0;
       vColorOnly=.001;
       vAltTextureMap=1.0;
       //vColorOnly=.0;
@@ -267,8 +286,9 @@ void main() {
   texcoord.zw = texcoord.st;
   vDepthAvgColorInf = 1.0;
 
-  if (mc_Entity.x == 901 || mc_Entity.x == 801){
-
+  
+  
+  if( mc_Entity.x == 901 || mc_Entity.x == 801 || mc_Entity.x == 8013 ){
     texcoord.zw = texcoord.st;
     vColorOnly=.001;
     //vColor.rgb=vec3(1.0);
@@ -276,36 +296,41 @@ void main() {
     vAvgColor*=vColor;
     vDepthAvgColorInf=0.3;
   }
-  if(mc_Entity.x == 801 || mc_Entity.x == 8011 || mc_Entity.x == 8012){
+  if( mc_Entity.x == 801 || mc_Entity.x == 8011 || mc_Entity.x == 8012 || mc_Entity.x == 8013 ){
     vDepthAvgColorInf =  0.0;
   }
-  if(mc_Entity.x == 907){
+  if( mc_Entity.x == 907 ){
     vDepthAvgColorInf =  0.0;
     vAltTextureMap = 1.0;
     vColorOnly=.001;
+  }
+  if( mc_Entity.x == 603 ){
+    //vColor = vec4(1.0,0.0,0.0,1.0);
+    //vAvgColor = vec4(1.0,0.0,0.0,1.0);
+    //vColorOnly=.1;
   }
   
   
   
   // Lava
-  if (mc_Entity.x == 701){
+  if( mc_Entity.x == 701 ){
     vIsLava=.8;
 #ifdef NETHER
     vCdGlow=.1;
 #else
-     vCdGlow=.03;
+     vCdGlow=.05;
 #endif
     //vColorOnly=1.10;
     //vColorOnly=1.30;
     vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   // Flowing Lava
-  if (mc_Entity.x == 702){
+  if( mc_Entity.x == 702 ){
     vIsLava=0.9;
 #ifdef NETHER
     //vCdGlow=.1;
 #else
-    vCdGlow=.03;
+    vCdGlow=.05;
 #endif
     //vColorOnly=0.30;
     //vColorOnly=1.30;
@@ -313,7 +338,7 @@ void main() {
   }
   
   // Fire / Soul Fire
-  if (mc_Entity.x == 707){
+  if( mc_Entity.x == 707 ){
 #ifdef NETHER
     vCdGlow=0.15;
 #endif
@@ -322,7 +347,7 @@ void main() {
     vDepthAvgColorInf =  0.0;
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
-  if (mc_Entity.x == 805){
+  if( mc_Entity.x == 805 ){
     vCdGlow=0.02;
 #ifdef NETHER
     vCdGlow=0.1;
@@ -355,6 +380,8 @@ void main() {
                                                                               
   //vColor = mix( gl_Color, vColor, eyeBrightnessSmooth.y/240.0);
   //vColor = gl_Color;
+
+
 
 }
 
@@ -476,6 +503,8 @@ varying vec3 vAnimFogNormal;
 
 varying vec4 vAvgColor;
 varying float vColorOnly;
+varying float vCrossBlockCull;
+
 varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
@@ -514,7 +543,7 @@ void main() {
       txCd = texture2D(texture, tuv);
     }
 
-    if (txCd.a < .2){
+    if (txCd.a * vAlphaMult < .2){
       discard;
     }
     
@@ -578,7 +607,7 @@ void main() {
 #endif
 #endif
     
-    float sunMoonShadowInf = smoothstep( .4, .5, abs(dot(sunVecNorm, vNormal)));
+    float sunMoonShadowInf = clamp( (abs(dot(sunVecNorm, vNormal))-.04)*2.0, 0.0, 1.0 );
     //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))-.5)*1.0);
     float shadowDepthInf = clamp( (depth*40.0), 0.0, 1.0 );
     diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf * shadowDepthInf );
@@ -677,12 +706,12 @@ void main() {
     
     
     // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    // -- Close up Radial Highlights on blocks - -- --
+    // -- 'Specular' Roll-Off; Radial Highlights -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     
-    depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*5.0)))*2.0) );
-
-    outCd.rgb += outCd.rgb * gl_FragCoord.w * surfaceShading * depthDetailing; // *fogColor; // -.2;
+    depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*5.0)))*.450) );
+    surfaceShading = 1.0-(1.0-surfaceShading)*.4;
+    outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing * .5; // *fogColor; // -.2;
 
 
     // -- -- -- -- -- -- 
@@ -844,20 +873,15 @@ void main() {
     glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
     
     glowCd = outCd.rgb+(outCd.rgb+.1)*glowInf;
-    //glowCd += vec3(1.0-distMix);
-    //glowCd *= skyBrightMultFit;
 
 
     vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness ;
+    glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness ;// * lightLuma;
 
 
 #ifdef NETHER
-    //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness;// * lightLuma;
-    //glowHSV.z *= 1.0+vIsLava*.5;
     outCd.rgb += outCd.rgb*lightCd*min(1.0,vIsLava+glowInf);
 #else
-    //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
     glowHSV.z *= .7+vIsLava*.5;
 #endif
 
@@ -901,6 +925,9 @@ void main() {
     //outCd.rgb = vec3(step(localUV.x, 0.0));
     //outCd.rg = tuv;
     
+    //outCd.rgb=vec3(vCrossBlockCull);
+    //outCd.rgb=normalize(vLocalPos.xyz);
+    outCd.a*=vAlphaMult;
     
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
