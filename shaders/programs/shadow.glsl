@@ -50,7 +50,7 @@ void main() {
 
   shadowCd.a*=step(.5, vAlphaMult);
 
-  shadowCd.rgb*=.0;
+  //shadowCd.rgb*=.0;
 
 	gl_FragData[0] = shadowCd;
 }

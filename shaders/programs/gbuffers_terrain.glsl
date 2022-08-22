@@ -75,6 +75,7 @@ varying float vColorOnly;
 varying float vCrossBlockCull;
 
 varying float vAlphaMult;
+varying float vAlphaRemove;
 
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
@@ -246,7 +247,9 @@ void main() {
     blockFogInfluence = 1.0;
   }
 
-
+  /*
+  // Single plane cross blocks;
+  //   Grass, flowers, etc.
   if (mc_Entity.x == 801){
     //vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(vPos.x, 0.0, vPos.z)) ));
     vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(1.0, 0.0, 1.0)) ));
@@ -262,21 +265,20 @@ void main() {
     vCrossBlockCull=step( .0, alphaStep );
     //vCrossBlockCull=step( .5, vCrossBlockCull );
     vAlphaMult=vCrossBlockCull;
-    
   }
+  */
   
   // Leaves
-  if (mc_Entity.x == 810 ){
-    if(SolidLeaves){
+  vAlphaRemove = 0.0;
+  if (mc_Entity.x == 810 && SolidLeaves ){
       //shadowPos.w = -2.0;
       //diffuseSun = diffuseSun*0.35+0.4;
       //vColor.rgb *= 1.1;
       vColorOnly=.001;
       vAltTextureMap=1.0;
       //vColorOnly=.0;
-    }
-    
-    vAvgColor=vColor*.5;
+      vAvgColor=vColor*.5;
+    vAlphaRemove = 1.0;
   }
 
 
@@ -287,6 +289,7 @@ void main() {
   vDepthAvgColorInf = 1.0;
 
   
+  // TODO : Remove all the daggon ifs somehow
   
   if( mc_Entity.x == 901 || mc_Entity.x == 801 || mc_Entity.x == 8013 ){
     texcoord.zw = texcoord.st;
@@ -492,6 +495,7 @@ varying float dayNight;
 varying vec4 shadowPos;
 varying vec3 shadowOffset;
 varying float vAlphaMult;
+varying float vAlphaRemove;
 varying float vAltTextureMap;
 
 varying vec4 vPos;
@@ -532,17 +536,22 @@ void main() {
     // TODO : There's gotta be a better way to do this...
     if( DetailBluring > 0 ){
       // Block's pre-modified, no need to blur again
-      if(vColorOnly>.0 && vIsLava<.1){
-        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, vTexelSize* DetailBluring);
-      }else{
+      // ## 1.19 Changes require a new texutre map
+      //      So will be planning to not require a texture map in the future
+      //      Updating the bluring functions to work better
+      //if(vColorOnly>.0 && vIsLava<.1){
+      //  txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, vTexelSize* DetailBluring);
+      //}else{
         txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
-      }
+      //}
       //txCd = texture2D(texture, tuv);
     }else{
       txCd = texture2D(texture, tuv);
     }
 
+    txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
+    txCd.a = mix(txCd.a, 1.0, vAlphaRemove);
     if (txCd.a * vAlphaMult < .2){
       discard;
     }
