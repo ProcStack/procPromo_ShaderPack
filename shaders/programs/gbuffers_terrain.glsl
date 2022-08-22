@@ -421,7 +421,6 @@ const int gnormalFormat = RGB10_A2;
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
-uniform sampler2D colortex4; // Minecraft Vanilla Texture Atlas
 uniform sampler2D colortex5; // Minecraft Vanilla Glow Atlas
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int fogMode;
@@ -535,17 +534,8 @@ void main() {
     vec4 txCd;
     // TODO : There's gotta be a better way to do this...
     if( DetailBluring > 0 ){
-      // Block's pre-modified, no need to blur again
-      // ## 1.19 Changes require a new texutre map
-      //      So will be planning to not require a texture map in the future
-      //      Updating the bluring functions to work better
-      //if(vColorOnly>.0 && vIsLava<.1){
-      //  txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, vTexelSize* DetailBluring);
-      //}else{
         txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
-      //}
-      //txCd = texture2D(texture, tuv);
     }else{
       txCd = texture2D(texture, tuv);
     }

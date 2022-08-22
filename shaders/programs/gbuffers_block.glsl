@@ -322,7 +322,6 @@ const int gnormalFormat = RGB10_A2;
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
-uniform sampler2D colortex4; // Minecraft Vanilla Texture Atlas
 uniform sampler2D colortex5; // Minecraft Vanilla Glow Atlas
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int fogMode;
@@ -480,14 +479,8 @@ void main() {
     vec4 txCd;
     // Why was #if breaking?????
     if( DetailBluring > 0 ){
-      // Block's pre-modified, no need to blur again
-      if(vColorOnly>.0){
-        txCd = texture2D( colortex4, tuv);//diffuseSampleNoLimit( texture, tuv, texelSize* DetailBluring*1.0*(1.0-vIsLava));
-      }else{
         txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
-      }
-      //txCd = texture2D(texture, tuv);
     }else{
       txCd = texture2D(texture, tuv);
     }

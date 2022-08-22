@@ -51,7 +51,6 @@ const float eyeBrightnessHalflife = 4.0f;
 uniform sampler2D colortex0; // Diffuse Pass
 uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex2; // Normal Pass
-//uniform sampler2D colortex4; // Light Pass
 
 
 uniform sampler2D gaux1;
@@ -232,7 +231,6 @@ void main() {
   vec3 dataCd = texture2D(gaux1, uv).xyz;
   vec4 spectralDataCd = texture2D(colortex9, uv);
 
-  //vec4 light = texture2D(colortex4, uv);
   
   
   // -- -- -- -- -- -- -- --

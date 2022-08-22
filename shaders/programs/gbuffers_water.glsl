@@ -211,13 +211,13 @@ void main() {
   vec4 lightCd = texture2D(lightmap, luv);
 	float lightmapLuma = luma( texture2D(gaux1,lmtexcoord.zw*texelSize).xyz );
   //lightCd.rgb = mix(lightCd.rgb, vec3(lightmapLuma), .05);
-  lightCd.rgb = lightCd.rgb*lightmapLuma;
+  lightCd.rgb = lightCd.rgb;//*lightmapLuma;
   
   vec4 outCd = lightCd;
   //outCd.rgb *= color.rgb;
   outCd *= color;
   //outCd.a = max(0.0, txCd.a-(lightCd.a-.5)*.3);
-  float txLuma = luma(txCd.rgb);
+  //float txLuma = luma(txCd.rgb);
   //outCd.rgb*=mix(1.0,txLuma,vTextureInf);
   outCd.rgb*=txCd.rgb;//+0.5;
   outCd.a*=txCd.a;
