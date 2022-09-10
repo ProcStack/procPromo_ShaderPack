@@ -1,8 +1,12 @@
-# ProcStack's procPromo v0.1
+# ProcStack's procPromo v0.2
 ### Optifine Shader Pack
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
 <br/> Softer details, edge highlights, sharp shadows, and glowiness.*
+
+*(Currently being updated to work with all versions of Minecraft)*
+<br/>*(There will be some issues until I have more time for this)*
+<br/>*(For version specific procPromo v0.1, see the 1.18.# branch)*
 
 <img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;"/>
 
