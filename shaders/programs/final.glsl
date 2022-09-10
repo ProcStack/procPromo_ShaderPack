@@ -78,6 +78,9 @@ uniform int worldTime;
 uniform float nightVision;
 
 
+uniform float darknessFactor; //                   strength of the darkness effect (0.0-1.0)
+uniform float darknessLightFactor; //              lightmap variations caused by the darkness effect (0.0-1.0) 
+
 const float eyeBrightnessHalflife = 4.0f;
 uniform ivec2 eyeBrightnessSmooth;
 
@@ -147,10 +150,8 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   
   float curInf = step( abs(curDepth - depthRef), thresh );
 
-  curDepth = ( abs(curDepth - depthRef)*3.0 );
-  //curDepth *=curDepth;
-  //curDepth = min(0.5, curDepth );
-  curDepth = smoothstep(0.0, .65, curDepth );
+  curDepth = ( abs(curDepth - depthRef)*1.5 );
+  //curDepth = smoothstep(0.0, .85, curDepth ); // Commented for performance, looks better tho
 
   depthOut = max( depthOut, curDepth );
   
@@ -263,6 +264,7 @@ void main() {
   // -- -- -- -- -- -- -- --
   // -- Depth Blur -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
+  // All threads are in or out, leaving for now
   if( UnderWaterBlur && isEyeInWater >= 1 ){
     float depthBlurInf = smoothstep( .5, 1.5, depth);//biasToOne(depthBase);
     
@@ -292,8 +294,7 @@ void main() {
   // Fit Normal
   normalCd.rgb = normalCd.rgb*2.0-1.0;
   // Dot To Camera
-  //float dotToCam = dot(normalCd.rgb,vec3(0.0,0.0,1.0));
-  float dotToCam = dot(normalCd.rgb,normalize(vec3(-(uv-.5),1.0)));
+  float dotToCam = dot(normalCd.rgb,normalize(vec3(.5-uv,1.0)));
   float dotToCamClamp = max(0.0, dotToCam);
   dotToCamClamp = smoothstep(.2,1.0, dotToCamClamp);
 
@@ -332,7 +333,10 @@ void main() {
   vec3 avgNormal = normalCd.rgb;
   float edgeInsidePerc;
   float edgeOutsidePerc;
-  findEdges( colortex0, colortex1, colortex2, uv, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading, depthBase,normalCd.rgb, edgeDistanceThresh, avgNormal,edgeInsidePerc,edgeOutsidePerc );
+  findEdges( colortex0, colortex1, colortex2,
+             uv, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading,
+             depthBase, normalCd.rgb, edgeDistanceThresh, avgNormal,
+             edgeInsidePerc,edgeOutsidePerc );
 
 
   edgeInsidePerc *= 1.0-min(1.0,max(0,isEyeInWater)*.5);
@@ -425,6 +429,8 @@ void main() {
   //outCd.rgb = vec3( spectralDataCd.rgb );
   
   outCd.rgb *= LightingBrightness;
+  
+  //outCd.rgb = vec3(edgeOutsidePerc);
   
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

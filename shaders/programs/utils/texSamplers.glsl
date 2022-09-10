@@ -89,8 +89,13 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
     curHSV = 1.0-abs( curHSV-sampleHSV );// * (DetailBluring*.15);
     
     delta = clamp( dot(sampleCd.rgb, curCd.rgb), 0.0, 1.0 );
-    //delta = mix( delta, length(sampleCd.rgb - curCd.rgb), .5);
-    delta *= curHSV.r*curHSV.g*curHSV.b;//*curHSV.b;
+    //delta = mix( delta, min(1.0,length(sampleCd.rgb - curCd.rgb)), .5);
+    //delta = delta * length(sampleCd.rgb - curCd.rgb);
+    //delta *= step(curHSV.r,.9)*step(.5,curHSV.g)*step(.5,curHSV.b);//*curHSV.b;
+    //delta *= step(.85,curHSV.r)*step(.4,curHSV.b);
+    delta *= step(.6,curHSV.b);
+    delta *= step(.85,curHSV.r);
+    //delta *= curHSV.r*curHSV.g*curHSV.b;//*curHSV.b;
   //delta *= curHSV.g*.5;//curHSV.r*curHSV.g*curHSV.b;//*curHSV.b;
     delta *= delta * delta ;
     delta *= sampleCd.a * curCd.a;

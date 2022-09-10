@@ -271,12 +271,8 @@ void main() {
   // Leaves
   vAlphaRemove = 0.0;
   if (mc_Entity.x == 810 && SolidLeaves ){
-      //shadowPos.w = -2.0;
-      //diffuseSun = diffuseSun*0.35+0.4;
-      //vColor.rgb *= 1.1;
       vColorOnly=.001;
       vAltTextureMap=1.0;
-      //vColorOnly=.0;
       vAvgColor=vColor*.5;
     vAlphaRemove = 1.0;
   }
@@ -291,13 +287,13 @@ void main() {
   
   // TODO : Remove all the daggon ifs somehow
   
-  if( mc_Entity.x == 901 || mc_Entity.x == 801 || mc_Entity.x == 8013 ){
+  if( mc_Entity.x == 901 || mc_Entity.x == 801 || mc_Entity.x == 811 || mc_Entity.x == 8013 ){
     texcoord.zw = texcoord.st;
     vColorOnly=.001;
     //vColor.rgb=vec3(1.0);
     vAltTextureMap = 0.0;
     vAvgColor*=vColor;
-    vDepthAvgColorInf=0.3;
+    vDepthAvgColorInf=.3;
   }
   if( mc_Entity.x == 801 || mc_Entity.x == 8011 || mc_Entity.x == 8012 || mc_Entity.x == 8013 ){
     vDepthAvgColorInf =  0.0;
@@ -534,7 +530,7 @@ void main() {
     vec4 txCd;
     // TODO : There's gotta be a better way to do this...
     if( DetailBluring > 0 ){
-        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
+        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.0005, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
     }else{
       txCd = texture2D(texture, tuv);
@@ -560,7 +556,7 @@ void main() {
     
 
   // -- -- -- -- -- -- -- --
-  // Modded shadow lookup Chocapic13's HighPerformance Toaster
+  // Modified shadow lookup from Chocapic13's HighPerformance Toaster
   //  (I'm still learning this shadow stuffs)
   //
   float shadowDist = 0.0;
@@ -602,8 +598,8 @@ void main() {
       shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
     }
     
-    
 #endif
+
 #endif
     
     float sunMoonShadowInf = clamp( (abs(dot(sunVecNorm, vNormal))-.04)*2.0, 0.0, 1.0 );
@@ -644,6 +640,7 @@ void main() {
 #ifdef OVERWORLD
     blockLumVal =  vec4(lightCd,1.0);
 #endif
+
 #ifdef NETHER
     //blockLumVal =  vec4( mix((fogColor*.4+.4), lightCd, depth), 1.0);
     //blockLumVal =  vec4( lightCd, 1.0);
@@ -742,14 +739,13 @@ void main() {
 
     // -- -- -- -- -- -- --
 
-      
+    // TODO : Move whats possible to vert
     float distMix = min(1.0,gl_FragCoord.w);
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
       //outCd.rgb *=  1.0+lightLuma+glowInf;
       outCd.rgb *=  1.0+lightLuma*.5;//+.5;
-      //outCd.rgb = mix( outCd.rgb*(fogColor*.1+.9), outCd.rgb*fogColor*( 1.0-smoothDepth*.5 ), max(0.0,( 1.0-smoothDepth )-glowInf*5.0) );
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
@@ -789,8 +785,6 @@ void main() {
       float noiseInf = min(1.0, (depthEnd+max(0.0,lightMax-.4+glowInf*.8))*.8+.1 );
       
       outCd.rgb *= mix(  (noiseZ*endFogCd*lightCd), vec3(1.0), noiseInf );
-
-
 #endif
     
     /*
@@ -808,24 +802,19 @@ void main() {
     noiseCd = mix( noiseCd, noiseY, abs(vWorldNormal.y));
     */
     
-    // TODO : Do I want ambient glow outside of the glow mask atlas?
-    //      | - Yes, prevent need for upkeep
-    //      | - No glow mask
-    /*
-    if( glowMultVertColor > 0.0 ){
-      float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
+    //if( glowMultVertColor > 0.0 ){
+      //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
       float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
-      float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
+      //float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
       glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.5+.5));
-    }
-    */
+    //}
     
     
     
     // Texcoord fit to block
-    vec2 localUV = vec2(0.0);
-    localUV.x = (tuv.x-texcoordminmax.x) / (texcoordminmax.z-texcoordminmax.x);
-    localUV.y = (tuv.y-texcoordminmax.y) / (texcoordminmax.w-texcoordminmax.y);
+    //vec2 localUV = vec2(0.0);
+    //localUV.x = (tuv.x-texcoordminmax.x) / (texcoordminmax.z-texcoordminmax.x);
+    //localUV.y = (tuv.y-texcoordminmax.y) / (texcoordminmax.w-texcoordminmax.y);
     
     
 
@@ -871,7 +860,7 @@ void main() {
     
     glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
     
-    glowCd = outCd.rgb+(outCd.rgb+.1)*glowInf;
+    glowCd += outCd.rgb+(outCd.rgb+.1)*glowInf;
 
 
     vec3 glowHSV = rgb2hsv(glowCd);

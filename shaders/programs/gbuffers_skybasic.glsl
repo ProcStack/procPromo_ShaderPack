@@ -65,7 +65,7 @@ uniform int fogMode;
 void main() {
   
   //vec2 tuv = texcoord.st;
-  vec4 txCd = texture2D(texture, texcoord.st);
+  //vec4 txCd = texture2D(texture, texcoord.st);
     
   vec4 outCd = color;
   vec2 luv = lmcoord.zw;
@@ -77,7 +77,7 @@ void main() {
   float upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
   upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
-  float skyGrey = luma(skyColor.rgb)*.8;
+  float skyGrey = min(luma(skyColor.rgb),.25)*1.4;
   vec3 skyCd = mix( skyColor.rgb, vec3(skyGrey), rainStrength);
   vec3 fogCd = mix( fogColor, vec3(skyGrey*.5), rainStrength);
 
