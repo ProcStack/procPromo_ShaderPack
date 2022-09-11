@@ -14,9 +14,7 @@ void main() {
 
 	vNormal = normalize(gl_NormalMatrix * gl_Normal);
   
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
-
-	gl_Position = gl_ProjectionMatrix * position;
+  gl_Position = ftransform();
 
 	color = gl_Color;
 
@@ -33,17 +31,16 @@ void main() {
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 0,6 */
+/* RENDERTARGETS: 0,1,2,6 */
+
 uniform sampler2D texture;
 uniform sampler2D lightmap;
+uniform int isEyeInWater;
 
 varying vec4 color;
 varying vec3 vNormal;
 varying vec4 texcoord;
 varying vec4 lmcoord;
-
-const int GL_LINEAR = 9729;
-const int GL_EXP = 2048;
 
 uniform int fogMode;
 
@@ -59,12 +56,23 @@ void main() {
   //outCd.rgb*=txCd.rgb;
   //outCd.rgb*=lightCd.rgb;
   
-  outCd=txCd*color;
+  //outCd=txCd*color;
+  outCd.a = 1.0;
   
-	gl_FragData[0] = outCd;
-    gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-  //gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
-	gl_FragData[1] = vec4(vec3(0.0),1.0);
+  // Isolate Block Highlight Outlight
+  float blockSelect = step(color.r*color.g*color.b, .01)*.4;
+  float outlineMult = (isEyeInWater*.3 +.01) * blockSelect;
+  
+#ifdef NETHER
+  outlineMult += .12*blockSelect;
+  blockSelect *= .1;
+#endif
 
+  //outCd.rgb = vec3(blockSelect);
+	gl_FragData[0] = outCd;
+  gl_FragData[1] = vec4(1.0, 0.0, 0.0, blockSelect);
+  gl_FragData[2] = vec4(vec3(0.5), blockSelect);
+	gl_FragData[3] = vec4(0.0,0.0,outlineMult,blockSelect);
+  
 }
 #endif

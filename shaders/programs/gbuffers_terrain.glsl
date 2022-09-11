@@ -506,7 +506,8 @@ void main() {
     vec4 txCd;
     // TODO : There's gotta be a better way to do this...
     if( DetailBluring > 0 ){
-        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.0005, DetailBluring*2.0 );
+        //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.0005, DetailBluring*2.0 );
+        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.001, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
     }else{
       txCd = texture2D(texture, tuv);
@@ -614,8 +615,10 @@ void main() {
     
     
 
-    
     vec4 lightBaseCd = texture2D(lightmap, luv);
+    float blackLevelShift = .05 * (1.0-lightBaseCd.r);
+    blackLevelShift = .05 * (1.0-lightBaseCd.r);
+    lightBaseCd = lightBaseCd*(1.0+blackLevelShift)-blackLevelShift;
     vec3 lightCd = lightBaseCd.rgb;//*vLightingMult; 
     
     vec4 blockLumVal =  vec4(1,1,1,1);
@@ -891,28 +894,9 @@ void main() {
     outCd.b = ( cdGatherBlue.x + cdGatherBlue.y + cdGatherBlue.z + cdGatherBlue.w ) * .25;
     outCd.a = 1.0;
     */
-    //outCd.rgb = vec3( vUVMinMax.xy,0.0);
-    //outCd.r = (texcoord.x-vUVMinMax.x) / (vUVMinMax.z-vUVMinMax.x);
-    //outCd.g = (texcoord.y-vUVMinMax.y) / (vUVMinMax.w-vUVMinMax.y);
-    //outCd.rg = abs(vUVMinMax.xy);
-    //outCd.rg = localUV;
-    //outCd.rgb = vec3(step(localUV.x, 0.0));
-    //outCd.rg = tuv;
     
-    //outCd.rgb=vec3(vCrossBlockCull);
-    //outCd.rgb=normalize(vLocalPos.xyz);
     outCd.a*=vAlphaMult;
     
-    
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), depthDetailing*vDepthAvgColorInf);
-    //float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf));
-    //float depthBias = biasToOne(depth, 4.5);
-    //float depthDetailing = clamp(1.195-depthBias*1.25, 0.0, 1.0);
-    //outCd.rgb = vec3(depthDetailing*vDepthAvgColorInf);
-    //outCd.rgb *= skyBrightMultFit;
-    //outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
-    //depthBias * surfaceShading * depthDetailing * .5;
-    //outCd.rgb=avgShading.rgb;
     
     
     gl_FragData[0] = outCd;

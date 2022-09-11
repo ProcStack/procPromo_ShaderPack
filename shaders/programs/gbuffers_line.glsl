@@ -13,10 +13,8 @@ attribute vec4 mc_Entity;
 void main() {
 
 	vNormal = normalize(gl_NormalMatrix * gl_Normal);
-  
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
-	gl_Position = gl_ProjectionMatrix * position;
+	gl_Position = ftransform();
 
 	color = gl_Color;
 
