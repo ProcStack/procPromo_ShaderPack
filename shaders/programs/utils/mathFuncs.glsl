@@ -41,6 +41,15 @@ float biasToOne( float value, float bias ){
   return 1.0-(1.0-min(1.0,value*bias))*(1.0-min(1.0,value*bias));
 }
 
+float maxValue(vec2 val){
+  return max(val.x,val.y);
+}
+float maxValue(vec3 val){
+  return max(val.x,max(val.y,val.z));
+}
+float maxValue(vec4 val){
+  return max(val.x,max(val.y,max(val.z,val.w)));
+}
 
 
 

@@ -155,7 +155,6 @@ const int gnormalFormat = RGB10_A2;
 #include "utils/texSamplers.glsl"
 
 uniform sampler2D texture;
-uniform sampler2D colortex5; // Minecraft Vanilla Glow Atlas
 uniform sampler2D lightmap;
 uniform sampler2DShadow shadow;
 uniform sampler2D normals;
@@ -198,7 +197,7 @@ void main() {
   vec2 tuv = texcoord.st;
   //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
   vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
-  float glowInf = texture2D(colortex5, texcoord.st).x;
+  float glowInf = 0.0;
   
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);

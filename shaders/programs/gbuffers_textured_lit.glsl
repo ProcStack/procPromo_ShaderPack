@@ -50,7 +50,6 @@ const int gnormalFormat = RGB10_A2;
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
-uniform sampler2D colortex5; // Minecraft Vanilla Glow Atlas
 uniform sampler2D lightmap;
 uniform vec2 texelSize;
 

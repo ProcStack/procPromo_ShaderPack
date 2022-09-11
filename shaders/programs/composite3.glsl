@@ -1,5 +1,5 @@
 
-// Glow Color down res pass; 20% res
+// Glow Color down res pass; 30% res
 
 #ifdef VSH
 varying vec2 texcoord;

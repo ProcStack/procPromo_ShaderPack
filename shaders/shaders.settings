@@ -1,4 +1,6 @@
 
+#define BaseQuality 1 // Reduce the ammount of texture bluring samples, heavier math functions, and other general performance slow downs; Low/Mid/High Quality [0 1 2]
+
 #define DetailBluring 1.0  //Detail Bluring [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
 #define EdgeShading 1.0    //Visibility of Brightness/Darkness in Edges [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
 #define LightingBrightness 1.0    //Brightness multiplier of block lighting [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
@@ -9,5 +11,7 @@
 #define UnderWaterBlur true    //Toggle Bluring & Warping while under water [true false]
 #define SolidLeaves true    //Toggle Solid Leaf Color [true false]
 #define GreyWorld false    //Toggle Greyscale Land [true false]
+#define DebugView false    //Toggle Debugging Colors & Effects [true false]
 
 const int shadowMapResolution = 2048; //Size of the texture generated for shadows (Lower for speed, Higher for detail) [512 1024 2048 4096 8192]
+

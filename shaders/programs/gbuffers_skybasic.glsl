@@ -2,11 +2,13 @@
 #ifdef VSH
 #include "/shaders.settings"
 
-uniform mat4 gbufferModelViewInverse;
+uniform int renderStage;
+
 varying vec4 texcoord;
-varying vec4 color;
 varying vec4 lmcoord;
+varying vec4 vColor;
 varying vec3 vNormal;
+varying float vAmbiance;
 
 attribute vec4 mc_Entity;
 
@@ -19,15 +21,20 @@ void main() {
 
 	gl_Position = gl_ProjectionMatrix * position;
 
-	color = gl_Vertex;//*step(1.0,(gl_Vertex.y+60.0)*.015);//*step(0.0, gl_Vertex.y);
+	vColor = gl_Vertex;//*step(1.0,(gl_Vertex.y+60.0)*.015);//*step(0.0, gl_Vertex.y);
 
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	//texcoord = gl_MultiTexCoord0;
-
 	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 	
   float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
   lmcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
+  
+  vAmbiance = 1.0;
+  
+  if(renderStage == MC_RENDER_STAGE_STARS) {
+    vAmbiance = 0.0;
+    vColor = vec4(1.0);
+  }
   
 	gl_FogFragCoord = gl_Position.z;
 }
@@ -51,10 +58,11 @@ uniform vec3 skyColor;
 uniform float viewHeight;
 uniform float viewWidth;
 
-varying vec4 color;
-varying vec3 vNormal;
 varying vec4 texcoord;
 varying vec4 lmcoord;
+varying vec4 vColor;
+varying vec3 vNormal;
+varying float vAmbiance;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
@@ -64,10 +72,7 @@ uniform int fogMode;
 
 void main() {
   
-  //vec2 tuv = texcoord.st;
-  //vec4 txCd = texture2D(texture, texcoord.st);
-    
-  vec4 outCd = color;
+  vec4 outCd = vColor;
   vec2 luv = lmcoord.zw;
   vec4 lightCd = texture2D(lightmap, luv);
   
@@ -82,8 +87,11 @@ void main() {
   vec3 fogCd = mix( fogColor, vec3(skyGrey*.5), rainStrength);
 
   outCd.rgb = mix(fogCd, skyCd, upDot);
+  
+  outCd.rgb = mix( vColor.rgb, outCd.rgb, vAmbiance );
+  
+  //outCd = texture2D(lightmap, texcoord.xy);
 
-    
     
 	gl_FragData[0] = outCd;
     //gl_FragData[1] = vec4(vec3( 0.0 ), 1.0);

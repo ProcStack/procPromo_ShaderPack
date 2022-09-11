@@ -112,7 +112,6 @@ void main() {
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
   vec4 outCd = texture2D(texture, texcoord.st);
-  //outCd.rgb *= lightCol;
   outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
   outCd.rgb *= vec3(toUpFitted);
   outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));

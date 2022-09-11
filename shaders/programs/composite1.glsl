@@ -1,6 +1,6 @@
 
 // Glow Color down res pass; 40% res
-//   Output - colortex10
+//   Output - colortex8
 
 #ifdef VSH
 

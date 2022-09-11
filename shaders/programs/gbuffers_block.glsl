@@ -8,7 +8,6 @@
 
 uniform sampler2D texture;
 uniform vec3 sunVec;
-uniform vec4 lightCol;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
@@ -193,7 +192,7 @@ texcoordmid=midcoord;
   #endif
 
 	gl_Position = toClipSpace3(position);
-	float diffuseSun = clamp(dot(normal,sunVec)*lightCol.a,0.0,1.0);
+	float diffuseSun = clamp(dot(normal,sunVec),0.0,1.0);
 
 
 	shadowPos.x = 1e30;
@@ -275,11 +274,6 @@ texcoordmid=midcoord;
     vAltTextureMap = 0.0;
 
   }
-  if (mc_Entity.x == 802){
-    vGlowMultiplier = 0.0;
-    color.rgb=vec3(1.0,0.0,0.0);
-    vColorOnly=1.001;
-  }
   
 
   color.a = diffuseSun*gl_MultiTexCoord1.y;
@@ -322,7 +316,6 @@ const int gnormalFormat = RGB10_A2;
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
-uniform sampler2D colortex5; // Minecraft Vanilla Glow Atlas
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int fogMode;
 uniform vec3 fogColor;
@@ -343,7 +336,6 @@ uniform sampler2DShadow shadow;
 uniform sampler2DShadow shadowtex0;
 uniform sampler2DShadow shadowtex1;
 
-uniform vec4 lightCol;
 uniform vec2 texelSize;
 
 uniform int worldTime;
@@ -461,7 +453,7 @@ void main() {
     float blockShading = diffuseSun * (sin( colorValue*PI*.5 )*.5+.5);
     
 		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*texelSize).xyz;
-		vec3 diffuseLight = mix(lightCol.rgb, vec3(1,1,1),.7)*blockShading;// * lightmapcd;
+		vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.7)*blockShading;// * lightmapcd;
     vec3 lightingHSV = rgb2hsv(diffuseLight);
     
     vec2 tuv = texcoord.st;
@@ -470,7 +462,7 @@ void main() {
     }
     vec2 luv = lmcoord.st;
 
-    float glowInf = texture2D(colortex5, tuv).x;
+    float glowInf = 0.0;
     vec3 glowCd = vec3(0,0,0);
 
 
@@ -579,7 +571,6 @@ void main() {
     //glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
     //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
     glowHSV.z *= vGlowMultiplier * glowValueMult;
-
 
 
     gl_FragData[0] = outCd;
