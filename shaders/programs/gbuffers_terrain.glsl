@@ -294,7 +294,7 @@ void main() {
     texcoord.zw = texcoord.st;
     vAltTextureMap = 0.0;
     vAvgColor*=vColor;
-    vDepthAvgColorInf=.8;
+    vDepthAvgColorInf=vColor.r;
   }
   
   
@@ -672,7 +672,7 @@ void main() {
 
     surfaceShading *= mix( moonPhaseMult, dot(sunVecNorm,vNormal), dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
-    surfaceShading *= 1.0-(rainStrength*.9+.1);
+    surfaceShading *= 1.0-(rainStrength*.8+.2);
     
     //toFogColor*=lightCol.rgb;
     
@@ -818,6 +818,7 @@ void main() {
     //blockShading = max( blockShading, lightLuma );// lightLuma is lightCd
     
     
+    glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
 #ifdef OVERWORLD
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
     // Biome & Snow Glow when in a Cold Biome - -- --
@@ -828,7 +829,9 @@ void main() {
     //cdBrightness *= cdBrightness;
     //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
     outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight)*(1.0-rainStrength)*skyBrightnessMult;
-    outCd.rgb *= 1.0-rainStrength*.35*skyBrightnessMult*(1.0-vIsLava);
+    
+    float surfaceLitRainInf = 1.0-max(0.0, lightmapcd.r-.9)*2.0*depthBias;
+    outCd.rgb *= 1.0-rainStrength*.35*skyBrightnessMult*(1.0-vIsLava)*surfaceLitRainInf;
     
     
     // -- -- -- -- -- -- -- -- -- -- -- 
@@ -842,7 +845,6 @@ void main() {
 #endif
     
     
-    glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
     
     glowCd += outCd.rgb+(outCd.rgb+.1)*glowInf;
 
