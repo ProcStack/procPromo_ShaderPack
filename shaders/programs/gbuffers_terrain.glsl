@@ -725,7 +725,7 @@ void main() {
 
 #ifdef OVERWORLD
     
-    float sunPhaseMult = 1.0-max(0.0,dot( sunVecNorm, upVecNorm)*.8+.2);
+    float sunPhaseMult = 1.0-max(0.0,dot( sunVecNorm, upVecNorm)*.65+.35);
     sunPhaseMult = 1.0-(sunPhaseMult*sunPhaseMult*sunPhaseMult);
     
     skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
@@ -771,7 +771,7 @@ void main() {
     // Reds drive a stronger color tone in blocks
     float colorRed = outCd.r;
     outCd.g = mix( outCd.g, min(1.0,outCd.g*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
-    outCd.b = mix( outCd.b, min(1.0,outCd.b*1.3), min(1.0, abs(1.0-colorRed-.5)*20.0) );
+    outCd.b = mix( outCd.b, min(1.0,outCd.b*1.5), min(1.0, abs(1.0-colorRed-.5)*30.0) );
 
     outCd.rgb = hsv2rgb(outCd.rgb);
 #endif

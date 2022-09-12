@@ -146,7 +146,7 @@ void main() {
   
   // Nether Portal
   if (mc_Entity.x == 705){
-    vTextureInf = 0.0;
+    vTextureInf = 1.0;
     vTextureGlow = 0.5;
     avgCd = texture2D(texture, mc_midTexCoord.st);
     color*=avgCd*.5+.5;
@@ -211,7 +211,7 @@ void main() {
   //vec4 txCd = diffuseSample( texture, tuv, texelSize, 0.0 );
   //vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize-.0005, 1.0 );
   //vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*0.50 );
-  //vec4 txCd = texture2D(texture, tuv);// diffuseSampleNoLimit( texture, tuv, texelSize );
+  vec4 txCd = texture2D(texture, tuv);// diffuseSampleNoLimit( texture, tuv, texelSize );
   
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);
@@ -222,12 +222,7 @@ void main() {
   vec4 outCd = lightCd;
   //outCd.rgb *= color.rgb;
   outCd *= color;
-  //outCd.a = max(0.0, txCd.a-(lightCd.a-.5)*.3);
-  //float txLuma = luma(txCd.rgb);
-  //outCd.rgb*=mix(1.0,txLuma,vTextureInf);
-  //outCd.rgb*=txCd.rgb;//+0.5;
-  //outCd.rgb*=mix(color.rgb, txCd.rgb, .5);//+0.5;
-  //outCd.a*=txCd.a;
+  outCd*= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
   
 
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
