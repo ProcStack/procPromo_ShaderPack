@@ -344,17 +344,16 @@ void main() {
   if( mc_Entity.x == 801 ||  mc_Entity.x == 811 || mc_Entity.x == 8013 ){
     texcoord.zw = texcoord.st;
     vAltTextureMap = 0.0;
+    vColorOnly = mc_Entity.x == 801 ? 0.65 : 0.0;
+    vColorOnly = mc_Entity.x == 811 ? vColor.b*.5 : vColorOnly;
     vAvgColor*=vColor;
     vDepthAvgColorInf=vColor.r;
-    vColorOnly = mc_Entity.x == 801 ? 0.65 : 0.0;
   }
 
   if( mc_Entity.x == 802 ){
     //vAltTextureMap = 0.0;
-    //vAvgColor*=vColor;
+    vAvgColor*=vColor;
     vDepthAvgColorInf=0.0;
-    //vColorOnly = mc_Entity.x == 801 ? 0.65 : 0.0;
-    //vFinalCompare = .8;
   }
 
   
@@ -570,11 +569,7 @@ void main() {
     vec4 txCd;
     // TODO : There's gotta be a better way to do this...
     if( DetailBluring > 0 ){
-        //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.0005, DetailBluring*2.0 );
-        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.001, DetailBluring*2.0 );
-        //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize*0.0, DetailBluring*2.0 );
-        //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
-        //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
+        txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
     }else{
       txCd = texture2D(texture, tuv);
     }
@@ -708,7 +703,7 @@ void main() {
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
     float avgColorMix = depthDetailing*vDepthAvgColorInf;
     avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly+((1.0-vFinalCompare)*step(.5,vAvgColor.r)*.10)));
 
     float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
     outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
@@ -980,12 +975,14 @@ void main() {
     
     vec3 outCdHSV = rgb2hsv(outCd.rgb);
     vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
-    outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare), outCdHSV.gb) );
+    outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,vAvgColor.r)), outCdHSV.gb) );
     
     //outCd.rgb = vAvgColor.rgb;
     //outCd.rgb = vec3(vColorOnly);
     //outCd.rgb = vec3(vCrossBlockCull);
     //outCd.rgb = vec3(vCamViewVec);
+    //outCd.rgb = vec3();
+//    outCd.rgb = vec3(vColor.rgb);
     
     
     gl_FragData[0] = outCd;
