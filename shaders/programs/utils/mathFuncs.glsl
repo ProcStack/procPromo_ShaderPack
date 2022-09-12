@@ -41,16 +41,27 @@ float biasToOne( float value, float bias ){
   return 1.0-(1.0-min(1.0,value*bias))*(1.0-min(1.0,value*bias));
 }
 
-float maxValue(vec2 val){
+// Return max vector component
+float maxComponent(vec2 val){
   return max(val.x,val.y);
 }
-float maxValue(vec3 val){
+float maxComponent(vec3 val){
   return max(val.x,max(val.y,val.z));
 }
-float maxValue(vec4 val){
+float maxComponent(vec4 val){
   return max(val.x,max(val.y,max(val.z,val.w)));
 }
 
+// Add all of a vectors component values together
+float addComponents(vec2 val){
+  return val.x+val.y;
+}
+float addComponents(vec3 val){
+  return val.x+val.y+val.z;
+}
+float addComponents(vec4 val){
+  return val.x+val.y+val.z+val.w;
+}
 
 
 

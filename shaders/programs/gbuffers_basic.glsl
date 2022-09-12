@@ -60,8 +60,8 @@ void main() {
   outCd.a = 1.0;
   
   // Isolate Block Highlight Outlight
-  float blockSelect = step(color.r*color.g*color.b, .01)*.4;
-  float outlineMult = (isEyeInWater*.3 +.01) * blockSelect;
+  float blockSelect = step(color.r*color.g*color.b, .01)*.65;
+  float outlineMult = (isEyeInWater*.3 +.03) * blockSelect;
   
 #ifdef NETHER
   outlineMult += .12*blockSelect;

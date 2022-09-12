@@ -15,6 +15,7 @@ const float eyeBrightnessHalflife = 4.0f;
 uniform sampler2D texture;
 uniform vec3 sunVec;
 uniform mat4 gbufferModelView;
+uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 shadowModelView;
@@ -71,6 +72,8 @@ varying vec3 shadowOffset;
 
 varying vec4 vPos;
 varying vec4 vLocalPos;
+varying vec4 vWorldPos;
+varying vec3 vModelPos;
 varying vec3 vNormal;
 varying vec2 vTexelSize;
 varying vec4 vUVMinMax;
@@ -82,6 +85,7 @@ varying float vCrossBlockCull;
 varying float vAlphaMult;
 varying float vAlphaRemove;
 
+varying vec3 vCamViewVec;
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
 
@@ -94,6 +98,8 @@ varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
 varying float vDepthAvgColorInf;
+varying float vFinalCompare;
+varying float vColorOnly;
 
 // -- Chocapic13 HighPerformance Toaster --
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
@@ -109,8 +115,14 @@ void main() {
 	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
 	lmtexcoord.xy = gl_MultiTexCoord0.xy;
   vWorldNormal = gl_Normal;
+  vNormal = normalize(normal);
   vAnimFogNormal = gl_NormalMatrix*vec3(1.0,0.0,0.0);
   
+  vModelPos = gl_Vertex.xyz;//(gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(0.0,0.0,0.0,1.0)).xyz;
+  vModelPos = gl_ModelViewMatrix[3].xyz;//(gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(0.0,0.0,0.0,1.0)).xyz;
+  vModelPos = (gl_ModelViewMatrix * vec4(0.0,0.0,0.0,1.0)).xyz;
+  
+  vCamViewVec =  normalize((mat3(gl_ModelViewMatrix) * normalize(vec3(-1.0,0.0,.0)))*vec3(1.0,0.0,1.0));
   
   // -- -- -- -- -- -- -- --
   
@@ -120,8 +132,8 @@ void main() {
 	dayNight = dot(sunVecNorm,upVecNorm);
 
   vLocalPos = gl_Vertex;
-  vPos = gl_ProjectionMatrix * gl_Vertex;
-	gl_Position = vPos;
+  vWorldPos = gl_ProjectionMatrix * gl_Vertex;
+	gl_Position = vWorldPos;
 
   vPos = vec4(position,1.0);
   
@@ -145,6 +157,7 @@ void main() {
   
   
   // Texture Atlas Min/Max UV Range
+  /*
   vec2 uvRotBase=(texcoord).xy - mc_midTexCoord;
   vec2 uvRotated = uvRotBase;
   uvRotated.x = cos(uvRotBase.x + PI) - sin(uvRotBase.y + PI);
@@ -156,6 +169,7 @@ void main() {
       max( uvRotated.x, uvRotBase.x ),
       max( uvRotated.y, uvRotBase.y )
     );
+    */
   
   
   float avgBlend = .3;
@@ -199,7 +213,6 @@ void main() {
 	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
   
-  vNormal = normalize(normal);
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
@@ -235,11 +248,15 @@ void main() {
 
   // -- -- -- -- -- -- -- --
   
+  // TODO : Move as MUCH as possible to Uniforms
+  //          Using Optifine's `shader.properties` Variables + Block.Ids to derive Uniforms
   
   vAlphaMult=1.0;
   vIsLava=0.0;
   vCdGlow=0.0;
-  vCrossBlockCull=0.5;
+  vCrossBlockCull=0.0;
+  vColorOnly=0.0;
+  vFinalCompare = mc_Entity.x == 811 ? 0.0 : 1.0;
 
   blockFogInfluence = 1.0;
   if (mc_Entity.x == 803){
@@ -252,9 +269,10 @@ void main() {
     blockFogInfluence = 1.0;
   }
 
-  /*
   // Single plane cross blocks;
   //   Grass, flowers, etc.
+  /*
+  vCamViewVec=vec3(0.0);
   if (mc_Entity.x == 801){
     //vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(vPos.x, 0.0, vPos.z)) ));
     vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(1.0, 0.0, 1.0)) ));
@@ -268,8 +286,42 @@ void main() {
     float alphaStep = abs(vCrossBlockCull-.5)-.2;
 
     vCrossBlockCull=step( .0, alphaStep );
+    float blerg = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),vec3(0.707107,0.0,0.707107) ));
+    blerg = step(.5, abs(dot(vec3(vCamViewVec.x, 0.0, vCamViewVec.z),vec3(0.707107,0.0,0.707107) )) );
+    //blerg = normalize(vec3(vPos.x, 0.0, vPos.z));
+    //blerg = dot( normalize((cameraPosition - gl_ModelViewMatrix[3].xyz)*vec3(1.0,0.0,1.0)), vec3(0.707107,0.0,0.707107) );
+    //vCrossBlockCull=blerg;
+    //vCamViewVec = normalize( gl_Vertex.xyz );
+    //vCamViewVec = normalize((gbufferProjection[3].xyz)*vec3(1.0,0.0,1.0));
+  vec3 crossNorm = abs(normalize((vWorldNormal.xyz)*vec3(1.0,0.0,1.0)));
+  //vCamViewVec = normalize((vCamViewVec.xyz)*vec3(1.0,0.0,1.0));
+  //vCamViewVec = vec3( abs(dot(vCamViewVec,crossNorm)) );
+  //  vCamViewVec = vec3( abs(dot(vCamViewVec,crossNorm)) );
+    vCamViewVec = vec3( abs(dot(vCamViewVec,crossNorm)) );
+    vCamViewVec = cross(vCamViewVec,crossNorm);
+    vCamViewVec = vec3( abs(dot( cross(vCamViewVec,crossNorm), vec3(0.707107,0.0,0.707107) )) );
+    //vCamViewVec = vec3( step(.5, abs(dot(vec3(vNormal.x, 0.0, vCamViewVec.z),vec3(0.707107,0.0,0.707107) )) ) );
+    
+//    gl_NormalMatrix * gl_Normal;
+    vCamViewVec = vec3( dot( gl_NormalMatrix* gl_Normal, gl_Normal ) );
     //vCrossBlockCull=step( .5, vCrossBlockCull );
-    vAlphaMult=vCrossBlockCull;
+    
+    
+    
+  //position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+    
+    vCamViewVec = mat3(gbufferModelViewInverse) * vec3(0.0,0.0,1.0) + gbufferModelViewInverse[3].xyz;
+    vCamViewVec = inverse(gl_NormalMatrix) * normalize( vCamViewVec*vec3(1.0,0.0,1.0) );
+    vec4 refPos = (gbufferProjectionInverse * gbufferModelViewInverse * gl_Vertex)*.5;
+
+    vec3 crossRefVec = normalize( ( vWorldPos.xyz, refPos.xyz )*vec3(1.0,0.0,1.0) );
+    vec3 wNormRefVec = normalize( vWorldNormal*vec3(1.0,0.0,1.0) );
+    //vCrossBlockCull = 1.0-abs(dot( crossRefVec, wNormRefVec ));
+    //vCamViewVec = vec3( step( vCrossBlockCull, .5 ) );
+    vCamViewVec = mat3(gbufferModelViewInverse) * gl_Normal;
+    vCamViewVec = mat3(gbufferProjection) * gl_Normal;
+    //vCamViewVec = gl_Normal;
+    //vAlphaMult=vCrossBlockCull;
   }
   */
   
@@ -288,14 +340,23 @@ void main() {
   texcoord.zw = texcoord.st;
   vDepthAvgColorInf = 1.0;
 
-  
-  // TODO : Remove all the daggon ifs somehow
-  if( mc_Entity.x == 801 || mc_Entity.x == 811 || mc_Entity.x == 8013 ){
+
+  if( mc_Entity.x == 801 ||  mc_Entity.x == 811 || mc_Entity.x == 8013 ){
     texcoord.zw = texcoord.st;
     vAltTextureMap = 0.0;
     vAvgColor*=vColor;
     vDepthAvgColorInf=vColor.r;
+    vColorOnly = mc_Entity.x == 801 ? 0.65 : 0.0;
   }
+
+  if( mc_Entity.x == 802 ){
+    //vAltTextureMap = 0.0;
+    //vAvgColor*=vColor;
+    vDepthAvgColorInf=0.0;
+    //vColorOnly = mc_Entity.x == 801 ? 0.65 : 0.0;
+    //vFinalCompare = .8;
+  }
+
   
   
   
@@ -472,13 +533,16 @@ varying vec3 shadowOffset;
 varying float vAlphaMult;
 varying float vAlphaRemove;
 varying float vAltTextureMap;
+varying float vColorOnly;
 
+varying vec3 vCamViewVec;
 varying vec4 vPos;
 varying vec4 vLocalPos;
+varying vec4 vWorldPos;
+varying vec3 vModelPos;
 varying vec3 vNormal;
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
-
 
 varying vec4 vAvgColor;
 varying float vCrossBlockCull;
@@ -487,6 +551,7 @@ varying float vIsLava;
 varying float vLightingMult;
 varying float vCdGlow;
 varying float vDepthAvgColorInf;
+varying float vFinalCompare;
 
 
 void main() {
@@ -496,7 +561,6 @@ void main() {
       tuv = texcoord.zw;
     }
     vec2 luv = lmcoord.st;
-
 
     float isLava = vIsLava;
     vec4 avgShading = vAvgColor;
@@ -508,6 +572,8 @@ void main() {
     if( DetailBluring > 0 ){
         //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.0005, DetailBluring*2.0 );
         txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize-.001, DetailBluring*2.0 );
+        //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize*0.0, DetailBluring*2.0 );
+        //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, vTexelSize*vec2(3.75,2.1)*DetailBluring );
     }else{
       txCd = texture2D(texture, tuv);
@@ -523,11 +589,12 @@ void main() {
     float glowInf = 0.0;
     vec3 glowCd = vec3(0,0,0);
     glowCd = txCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
-    glowInf = max(0.0, maxValue(txCd.rgb)*1.5-1.0)*vCdGlow;
+    glowInf = max(0.0, maxComponent(txCd.rgb)*1.5-1.0)*vCdGlow;
     
     
     // Screen Space UVing and Depth
     // TODO : Its a block game.... move the screen space stuff to vert stage
+    //          Vert interpolation is good enough
     vec2 screenSpace = (vPos.xy/vPos.z);
     float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
@@ -617,7 +684,7 @@ void main() {
 
     vec4 lightBaseCd = texture2D(lightmap, luv);
     float blackLevelShift = .05 * (1.0-lightBaseCd.r);
-    blackLevelShift = .05 * (1.0-lightBaseCd.r);
+    blackLevelShift = (.1-LightBlackLevel) * (1.0-lightBaseCd.r);
     lightBaseCd = lightBaseCd*(1.0+blackLevelShift)-blackLevelShift;
     vec3 lightCd = lightBaseCd.rgb;//*vLightingMult; 
     
@@ -641,7 +708,7 @@ void main() {
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
     float avgColorMix = depthDetailing*vDepthAvgColorInf;
     avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), avgColorMix);
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
 
     float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
     outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
@@ -703,6 +770,7 @@ void main() {
     //          Since I'm mixing saturation and value,
     //            This seems a bit overkill to convert rgb -> hsv -> rgb
     //          Multiply the color vector evenly
+    //          Learn some gat'dahhhm 3 phase color frequency math!
     outCd.rgb = rgb2hsv(outCd.rgb);
     
     // Reds drive a stronger color tone in blocks
@@ -722,6 +790,10 @@ void main() {
     // -- -- -- -- -- -- -- -- -- -- --
     outCd.rgb *=  lightLuma + glowInf + vCdGlow;
 
+    // Used for correcting blended colors post environment influences
+    // This shouldn't be needed, but blocks like Grass or Birch Log/Wood are persnickety
+    vec3 outCdAvgRef = outCd.rgb;
+    vec3 avgCdRef = vAvgColor.rgb * (lightLuma + glowInf + vCdGlow);
 
     // -- -- -- -- -- -- --
 
@@ -897,6 +969,23 @@ void main() {
     
     outCd.a*=vAlphaMult;
     
+    //outCd.rgb = vAvgColor.rgb;
+    //vec3 cdToAvgDelta = (outCdAvgRef.rgb - avgCdRef.rgb)*1.5; // Color deltas for subtle differences
+    //cdToAvgDelta = max(cdToAvgDelta, outCdAvgRef.rgb - txCd.rgb); // Strong color changes, ie birch black bark markings
+    vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
+    float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta )*2.0);
+    //outCd.rgb = mix( outCd.rgb, outCdAvgRef.rgb, max(0.0,(cdToAvgBlender-depthBias*.5)*(1.0-vColorOnly*2.0)) );
+    outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
+    //outCd.rgb = mix( vAvgColor.rgb * (luma(outCd.rgb)*.3+.7), outCd.rgb, vFinalCompare);
+    
+    vec3 outCdHSV = rgb2hsv(outCd.rgb);
+    vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
+    outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare), outCdHSV.gb) );
+    
+    //outCd.rgb = vAvgColor.rgb;
+    //outCd.rgb = vec3(vColorOnly);
+    //outCd.rgb = vec3(vCrossBlockCull);
+    //outCd.rgb = vec3(vCamViewVec);
     
     
     gl_FragData[0] = outCd;

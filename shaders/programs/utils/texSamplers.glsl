@@ -93,9 +93,9 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
     //delta = delta * length(sampleCd.rgb - curCd.rgb);
     //delta *= step(curHSV.r,.9)*step(.5,curHSV.g)*step(.5,curHSV.b);//*curHSV.b;
     //delta *= step(.85,curHSV.r)*step(.4,curHSV.b);
-    //delta *= step(.6,curHSV.b);
-    //delta *= step(.85,curHSV.r);
-    delta *= curHSV.r*curHSV.g*curHSV.b;//*curHSV.b;
+    delta *= step(.4,curHSV.b);
+    delta *= step(.5,curHSV.r);
+    delta *= curHSV.r*curHSV.g;//*curHSV.b;//*curHSV.b;
   //delta *= curHSV.g*.5;//curHSV.r*curHSV.g*curHSV.b;//*curHSV.b;
     delta *= delta * delta ;
     delta *= sampleCd.a * curCd.a;

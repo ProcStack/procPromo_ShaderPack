@@ -71,7 +71,7 @@ void main() {
 	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = texcoord.xy-midcoord;
   texmidcoord = midcoord;
-	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
+	vtexcoordam.pq = abs(texcoordminusmid)*3.0;
 	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
 	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
@@ -100,51 +100,56 @@ void main() {
   vMinAlpha = 0.0;
   
 
-  vec2 txlquart;
-  vec3 avgValue;
+  //vec2 txlquart = texelSize*8.0;
+  vec2 txlquart = texelSize*4.0;
+  vec4 avgCd;
+  float avgValue;
 
   // Lava
-  if (mc_Entity.x == 701){
-    //color.rgb=avgValue;
-  }
+  //if (mc_Entity.x == 701){
+    //color.rgb=avgCd;
+  //}
   // Flowing Lava
   if (mc_Entity.x == 702){
-    txlquart = texelSize*8.0;
-    avgValue = texture2D(texture, mc_midTexCoord.st).xyz;
-    //avgValue += texture2D(texture, mc_midTexCoord.st+txlquart).x;
-    //avgValue += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y)).x;
-    //avgValue += texture2D(texture, mc_midTexCoord.st-txlquart).x;
-    //avgValue += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y)).x;
-    //avgValue *= .2;
-    //color.rgb *= vec3(.3,.3,.5)*avgValue;
+    avgCd = texture2D(texture, mc_midTexCoord.st);
+    avgCd += texture2D(texture, mc_midTexCoord.st+txlquart);
+    avgCd += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y));
+    avgCd += texture2D(texture, mc_midTexCoord.st-txlquart);
+    avgCd += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y));
+    avgCd *= .2;
+    //avgCd *= .5;
+    //color.rgb *= vec3(.3,.3,.5)*avgCd;
   
-    color.rgb *= avgValue*.3+.7;
+    color *= avgCd;//*.3+.7;
   }
   
   // Water
-  //if (mc_Entity.x == 703){
+  if (mc_Entity.x == 703){
+    avgCd = texture2D(texture, mc_midTexCoord.st);
+    avgCd += texture2D(texture, mc_midTexCoord.st+txlquart);
+    avgCd *= .5;
     //color.rgb=vec3(.35,.35,.85);
-  //}
+    color = color*avgCd;
+  }
   // Flowing Water
   if (mc_Entity.x == 704){
-    txlquart = texelSize*8.0;
-    avgValue = texture2D(texture, mc_midTexCoord.st).xyz;
-    //avgValue += texture2D(texture, mc_midTexCoord.st+txlquart).x;
-    //avgValue += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y)).x;
-    //avgValue += texture2D(texture, mc_midTexCoord.st-txlquart).x;
-    //avgValue += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y)).x;
-    //avgValue *= .2;
-    //color.rgb *= vec3(.3,.3,.5)*avgValue;
+    avgCd = texture2D(texture, mc_midTexCoord.st);
+    //avgCd += texture2D(texture, mc_midTexCoord.st+txlquart).x;
+    //avgCd += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y)).x;
+    //avgCd += texture2D(texture, mc_midTexCoord.st-txlquart).x;
+    //avgCd += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y)).x;
+    //avgCd *= .2;
+    //color.rgb *= vec3(.3,.3,.5)*avgCd;
     
-    color.rgb *= avgValue*.3+.7;
+    color *= avgCd*.3+.7;
   }
   
   // Nether Portal
   if (mc_Entity.x == 705){
     vTextureInf = 0.0;
     vTextureGlow = 0.5;
-    avgValue = texture2D(texture, mc_midTexCoord.st).xyz;
-    color.rgb*=avgValue*.5+.5;
+    avgCd = texture2D(texture, mc_midTexCoord.st);
+    color*=avgCd*.5+.5;
     vMinAlpha = .5;
   }
   
@@ -204,7 +209,8 @@ void main() {
 
   vec2 tuv = texcoord.st;
   //vec4 txCd = diffuseSample( texture, tuv, texelSize, 0.0 );
-  vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, 1.0 );
+  //vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize-.0005, 1.0 );
+  //vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*0.50 );
   //vec4 txCd = texture2D(texture, tuv);// diffuseSampleNoLimit( texture, tuv, texelSize );
   
   vec2 luv = lmcoord.st;
@@ -219,8 +225,9 @@ void main() {
   //outCd.a = max(0.0, txCd.a-(lightCd.a-.5)*.3);
   //float txLuma = luma(txCd.rgb);
   //outCd.rgb*=mix(1.0,txLuma,vTextureInf);
-  outCd.rgb*=txCd.rgb;//+0.5;
-  outCd.a*=txCd.a;
+  //outCd.rgb*=txCd.rgb;//+0.5;
+  //outCd.rgb*=mix(color.rgb, txCd.rgb, .5);//+0.5;
+  //outCd.a*=txCd.a;
   
 
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
@@ -252,6 +259,7 @@ void main() {
 #else
     glowHSV.z *= vTextureGlow*.7;
 #endif
+
 
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
