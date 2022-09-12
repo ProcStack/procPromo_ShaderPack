@@ -34,7 +34,7 @@ Some issues I've found is that animated textures, like Water, Lava, Nether Porta
 <br/>For some aspects of this, having a uniform shift in Water and Lava looks pretty good, but does have a penchant for being a little nausiating out at sea or lava walking with a strider.
 <br/>(This look and feel is still being worked on.)
 
-Another issue comes from Ores blending to undesirable colors.  For some ores, seeing a solid blue color for lapis at a distance, helps you find blocks at greated distances, but isn't in the vein of minecraft to have such an easy time finding ores.
+Another issue comes from Ores blending to undesirable colors.  For some ores, seeing a solid blue color for lapis at a distance, helps you find blocks at greater distances, but isn't in the vein of minecraft to have such an easy time finding ores.
 <br/>Blending in tones that vary from the found "block color" from the vertex stage is allowing ore block colors to be retained at greater distances.  Iron, Copper, Coal, Diamond, and Redstone's visible colors within stone/deepslate, retain more of their shape, and less solid block color tone.
 <br/>Course lapis is still janky.  Since the locations I'm sampling the block texture in the Vertex stage, is exactly where the lapis blue color shows through.... Fun times...
 <br/>Tweak some values to fix one ore...
@@ -42,6 +42,7 @@ Another issue comes from Ores blending to undesirable colors.  For some ores, se
 
 All of this being said, Optifine does have block color options where I can manually set every block's color specifically for my needs.
 <br/>Paper pushing, book keeping, and tedius monotony... I'll do it anyway...
+<br/>(Hmm, just poked at the block color mapping, I don't think it does what I think it does.)
  
 ---
 
