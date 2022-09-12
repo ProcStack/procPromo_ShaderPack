@@ -95,7 +95,7 @@ void main() {
   
   
   //vTextureInf = step(.1,texcoord.y)*.2+.05;
-  vTextureInf = 0.0;
+  vTextureInf = 1.0;
   vTextureGlow = 0.0;
   vMinAlpha = 0.0;
   
@@ -121,6 +121,7 @@ void main() {
     //color.rgb *= vec3(.3,.3,.5)*avgCd;
   
     color *= avgCd;//*.3+.7;
+    vTextureInf = 0.0;
   }
   
   // Water
@@ -130,6 +131,7 @@ void main() {
     avgCd *= .5;
     //color.rgb=vec3(.35,.35,.85);
     color = color*avgCd;
+    vTextureInf = 0.0;
   }
   // Flowing Water
   if (mc_Entity.x == 704){
@@ -142,11 +144,11 @@ void main() {
     //color.rgb *= vec3(.3,.3,.5)*avgCd;
     
     color *= avgCd*.3+.7;
+    vTextureInf = 0.0;
   }
   
   // Nether Portal
   if (mc_Entity.x == 705){
-    vTextureInf = 1.0;
     vTextureGlow = 0.5;
     avgCd = texture2D(texture, mc_midTexCoord.st);
     color*=avgCd*.5+.5;
