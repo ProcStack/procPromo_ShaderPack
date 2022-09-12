@@ -257,6 +257,7 @@ void main() {
   vCrossBlockCull=0.0;
   vColorOnly=0.0;
   vFinalCompare = mc_Entity.x == 811 ? 0.0 : 1.0;
+  vFinalCompare = mc_Entity.x == 901 ? 0.0 : vFinalCompare;
 
   blockFogInfluence = 1.0;
   if (mc_Entity.x == 803){
@@ -968,7 +969,7 @@ void main() {
     //vec3 cdToAvgDelta = (outCdAvgRef.rgb - avgCdRef.rgb)*1.5; // Color deltas for subtle differences
     //cdToAvgDelta = max(cdToAvgDelta, outCdAvgRef.rgb - txCd.rgb); // Strong color changes, ie birch black bark markings
     vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
-    float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta )*2.0);
+    float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
     //outCd.rgb = mix( outCd.rgb, outCdAvgRef.rgb, max(0.0,(cdToAvgBlender-depthBias*.5)*(1.0-vColorOnly*2.0)) );
     outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
     //outCd.rgb = mix( vAvgColor.rgb * (luma(outCd.rgb)*.3+.7), outCd.rgb, vFinalCompare);
