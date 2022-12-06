@@ -63,6 +63,41 @@ float addComponents(vec4 val){
   return val.x+val.y+val.z+val.w;
 }
 
+// -- -- -- -- -- --
+// Top
+float DeltaDivTo(float s1, float s2, float b){
+  // Second from top
+  float deltaTo = abs(((s1-b)-(s2-b)) / b) - b;
+  //float deltaDivTo = abs((s1-b)*(s2-b) / b)-b;
+  return deltaTo;
+}
+  
+// Second
+float SinTo(float s1, float s2, float p){
+  // Top
+  float sd = (s2-s1);
+  float d = sd*p ;
+  d = clamp(d, -1.0, 1.0) * PI ;
+  float divTo = 1.0-cos( d );
+  return divTo;
+}
+  
+// Third
+float LogPowTo(float s1, float s2, float j){  // j => 0.0 - 1.5
+  float sd = (s2-s1);
+  float logPowTo = 1.0-abs( log(pow(abs(sd),j)) );
+  return logPowTo;
+}
+
+// Bottom
+float PowTo(float s1, float s2, float k){  // k => 0.0 - 9.0
+  float sd = (s2-s1);
+  float powTo = pow(abs(sd),k);
+  return powTo;
+}
+  
+
+// -- -- -- -- -- --
 
 
 /*

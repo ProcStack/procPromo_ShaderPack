@@ -90,6 +90,8 @@ void main() {
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
   
   
+  
+#ifdef OVERWORLD
   float bodyThresh = .125;
   float uvbase = max( abs(fituv.x-.5), abs(fituv.y-.5) );
   float sunBody = step(bodyThresh,uvbase);
@@ -104,7 +106,7 @@ void main() {
   vec3 sunCd = mix( outCd.rgb, vGlowEdgeCd * dfLen, sunBody);
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
-
+#endif
   
 	gl_FragData[0] = outCd;
 	gl_FragData[1] = vec4(vec3(0.0),1.0);

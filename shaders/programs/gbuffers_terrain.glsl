@@ -181,19 +181,22 @@ void main() {
   tmpCd = texture2D(texture, midcoord);
     mixColor = tmpCd.rgb;
     avgDiv += tmpCd.a;
+  #if (BaseQuality > 1)
   tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  /*tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+  #if (BaseQuality == 2)
+  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-    avgDiv += tmpCd.a;*/
-    
+    avgDiv += tmpCd.a;
+  #endif
+  #endif
   //mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
   mixColor = mix( vec3(vColor.rgb), mixColor, step(.1, length(mixColor)) );
 
@@ -694,6 +697,8 @@ void main() {
     //blockLumVal =  vec4( mix((fogColor*.4+.4), lightCd, depth), 1.0);
     //blockLumVal =  vec4( lightCd, 1.0);
     blockLumVal =  vec4( (fogColor*.4+.4), 1.0);
+    float netherScalar = .8;
+    lightCd = 1.0-((1.0-lightCd)*netherScalar);
 #endif
 
     float lightLuma = luma(blockLumVal.rgb);
@@ -910,7 +915,7 @@ void main() {
     // -- -- -- -- -- -- -- -- -- -- -- -- --
     // Brighten blocks when going spelunking
     // TODO: Promote control to Shader Options
-    float skyBrightMultFit = 1.1-skyBrightnessMult*.1*(1.0-frozenSnowGlow);
+    float skyBrightMultFit = min(1.0, 1.1-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
     outCd.rgb *= skyBrightMultFit;
     outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
 #endif
@@ -977,6 +982,10 @@ void main() {
     vec3 outCdHSV = rgb2hsv(outCd.rgb);
     vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
     outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,vAvgColor.r)), outCdHSV.gb) );
+    
+    float blindinglyBrightCd = ( outCd.r * outCd.g * outCd.b );
+    blindinglyBrightCd = max(0.0, 1.0- blindinglyBrightCd*5.0);
+    outCd.rgb *=  mix( (blindinglyBrightCd *LightingBrightness + (1.0-LightingBrightness)), 1.0, LightingBrightness );
     
     //outCd.rgb = vAvgColor.rgb;
     //outCd.rgb = vec3(vColorOnly);
