@@ -94,9 +94,9 @@ void main() {
   float upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
   upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
-  float skyGrey = min(luma(skyColor.rgb),.25)*1.4;
+  float skyGrey = min(luma(skyColor.rgb),.35)*1.4;
   vec3 skyCd = mix( skyColor.rgb, vec3(skyGrey), rainStrength);
-  vec3 fogCd = mix( fogColor, vec3(skyGrey*.5), rainStrength);
+  vec3 fogCd = mix( fogColor, vec3(skyGrey*.65), rainStrength);
 
   outCd.rgb = mix(fogCd, skyCd, upDot);
   

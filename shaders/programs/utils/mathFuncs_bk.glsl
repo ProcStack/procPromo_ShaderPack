@@ -4,27 +4,26 @@
 
 ///https://stackoverflow.com/questions/15095909/from-rgb-to-hsv-in-opengl-glsl
 vec3 rgb2hsv(vec3 c){
-  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
 
-  float d = q.x - min(q.w, q.y);
-  float e = 1.0e-10;
-  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 vec3 hsv2rgb(vec3 c){
-  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-// -- -- -- -- -- --
 
 vec2 rotToUV(vec3 direction){
-  vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y));
-  uv *= vec2(0.1591, 0.3183);
-  uv += 0.5;
-  return uv;
+    vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y));
+    uv *= vec2(0.1591, 0.3183);
+    uv += 0.5;
+    return uv;
 }
 
 vec3 addToGlowPass(vec3 baseCd, vec3 addCd){
@@ -65,14 +64,15 @@ float addComponents(vec4 val){
 }
 
 // -- -- -- -- -- --
-
+// Top
 float DeltaDivTo(float s1, float s2, float b){
   // Second from top
   float deltaTo = abs(((s1-b)-(s2-b)) / b) - b;
   //float deltaDivTo = abs((s1-b)*(s2-b) / b)-b;
   return deltaTo;
 }
-
+  
+// Second
 float SinTo(float s1, float s2, float p){
   // Top
   float sd = (s2-s1);
@@ -81,103 +81,21 @@ float SinTo(float s1, float s2, float p){
   float divTo = 1.0-cos( d );
   return divTo;
 }
-
+  
+// Third
 float LogPowTo(float s1, float s2, float j){  // j => 0.0 - 1.5
   float sd = (s2-s1);
   float logPowTo = 1.0-abs( log(pow(abs(sd),j)) );
   return logPowTo;
 }
 
+// Bottom
 float PowTo(float s1, float s2, float k){  // k => 0.0 - 9.0
   float sd = (s2-s1);
   float powTo = pow(abs(sd),k);
   return powTo;
 }
   
-
-// -- -- -- -- -- --
-
-              
-              
-              
-vec3 srgbToLinear(vec3 sRGB) {
-  vec3 belowCutoff = sRGB * 0.07739938080495357 ;
-  vec3 aboveCutoff = pow((sRGB + 0.055) * 0.9478672985781991, vec3(2.4) );
-  
-  return mix( belowCutoff, aboveCutoff, step(vec3(0.04045), sRGB) );
-}    
-
-
-
-
-mat3 linearToXYZMat = mat3( vec3( 0.4124,  0.3576,  0.1805 ),
-                            vec3( 0.2126,  0.7152,  0.0722 ),
-                            vec3( 0.0193,  0.1192,  0.9505 ) );
-vec3 linearToXYZ( vec3 lin ){
-  return linearToXYZMat * lin ;
-}
-
-
-// CIELAB; the values, L 116 , color a,b  500 and 200
-
-vec3 xyzToLab( vec3 xyz ){
-
-  // White Balancing
-  vec3 labRefWhite = vec3( .95047, 1.0, 1.08883 );
-  vec3 refXYZ = xyz / labRefWhite ;
-  vec3 lab = vec3( 0.0, 0.0, 0.0 );
-      //  1.16 * refXYZ.y - 0.016,
-      //  5.00 * (refXYZ.x - refXYZ.y),
-      //  2.00 * (refXYZ.y - refXYZ.z)
-      //);
-    
-  // hmmm...
-  if (refXYZ.y > 0.008856) {
-    lab.x = 1.16 * pow(refXYZ.y, 1.0 / 3.0) - 0.16;
-  } else {
-    lab.x = 9.033 * refXYZ.y;
-  }
-
-  if (refXYZ.x > 0.008856) {
-    refXYZ.x = pow(refXYZ.x, 1.0 / 3.0);
-  } else {
-    refXYZ.x = (7.787 * refXYZ.x) + (16.0 / 116.0);
-  }
-
-  if (refXYZ.y > 0.008856) {
-    refXYZ.y = pow(refXYZ.y, 1.0 / 3.0);
-  } else {
-    refXYZ.y = (7.787 * refXYZ.y) + (16.0 / 116.0);
-  }
-
-  if (refXYZ.z > 0.008856) {
-    refXYZ.z = pow(refXYZ.z, 1.0 / 3.0);
-  } else {
-    refXYZ.z = (7.787 * refXYZ.z) + (16.0 / 116.0);
-  }
-
-  lab.y = 5.0 * (refXYZ.x - refXYZ.y);
-  lab.z = 2.0 * (refXYZ.y - refXYZ.z);
-  
-  return lab;
-}
-
-
-vec3 rgbToXYZ( vec3 rgb ){
-  vec3 lin = srgbToLinear( rgb );
-  vec3 xyz = linearToXYZ( lin );
-  return xyz;
-}
-
-vec3 rgbToLab( vec3 rgb ){
-  vec3 lin = srgbToLinear( rgb );
-  vec3 xyz = linearToXYZ( lin );
-  vec3 lab = xyzToLab( xyz );
-  return lab;
-}
-
-
-
 
 // -- -- -- -- -- --
 
@@ -210,4 +128,3 @@ vec3 rgbToLab( vec3 rgb ){
                 vec4( 0, 0, 1, 0 ),
                 posVal
               );*/
-              
