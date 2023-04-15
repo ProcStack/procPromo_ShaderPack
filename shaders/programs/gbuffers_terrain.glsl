@@ -636,8 +636,8 @@ void main() {
   float distort = calcDistort(shadowPos.xy);
   vec2 spCoord = shadowPos.xy / distort;
   if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
-    float diffthresh = 0.0003*shadowDistance/45.;
-    diffthresh = 0.00003*2048./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
+    float diffthresh = 0.0006*shadowDistance/45.;
+    diffthresh = 0.00006*2048./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
 
     float thirdofhalf = 0.5 / 3.0;
     float halfthreshrecip = 0.5-diffthresh;
@@ -698,7 +698,7 @@ void main() {
     float blockShading = diffuseSun * (sin( vColor.a*PI*.5 )*.5+.5);
     
 		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*vTexelSize).xyz;// *.5+.5;
-		vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.7) ;
+		vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.75) ;
 		diffuseLight *= max(lightmapcd, vec3(blockShading) ) ;
     
     
