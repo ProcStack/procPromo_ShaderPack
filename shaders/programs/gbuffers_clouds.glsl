@@ -147,7 +147,7 @@ void main() {
   outCd.rgb += vec3( sunMoonGlow*.8 );
   
   // Opacity Logic
-  outCd.a *= color.a*.5+.5;
+  outCd.a *= color.a*.5+(1.0-distMix)*.5;
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*.2*(depth*.9+.1);
@@ -159,7 +159,7 @@ void main() {
 
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-  gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.5, 1.0);
+  gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);
   gl_FragData[2] = vec4(toNorm, 1.0);
   gl_FragData[3] = vec4(glowHSV, glowReach);
     
