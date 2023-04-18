@@ -1018,6 +1018,11 @@ void main() {
     //outCd.rgb = vec3();
 //    outCd.rgb = vec3(vColor.rgb);
     
+    if( GlowBrightness>0.0 ){
+      float ambientGlow = length(outCd.rgb) * (.1 + GlowBrightness*.05);
+      ambientGlow = ambientGlow*ambientGlow;
+      glowHSV.z = min( glowHSV.z, ambientGlow );
+    }
     
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);

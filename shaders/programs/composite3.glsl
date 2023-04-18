@@ -23,6 +23,7 @@ void main() {
   #define GLOW_PERC 1.0
 #endif
 
+#include "/shaders.settings"
 //#include "utils/texSampler.glsl"
 
 uniform sampler2D colortex8;
@@ -79,10 +80,14 @@ void main() {
 
   reachDist*=GLOW_PERC;
   reachDist*=GLOW_REACH;
-
+  reachDist*=GlowBrightness*2.0;
+  //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0));
+  
+  int reachSteps = 7 + BaseQuality*6 ;
+  vec2 texelRes = vec2(0.0,texelSize.x*20.0*reachDist);
   
   
-	vec3 baseBloomCd = directionBlurSample(sampleCd, gaux3, uv, vec2(0.0,texelSize.x*20.0*reachDist), 15)*sampleCdAlpha;
+	vec3 baseBloomCd = directionBlurSample(sampleCd, gaux3, uv, texelRes, reachSteps)*sampleCdAlpha;
 	gl_FragData[0] = vec4(baseBloomCd, 1.0);
 }
 #endif

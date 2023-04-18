@@ -23,6 +23,7 @@ void main() {
   #define GLOW_PERC 1.0
 #endif
 
+#include "/shaders.settings"
 //#include "utils/texSampler.glsl"
 
 uniform sampler2D colortex8;
@@ -73,14 +74,18 @@ void main() {
   vec2 uv = texcoord*.4;
   vec4 sampleCd = texture2D(gaux2, uv);
   //float sCdMax = max(sampleCd.r,max(sampleCd.g,sampleCd.b));
-  float sCdMax = (sampleCd.r+sampleCd.g+sampleCd.b)*.33333;
+  float sCdMax = (sampleCd.r+sampleCd.g+sampleCd.b)*0.5773502691896258;// .33333;
   float reachDist = sampleCd.a;
 
   reachDist*=GLOW_PERC;
   reachDist*=GLOW_REACH;
+  reachDist*=GlowBrightness*2.0;
+  //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0)*.1);
 
+  int reachSteps = 7 + BaseQuality*6 ;
+  vec2 texelRes = vec2(texelSize.x*20.0*reachDist,0.0);
   
-	vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux2, uv, vec2(texelSize.x*20.0*reachDist,0.0), 15)*sampleCd.a;
+	vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux2, uv, texelRes, reachSteps)*sampleCd.a;
 
 	gl_FragData[0] = vec4(baseBloomCd, 1.0);
 }

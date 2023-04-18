@@ -24,6 +24,7 @@ void main() {
   #define GLOW_PERC 1.0
 #endif
 
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D colortex1; // Depth Pass
