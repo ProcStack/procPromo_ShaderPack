@@ -17,8 +17,7 @@ varying float vAlphaMult;
 void main() {
 
   vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	gl_Position = BiasShadowProjection(  position );
-	gl_Position.z /= 3.0;
+	gl_Position = biasShadowPos(  position );
 
 
 	texcoord = gl_MultiTexCoord0.xy;

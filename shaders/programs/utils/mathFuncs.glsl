@@ -66,6 +66,12 @@ float addComponents(vec4 val){
 
 // -- -- -- -- -- --
 
+// I wrote a visualizer for the below 4 A-to-B math functions
+//   Using the functions to animate a nyan cat
+//   And display the corresponding blended 0-1 value in greyscale
+// You can see it at my shadertoy -
+//   https://www.shadertoy.com/view/ddlXD2
+
 float DeltaDivTo(float s1, float s2, float b){
   // Second from top
   float deltaTo = abs(((s1-b)-(s2-b)) / b) - b;

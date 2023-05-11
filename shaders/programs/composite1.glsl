@@ -76,6 +76,7 @@ void main() {
 
   sampleDepth*=GLOW_PERC;
   sampleDepth*=GLOW_REACH;
+  sampleDepth*=GlowBrightness*2.0;
 
   float glowBrightness = sampleCd.b * sampleCd.b;
   

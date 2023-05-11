@@ -52,6 +52,8 @@ uniform sampler2D colortex0; // Diffuse Pass
 uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex2; // Normal Pass
 
+uniform sampler2D shadowcolor0;
+uniform vec3 cameraPosition;
 
 uniform sampler2D gaux1;
 uniform sampler2D gaux2; // 40% Res Glow Pass
@@ -432,6 +434,17 @@ void main() {
   //outCd.rgb = vec3(smoothTo);
   
   //outCd.rgb = vec3(edgeOutsidePerc);
+  
+  
+  #if ( DebugView == 2 )
+    float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
+    vec2 debugShadowUV = vec2((uv.x-.5)*fitWidth+.5,uv.y)*2.0 + vec2(.2,-.10);
+    vec3 shadowCd = texture2D(shadowcolor0, debugShadowUV ).xyz;
+    shadowCd.rgb = mix( shadowCd.rgb, vec3(fract(cameraPosition)), step(.5,abs(debugShadowUV.x-.5)));
+    debugShadowUV = abs(debugShadowUV-.5);
+    float shadowHelperMix = step(max(debugShadowUV.x,debugShadowUV.y), .5);
+    outCd.rgb = mix( outCd.rgb, shadowCd, shadowHelperMix);
+  #endif
   
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

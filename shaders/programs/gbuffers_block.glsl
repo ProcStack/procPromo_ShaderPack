@@ -333,8 +333,6 @@ uniform float near;
 uniform float far;
 uniform sampler2D gaux1;
 uniform sampler2DShadow shadow;
-uniform sampler2DShadow shadowtex0;
-uniform sampler2DShadow shadowtex1;
 
 uniform vec2 texelSize;
 
@@ -419,7 +417,7 @@ void main() {
 		float diffuseSun = color.a/255.;
 #ifdef OVERWORLD
 		if (color.a > 0.0001 && shadowPos.x < 1e10) {
-			float distort = calcDistort(shadowPos.xy);
+			float distort = shadowBias(shadowPos.xy);
 			vec2 spCoord = shadowPos.xy / distort;
 			if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
 					float diffthresh = 0.0006*shadowDistance/45.;
@@ -487,7 +485,7 @@ void main() {
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
     vec3 lightCd = lightBaseCd.rgb; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5)*vLightingMult;
-    lightCd.rgb *= LightingBrightness;
+    lightCd.rgb *= LightWhiteLevel;
     //vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
     
 #ifdef OVERWORLD

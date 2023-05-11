@@ -1,0 +1,75 @@
+
+option.PROC_PROMO=[:
+value.PROC_PROMO.true=procPromo Shader Pack ::]
+value.PROC_PROMO.false=§6§kgh§r §oprocPromo§r§6 §kij§r ::]
+option.PROC_PROMO.comment=§fThanks for trying my shader pack. §oCreated By §r§6Kevin Edzenga§7§o, 2023. §oGitHub: §r§6ProcStack. §7§o(This button does nothing)
+
+#General Quality Controls
+
+option.BaseQuality=Base Quality
+value.BaseQuality.0 = Low
+value.BaseQuality.1 = Mid
+value.BaseQuality.2 = High
+option.BaseQuality.comment=Reduce the ammount of texture bluring samples, heavier math functions, and other general performance slow downs.
+
+# -- -- --
+
+#Color Values & Gamma
+
+option.LightBlackLevel=Black Color Levels
+option.LightBlackLevel.comment=Set how dark lighting can get; This offsets black color values to brighten the entire environment. Lower values are moodier, higher values are better for streaming or video recording. 0.0, blacks = §8black. 0.5, blacks = §7grey. 1.0, blacks = white 
+
+option.LightWhiteLevel=White Color Levels
+option.LightWhiteLevel.comment=Set how bright block lighting can get. As light emitting blocks also appear to glow, this will also affect how much glow is visible.  0.0, white = §7grey. 1.0, white = white. 2.0, white = §l§oWHITE
+
+option.WorldColor=World Colors
+value.WorldColor.false=§1C§ao§3l§bo§6r§ei§5z§de§4d
+value.WorldColor.true=§fG§7r§8e§7y§fs§7c§8a§7l§fe
+option.WorldColor.comment=Toggle full color or greyscale. When greyscale, everything appears black & white, except for glowing colors, for funsies. §7§o(Color Blind options to come).
+
+# -- -- --
+
+#Screen Style Effects
+
+option.GlowBrightness=Glow Ammount
+option.GlowBrightness.comment=Set how bright glow appears. Glow from light emitting blocks, along with brighter colored blocks in direct sunlight / near lighting (torches, lanterns, etc), and particles. 0.0, no glow. 1.0, default glow. 2.0, blown out glow colors.
+
+option.DetailBluring=Detail Bluring
+option.DetailBluring.comment=Set ammount of texture blending of blocks, entities, etc.  Detail Bluring works with custom resource packs. 0.0, no detail bluring. 1.0, default bluring. 2.0, blocks appear a solid color.
+
+option.EdgeShading=Edge Outlines
+option.EdgeShading.comment=Visibility of Edges in game, appearing lighter Overworld, darker in the Nether.  0.0, no visible edges. 1.0, default edges (slightly transparent, ~2px wide). 2.0, overdrive edges (100% visible, ~4px wide)
+
+# -- -- --
+
+#Environment Effects
+
+option.UnderWaterBlur=Under Water Effects
+option.UnderWaterBlur.comment=Toggle Bluring & Warping while under water. If you get dizzy or sick under water, turn this Off
+
+option.SolidLeaves=Solid Leaves
+option.SolidLeaves.comment=Toggle Solid Leaf Colors.  True, to match Mojang's promo/key art style. False, leaves will appear as default, see through leaves.
+
+# -- -- --
+
+#Shadow Options
+
+option.shadowMapResolution=Shadow Resolution
+value.shadowMapResolution.16384=§c§l16384(!!)
+option.shadowMapResolution.comment=Size of the texture generated for shadows. 512, low quality, better performance. 4096, high quality, slower performance. 16384, §oonly use for high quality video, fps may drop.
+
+option.ShadowSampleCount=Shadow Quality
+value.ShadowSampleCount.0=Off
+value.ShadowSampleCount.1=Low
+value.ShadowSampleCount.2=Mid
+value.ShadowSampleCount.3=High
+option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Low, simple shadows, 1 sample.  Mid, mellow shadows, 9 samples. High, goose down pillow soft shadows, 17 samples.
+
+# -- -- --
+
+#Debugging Effects
+option.DebugView=Debug Vision
+value.DebugView.0=Off
+value.DebugView.1=Detail Bluring
+value.DebugView.2=Shadow Cam
+option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Side by side Detail Bluring, test colors, and other debugging views. Left in for funsies.
