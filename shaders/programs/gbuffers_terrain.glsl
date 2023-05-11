@@ -691,9 +691,9 @@ void main() {
     //float blockShading = max( diffuseSun, (sin( vColor.a*PI*.5 )*.5+.5) );
     float blockShading = diffuseSun * (sin( vColor.a*PI*.5 )*.5+.5);
     
-		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*vTexelSize).xyz *.6+.7;
+		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*vTexelSize).xyz *.6+.4;
 		//vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.95) ;
-		vec3 diffuseLight = vec3(1,1,1) ;
+		vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.9) ;
 		diffuseLight *= max(lightmapcd, vec3(blockShading) ) ;
     
     
@@ -759,6 +759,7 @@ void main() {
     
     //diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0-.5 + (1-skyBrightnessMult), 0.0, 0.90) );
     diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*1.0 + (1-skyBrightnessMult), 0.0, 0.90) );
+    diffuseLight = diffuseLight*.5+.5;
 
     surfaceShading *= mix( moonPhaseMult, dot(sunVecNorm,vNormal), dayNight*.5+.5 );
     surfaceShading *= sunPhaseMult;
@@ -822,7 +823,7 @@ void main() {
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
       //outCd.rgb *=  1.0+lightLuma+glowInf;
-      outCd.rgb *=  1.0+lightLuma*1.7;//+.5;
+      outCd.rgb *=  1.0+lightLuma*1.2;//+.5;
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
@@ -936,7 +937,7 @@ void main() {
     float skyBrightMultFit = min(1.0, 1.0-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
     outCd.rgb *= skyBrightMultFit;
     //outCd.rgb*=mix(vec3(1.0), diffuseLight.rrr, max(diffuseLight.r, skyBrightnessMult*sunPhaseMult));
-    outCd.rgb*=diffuseLight;
+    outCd.rgb*=max(diffuseLight,lightmapcd);
     outCd.rgb*=mix(vec3(1.0), blockLumVal.rgb, min(1.0, max(lightLuma, skyBrightnessMult*sunPhaseMult)));
 #endif
     
