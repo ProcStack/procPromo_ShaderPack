@@ -135,7 +135,7 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
 
 vec4 diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 uvOffset, vec2 texelRes, float resScalar ){
   vec4 sampleCd = texture2D(tx, uv);
-  vec3 sampleLab = linearToXYZ( sampleCd.rgb );
+  vec3 sampleLab = linearToXYZ( sampleCd.rgb ) * vec3(1.0,.7,1.0);
   // linearToXYZ( lin )
   vec2 res = texelRes * resScalar;
   
@@ -156,10 +156,10 @@ vec4 diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 uvOffset, vec2
 		curUV = fract(curUV)*uvLimits.pq+uvLimits.st;//+uvOffset;
 		
     curCd = texture2D(tx, curUV);
-    curLab = linearToXYZ( curCd.rgb );
+    curLab = linearToXYZ( curCd.rgb ) * vec3(1.0,.7,1.0);
     
     delta = dot(sampleLab.rgb, curLab.rgb);
-    //delta = (delta)*1.0+.5;
+    delta = (delta)*.5+.2;
     delta = max(0.0,delta);//*delta;
     
     //delta *= 0.31-(length( sampleLab.rgb-curLab.rgb )*0.95);
