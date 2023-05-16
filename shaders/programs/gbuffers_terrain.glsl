@@ -577,7 +577,7 @@ void main() {
     if( DetailBluring > 0 ){
         //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
         
-        vec2 uvOffset = vec2(-vTexelSize.x*.74*vUvOffset, 0.0);
+        vec2 uvOffset = vec2(0.0); //vec2(-vTexelSize.x*.74*vUvOffset, 0.0)*0.0;
         txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, uvOffset, vTexelSize*screenSpace, DetailBluring*2.0 );
     }else{
       txCd = texture2D(texture, tuv);
@@ -686,7 +686,7 @@ void main() {
     
     //diffuseSun = smoothstep(.0,.65,diffuseSun); 
     // Mute Shadows during Rain
-    //diffuseSun = mix( diffuseSun*.6+.6, 1.0, rainStrength);
+    diffuseSun = mix( diffuseSun*.6+.6, 1.0, rainStrength);
 
     //float blockShading = max( diffuseSun, (sin( vColor.a*PI*.5 )*.5+.5) );
     float blockShading = diffuseSun * (sin( vColor.a*PI*.5 )*.5+.5);

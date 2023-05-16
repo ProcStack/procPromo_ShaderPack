@@ -153,7 +153,7 @@ vec4 diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 uvOffset, vec2
     curUV =  uv + boxSamples[x]*res ;
     //curUV =  clamp(uv + boxSamples[x]*res, vec2(0.0), vec2(1.0) ) ;
     
-		curUV = fract(curUV)*uvLimits.pq+uvLimits.st+uvOffset;
+		curUV = fract(curUV)*uvLimits.pq+uvLimits.st;//+uvOffset;
 		
     curCd = texture2D(tx, curUV);
     curLab = linearToXYZ( curCd.rgb );
