@@ -1,5 +1,21 @@
 
 #ifdef VSH
+
+
+#include "utils/shadowCommon.glsl"
+
+uniform float frameTimeCounter;
+uniform vec3 cameraPosition;
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
+
+uniform vec3 sunPosition;
+uniform vec3 upPosition;
+uniform mat4 shadowModelView;
+uniform mat4 shadowProjection;
+
+attribute vec4 mc_Entity;
+
 varying vec4 texcoord;
 varying vec4 color;
 varying vec4 lmcoord;
@@ -11,18 +27,20 @@ varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
 
-attribute vec4 mc_Entity;
+varying vec4 shadowPos;
+varying vec3 shadowOffset;
 
-uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
-uniform mat4 gbufferModelView;
-uniform mat4 gbufferModelViewInverse;
 
-uniform vec3 sunPosition;
-uniform vec3 upPosition;
+// -- Chocapic13 HighPerformance Toaster --
+#define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
+#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+vec4 toClipSpace3(vec3 viewSpacePosition) {
+    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
+}
+// -- -- -- -- -- --
+
 
 void main() {
-
 
 	sunVecNorm = normalize(sunPosition);
 	upVecNorm = normalize(upPosition);
@@ -38,6 +56,23 @@ void main() {
 
 	color = gl_Color;
 
+
+
+  // -- -- -- -- -- -- -- --
+  
+  // Shadow Prep
+  //position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+  
+  float shadowPushAmmount = 1.0-abs(dot(sunVecNorm, gl_Normal))*.9;//normal));
+  vec3 shadowPush = gl_Normal*shadowPushAmmount*.2 ;
+  shadowPos.xyz = mat3(shadowModelView) * (position.xyz+shadowPush) + shadowModelView[3].xyz;
+  vec3 shadowProjDiag = diagonal3(shadowProjection);
+  shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+
+  // -- -- -- -- -- -- -- --
+
+
+
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
 	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
@@ -45,6 +80,10 @@ void main() {
 	gl_FogFragCoord = gl_Position.z;
 }
 #endif
+
+// -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- --
 
 #ifdef FSH
 /* RENDERTARGETS: 0,1,2,6 */
@@ -56,7 +95,10 @@ const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
  -- */
  
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
+#include "utils/shadowCommon.glsl"
+#include "utils/texSamplers.glsl"
 
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
@@ -66,9 +108,13 @@ uniform sampler2D texture;
 uniform sampler2D lightmap;
 uniform float rainStrength;
 uniform int moonPhase;
+uniform vec3 shadowLightPosition;
 
 uniform float near;
 uniform float far;
+
+uniform int fogMode;
+uniform vec3 fogColor;
 
 varying vec4 color;
 varying vec4 texcoord;
@@ -78,6 +124,9 @@ varying vec4 vLocalPos;
 varying vec3 vNormal;
 varying vec3 cameraPosition;
 
+varying vec4 shadowPos;
+varying vec3 shadowOffset;
+
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
@@ -85,8 +134,6 @@ varying float dayNight;
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
 
-uniform int fogMode;
-uniform vec3 fogColor;
 
 void main() {
 
@@ -156,6 +203,82 @@ void main() {
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
   toNorm=normalize(toNorm)*.5+.5;
+
+  // -- -- --
+  
+  float shadowDist = 0.0;
+  float diffuseSun = 1.0;
+  float shadowAvg = 1.0;
+#ifdef OVERWORLD
+
+#if ShadowSampleCount > 0
+/*
+  vec4 shadowProjOffset = vec4( fitShadowOffset( cameraPosition ), 0.0);
+  vec4 shadowProjPos = shadowPos;
+  float distort = shadowBias(shadowPos.xy);
+  vec2 spCoord = shadowProjPos.xy / distort;
+
+  float halfthreshrecip = 0.5-shadowThreshold;
+  
+  vec3 localShadowOffset = shadowPosOffset;
+  //localShadowOffset.z *= min(1.0,outDepth*20.0+.7)*.1+.9;
+  
+  vec3 projectedShadowPosition = vec3(spCoord, shadowProjPos.z) * shadowPosMult + localShadowOffset;
+  
+  shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
+  */
+  
+#if ShadowSampleCount > 1
+
+  // Modded for multi sampling the shadow
+  // TODO : Functionize this rolled up for loop dooky
+  /*
+  vec2 posOffset;
+  float reachMult = 1.5 - (min(1.0,outDepth*20.0)*.5);
+  
+  for( int x=0; x<axisSamplesCount; ++x){
+    posOffset = axisSamples[x]*.0007*reachMult;
+    projectedShadowPosition = vec3(spCoord+posOffset, shadowProjPos.z) * shadowPosMult + localShadowOffset;
+  
+    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
+    
+    
+  #if ShadowSampleCount > 2
+    posOffset = crossSamples[x]*.0005*reachMult;
+    projectedShadowPosition = vec3(spCoord+posOffset, shadowProjPos.z) * shadowPosMult + localShadowOffset;
+  
+    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .2);
+  #endif
+    
+  }
+  */
+
+#endif
+  /*
+  float sunMoonShadowInf = clamp( (abs(dot(sunVecNorm, vNormal))-.04)*1.5, 0.0, 1.0 );
+  //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))+.50)*1.0);
+  float shadowDepthInf = clamp( (depth*40.0), 0.0, 1.0 );
+
+  
+  shadowAvg = shadowAvg + min(1.0, (length(vLocalPos.xz)*.0025)*1.5);
+  
+  float shadowSurfaceInf = step(0.1,dot(normalize(shadowLightPosition), vNormal) + abs(vWorldNormal.z));
+  
+  //diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf * shadowDepthInf );
+  diffuseSun *= mix( 1.0, shadowAvg, shadowSurfaceInf * shadowDepthInf );
+*/
+#endif
+#endif
+  
+  // -- -- --
+
+
+  //glowHSV.z=0.0;
+  //glowReach=0.0;
+  //outCd.rgb = vec3(0.0,1.0,1.0);
+  //outCd.a = 1.0;
+  
+
 
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);

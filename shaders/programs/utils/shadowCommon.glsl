@@ -8,7 +8,7 @@ const bool shadowHardwareFiltering = true;
 //  (I'm still learning this shadow stuffs)
 
 
-const float shadowMapFov = 72.0; 
+const float shadowMapFov = 90.0; 
 const float shadowDistance = 192.0;//128.0;
 const float shadowDistanceRenderMul = 1.0; //[-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
 const float shadowIntervalSize = 0.50;
@@ -17,8 +17,9 @@ const float shadowBiasMult = 1.05;//1.35;//1.5;
 float shadowBiasOffset = 1.25;//1.25;//1.29;//1.10;//1.08;
 
 
-// const float shadowThreshold = 0.0006*shadowDistance/45.;
-const float shadowThreshold =0.00001*shadowDistance/shadowMapFov;// * 2048./shadowMapResolution;
+// const float shadowThreshold = 0.0006*shadowDistance/ // 45.;
+// const float shadowThreshold =0.00001*shadowDistance/shadowMapFov;// * 2048./shadowMapResolution;
+const float shadowThreshold =0.00001*shadowDistance/(shadowMapFov*.5);// * 2048./shadowMapResolution;
 
 const float oneThird = 1.0 / 3.0;
 const float thirdHalf = .5 * oneThird;
@@ -27,6 +28,19 @@ const float shadowThreshReciprical = 0.5 - shadowThreshold;
 const vec3 shadowPosOffset = vec3(0.5,0.5,shadowThreshReciprical);
 const vec3 shadowPosMult = vec3(0.5,0.5,thirdHalf);
 
+// -- -- --
+/*
+vec3 toShadowPosition(){
+  // Shadow Prep
+  position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+  
+  float shadowPushAmmount = 1.0-abs(dot(sunVecNorm, gl_Normal))*.9;//normal));
+  vec3 shadowPush = gl_Normal*shadowPushAmmount*.2 ;
+  shadowPos.xyz = mat3(shadowModelView) * (position.xyz+shadowPush) + shadowModelView[3].xyz;
+  vec3 shadowProjDiag = diagonal3(shadowProjection);
+  shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+}
+*/
 // -- -- --
 
 vec3 fitShadowOffset( vec3 posOffset ){

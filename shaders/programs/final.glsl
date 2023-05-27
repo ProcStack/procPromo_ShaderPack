@@ -437,13 +437,14 @@ void main() {
   
   
   #if ( DebugView == 2 )
-    float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
-    vec2 debugShadowUV = vec2((uv.x-.5)*fitWidth+.5,uv.y)*2.0 + vec2(.2,-.10);
+    //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
+    float fitWidth = 1.0 + aspectRatio*.45;
+    vec2 debugShadowUV = vec2((uv.x-.5)*fitWidth+.5,uv.y)*2.35 + vec2(-2.25,-.04);
     vec3 shadowCd = texture2D(shadowcolor0, debugShadowUV ).xyz;
-    shadowCd.rgb = mix( shadowCd.rgb, vec3(fract(cameraPosition)), step(.5,abs(debugShadowUV.x-.5)));
     debugShadowUV = abs(debugShadowUV-.5);
-    float shadowHelperMix = step(max(debugShadowUV.x,debugShadowUV.y), .5);
-    outCd.rgb = mix( outCd.rgb, shadowCd, shadowHelperMix);
+    float shadowHelperMix = max(debugShadowUV.x,debugShadowUV.y);
+    shadowCd = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
+    outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
   #endif
   
 	gl_FragColor = vec4(outCd.rgb,1.0);

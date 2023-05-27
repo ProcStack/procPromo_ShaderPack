@@ -45,7 +45,7 @@ option.EdgeShading.comment=Visibility of Edges in game, appearing lighter Overwo
 #Environment Effects
 
 option.UnderWaterBlur=Under Water Effects
-option.UnderWaterBlur.comment=Toggle Bluring & Warping while under water. If you get dizzy or sick under water, turn this Off
+option.UnderWaterBlur.comment=Toggle Bluring & Warping while under water. If you get dizzy or sick under water, turn this False
 
 option.SolidLeaves=Solid Leaves
 option.SolidLeaves.comment=Toggle Solid Leaf Colors.  True, to match Mojang's promo/key art style. False, leaves will appear as default, see through leaves.
@@ -63,7 +63,7 @@ value.ShadowSampleCount.0=Off
 value.ShadowSampleCount.1=Low
 value.ShadowSampleCount.2=Mid
 value.ShadowSampleCount.3=High
-option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Low, simple shadows, 1 sample.  Mid, mellow shadows, 9 samples. High, goose down pillow soft shadows, 17 samples.
+option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Low, simple shadows, 1 sample.  Mid, mellow shadows, 5 samples. High, goose down pillow soft shadows, 9 samples.
 
 # -- -- --
 
@@ -72,4 +72,4 @@ option.DebugView=Debug Vision
 value.DebugView.0=Off
 value.DebugView.1=Detail Bluring
 value.DebugView.2=Shadow Cam
-option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Side by side Detail Bluring, test colors, and other debugging views. Left in for funsies.
+option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Bluring, test bluring methods and side-by-side views.  Shadow Cam, see what the sun & moon see. Left in for funsies.
