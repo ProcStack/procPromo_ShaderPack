@@ -417,7 +417,7 @@ void main() {
 		float diffuseSun = color.a/255.;
 #ifdef OVERWORLD
 		if (color.a > 0.0001 && shadowPos.x < 1e10) {
-			float distort = shadowBias(shadowPos.xy);
+			float distort = radialBias(shadowPos.xy);
 			vec2 spCoord = shadowPos.xy / distort;
 			if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
 					float diffthresh = 0.0006*shadowDistance/45.;

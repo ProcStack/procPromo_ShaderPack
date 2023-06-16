@@ -10,7 +10,7 @@ option.BaseQuality=Base Quality
 value.BaseQuality.0 = Low
 value.BaseQuality.1 = Mid
 value.BaseQuality.2 = High
-option.BaseQuality.comment=Reduce the ammount of texture bluring samples, heavier math functions, and other general performance slow downs.
+option.BaseQuality.comment=Reduce the ammount of texture bluring samples, heavier math functions, and performance slow downs.  Below options denote fidelity, this option is how that fidelity is utilized.
 
 # -- -- --
 
@@ -72,4 +72,5 @@ option.DebugView=Debug Vision
 value.DebugView.0=Off
 value.DebugView.1=Detail Bluring
 value.DebugView.2=Shadow Cam
+value.DebugView.3=Shadow Debug
 option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Bluring, test bluring methods and side-by-side views.  Shadow Cam, see what the sun & moon see. Left in for funsies.

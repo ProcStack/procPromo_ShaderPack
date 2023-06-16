@@ -31,14 +31,6 @@ varying vec4 shadowPos;
 varying vec3 shadowOffset;
 
 
-// -- Chocapic13 HighPerformance Toaster --
-#define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
-vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
-}
-// -- -- -- -- -- --
-
 
 void main() {
 
@@ -60,16 +52,6 @@ void main() {
 
   // -- -- -- -- -- -- -- --
   
-  // Shadow Prep
-  //position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-  
-  float shadowPushAmmount = 1.0-abs(dot(sunVecNorm, gl_Normal))*.9;//normal));
-  vec3 shadowPush = gl_Normal*shadowPushAmmount*.2 ;
-  shadowPos.xyz = mat3(shadowModelView) * (position.xyz+shadowPush) + shadowModelView[3].xyz;
-  vec3 shadowProjDiag = diagonal3(shadowProjection);
-  shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
-
-  // -- -- -- -- -- -- -- --
 
 
 
@@ -213,9 +195,8 @@ void main() {
 
 #if ShadowSampleCount > 0
 /*
-  vec4 shadowProjOffset = vec4( fitShadowOffset( cameraPosition ), 0.0);
   vec4 shadowProjPos = shadowPos;
-  float distort = shadowBias(shadowPos.xy);
+  float distort = radialBias(shadowPos.xy);
   vec2 spCoord = shadowProjPos.xy / distort;
 
   float halfthreshrecip = 0.5-shadowThreshold;

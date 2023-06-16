@@ -436,17 +436,21 @@ void main() {
   //outCd.rgb = vec3(edgeOutsidePerc);
   
   
-  #if ( DebugView == 2 )
+  #if ( DebugView >= 2 )
     //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
     float fitWidth = 1.0 + aspectRatio*.45;
     vec2 debugShadowUV = vec2((uv.x-.5)*fitWidth+.5,uv.y)*2.35 + vec2(-2.25,-.04);
     vec3 shadowCd = texture2D(shadowcolor0, debugShadowUV ).xyz;
     debugShadowUV = abs(debugShadowUV-.5);
     float shadowHelperMix = max(debugShadowUV.x,debugShadowUV.y);
-    shadowCd = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
+    shadowCd = mix( vec3(0.0), shadowCd.rgb, step(shadowHelperMix, 0.50));
     outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
   #endif
   
+  //outCd.rgb=baseCd.rgb;
+  
+  //outCd.rgb = texture2D(gaux1,uv).xyz;
+  //outCd.rgb = dataCd.rgb;
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif
