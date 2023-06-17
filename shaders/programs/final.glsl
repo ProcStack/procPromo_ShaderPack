@@ -448,6 +448,7 @@ void main() {
   #endif
   
   //outCd.rgb=baseCd.rgb;
+  //outCd.rgb=outGlowCd;
   
   //outCd.rgb = texture2D(gaux1,uv).xyz;
   //outCd.rgb = dataCd.rgb;

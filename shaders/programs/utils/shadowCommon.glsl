@@ -1,8 +1,8 @@
 
-// Learned/Logic from Chocapic13's HighPerformance Toaster shader pack
-//  I'm still learning this shadow stuffs, but mostly wrote whats below
+// Learned from Chocapic13's HighPerformance Toaster shader pack
+//  I'm still picking up this shadow stuffs, but mostly wrote whats below
 //    Baring the player-space to shadow-space logic
-//      It just works; and I like defining a function that way
+//      It just works; and I like how they defined a function that way
 // Functions for Radial & Per-Axis Shadow Biasing below
 //   For most situations,
 //     Radial Biasing works just fine
@@ -29,7 +29,8 @@ const float shadowIntervalSize = 1.00;
 const float shadowRadialBiasMult = 1.33;
 const float shadowRadialBiasOffset = .02;
 const float shadowAxisBiasMult = 1.13;
-const float shadowAxisBiasOffset = .02;
+const float shadowAxisBiasOffset = .65;
+const float shadowAxisBiasPosOffset = 0.02;
 
 // const float shadowThreshold = 0.0006*shadowDistance/ // 45.;
 // const float shadowThreshold =0.00001*shadowDistance/shadowMapFov;// * 2048./shadowMapResolution;
@@ -84,7 +85,7 @@ vec3 fitShadowOffset( vec3 posOffset ){
 
 //
 // Bias toward Distance-From-Center; Radial Compression
-//    https://www.youtube.com/watch?v=WZNt9p4LWeA
+//    https://youtu.be/WZNt9p4LWeA
 //
 
 float radialBias(vec2 shadowSpaceUV, float offset, float mult){
@@ -108,7 +109,7 @@ vec4 biasShadowRadial(vec4 shadowSpacePos) {
 
 //
 // Bias toward Axial-Weighting; Individually Biased X/Y 
-//    https://www.youtube.com/watch?v=dfHD69F62MQ
+//    https://youtu.be/GBkT19uH2RQ
 //
 
 vec2 axisBias(vec2 shadowSpaceUV, float offset, float mult){
@@ -133,6 +134,25 @@ vec2 axisBias(vec2 shadowSpaceUV){
 vec4 biasShadowAxis(vec4 shadowSpacePos) {
   vec2 distortFactor = axisBias(shadowSpacePos.xy);
   shadowSpacePos.xy /= distortFactor;
+  #ifdef SHADOW
+    shadowSpacePos.z *= oneThird;
+  #endif
+  return shadowSpacePos;
+}
+
+// -- -- --
+ 
+vec4 biasShadowShift(vec4 shadowSpacePos) {
+  vec2 outUV=shadowSpacePos.xy;
+  outUV.xy = abs(outUV.xy);
+  //
+  float pLen = outUV.x*.5;
+  outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  pLen = outUV.y*.5;
+  outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  shadowSpacePos.xy /= outUV;
+  //
+  
   #ifdef SHADOW
     shadowSpacePos.z *= oneThird;
   #endif
@@ -178,22 +198,5 @@ void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
   
   shiftInf = shiftInf+(1.0-upDownInf);
   camDir.w=shiftInf;//length(posVal.xy)*shiftInf;
-}
-
-vec4 biasShadowShift(vec4 shadowSpacePos) {
-  vec2 outUV=shadowSpacePos.xy;
-  outUV.xy = abs(outUV.xy);
-  //
-  float pLen = outUV.x*.5;
-  outUV.x = pow(pLen+.02,max(0.0,.65-pLen*1.33));
-  pLen = outUV.y*.5;
-  outUV.y = pow(pLen+.02,max(0.0,.65-pLen*1.33));
-  shadowSpacePos.xy /= outUV;
-  //
-  
-  #ifdef SHADOW
-    shadowSpacePos.z *= oneThird;
-  #endif
-  return shadowSpacePos;
 }
 

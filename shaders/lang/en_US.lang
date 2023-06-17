@@ -2,7 +2,7 @@
 option.PROC_PROMO=[:
 value.PROC_PROMO.true=procPromo Shader Pack ::]
 value.PROC_PROMO.false=§6§kgh§r §oprocPromo§r§6 §kij§r ::]
-option.PROC_PROMO.comment=§fThanks for trying my shader pack. §oCreated By §r§6Kevin Edzenga§7§o, 2023. §oGitHub: §r§6ProcStack. §7§o(This button does nothing)
+option.PROC_PROMO.comment=§fThanks for trying my shader pack. §oCreated By §r§6Kevin Edzenga§7§o, 2022-2023. §oGitHub: §r§6ProcStack. §7§o(This button does nothing)
 
 #General Quality Controls
 
@@ -55,7 +55,7 @@ option.SolidLeaves.comment=Toggle Solid Leaf Colors.  True, to match Mojang's pr
 #Shadow Options
 
 option.shadowMapResolution=Shadow Resolution
-value.shadowMapResolution.16384=§c§l16384(!!)
+value.shadowMapResolution.16384=16384§c§6(!)
 option.shadowMapResolution.comment=Size of the texture generated for shadows. 512, low quality, better performance. 4096, high quality, slower performance. 16384, §oonly use for high quality video, fps may drop.
 
 option.ShadowSampleCount=Shadow Quality

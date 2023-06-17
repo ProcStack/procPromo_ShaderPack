@@ -45,7 +45,7 @@
     vIsLeaves=0.0;
     
     // Leaves
-    if ( (mc_Entity.x == 810 || mc_Entity.x == 8101) && SolidLeaves){
+    if ( SolidLeaves && (mc_Entity.x == 810 || mc_Entity.x == 8101) ){
       vIsLeaves = 1.0;
     }
     

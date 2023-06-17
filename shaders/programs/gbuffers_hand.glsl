@@ -151,6 +151,7 @@ const int gdepthFormat = RGBA16; //it's to inacurrate otherwise
 const int gnormalFormat = RGB10_A2;
  -- */
 
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 
@@ -195,6 +196,9 @@ const int GL_EXP = 2048;
 void main() {
 
   vec2 tuv = texcoord.st;
+  
+  
+  
   //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
   vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
   float glowInf = 0.0;
@@ -248,12 +252,9 @@ void main() {
 	gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w),0.0,1.0);//glowVal);
 	gl_FragData[4] = vec4(glowHSV,1.0);//glowVal);
 
-	/*if (fogMode == GL_EXP) {
-		gl_FragData[0].rgb = mix(gl_FragData[0].rgb, gl_Fog.color.rgb, 1.0 - clamp(exp(-gl_Fog.density * gl_FogFragCoord), 0.0, 1.0));
-	} else if (fogMode == GL_LINEAR) {
+	/*
 		gl_FragData[0].rgb = mix(gl_FragData[0].rgb, gl_Fog.color.rgb, clamp((gl_FogFragCoord - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0));
-	}*/
-  
+  */
 }
 
 #endif

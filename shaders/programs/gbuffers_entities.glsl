@@ -203,7 +203,26 @@ void main() {
 
   vec2 tuv = texcoord.st;
   vec4 baseCd = texture2D(texture, tuv);;
-  vec4 txCd = baseCd;//diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
+  vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
+  
+  /*
+  if ( DetailBluring >0.0 ){
+    //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
+    
+    #if ( DebugView == 1 )
+      float debugDetailBluring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
+      //debugDetailBluring *= debugDetailBluring;
+      debugDetailBluring = mix( DetailBluring, debugDetailBluring, step(screenSpace.x,0.75));
+      txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, debugDetailBluring );
+    #else
+      txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, DetailBluring);
+    #endif
+    
+  }else{
+    txCd = texture2D(texture, tuv);
+  }
+  */
+  
   
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);

@@ -116,8 +116,7 @@ void main() {
     avgCd += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y));
     avgCd += texture2D(texture, mc_midTexCoord.st-txlquart);
     avgCd += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y));
-    avgCd *= .2;
-    //avgCd *= .5;
+    avgCd *= .5;
     //color.rgb *= vec3(.3,.3,.5)*avgCd;
   
     color *= avgCd;//*.3+.7;
@@ -169,6 +168,7 @@ const int gdepthFormat = RGBA16; //it's to inacurrate otherwise
 const int gnormalFormat = RGB10_A2;
  -- */
 
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 
@@ -256,6 +256,11 @@ void main() {
 #else
     glowHSV.z *= vTextureGlow*.7;
 #endif
+
+
+    if( WorldColor ){ // Greyscale
+      outCd.rgb = vec3( luma(color.rgb) * lightCd.r );
+    }
 
 
     gl_FragData[0] = outCd;

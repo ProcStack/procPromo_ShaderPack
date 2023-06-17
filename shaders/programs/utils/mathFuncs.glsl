@@ -73,12 +73,10 @@ float addComponents(vec4 val){
 
 // User Settings
 //   Fit Black/White Levels
+float shiftBlackLevels( float inCd ){
+    return inCd*(1.0-LightBlackLevel) + LightBlackLevel;
+}
 vec3 shiftBlackLevels( vec3 inCd ){
-
-    //float blackLevelShift = .05 * (1.0-inCd.r);
-    //blackLevelShift = (.1-LightBlackLevel) * (1.0-inCd.r);
-    //inCd = inCd*(1.0+blackLevelShift)-blackLevelShift;
-    
     return inCd*(1.0-LightBlackLevel) + LightBlackLevel;
 }
 

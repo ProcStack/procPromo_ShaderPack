@@ -49,7 +49,6 @@ const int gnormalFormat = RGB10_A2;
 uniform sampler2D texture;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform vec2 texelSize;
-uniform int worldTime;
 uniform vec3 cameraPosition;
 uniform vec3 upPosition;
 
@@ -99,8 +98,7 @@ vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){
 
 void main() {
 
-  float timeOffset = worldTime/24000.0;
-  vec4 outCd = texture2D(texture, fract(texcoord.st-vec2(timeOffset*50.,timeOffset*20.)) );
+  vec4 outCd = texture2D(texture, texcoord.st );
   outCd.rgb -= vec3(abs(vLocalNormal.y)*.1);
   
   // Glow Pass Logic
