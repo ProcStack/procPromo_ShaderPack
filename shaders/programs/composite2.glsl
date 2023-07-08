@@ -62,10 +62,10 @@ vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, in
     
     curUV =  uv + vec2( -1.0, -1.0 )*texelRes*dist ;
     curCd = texture2D(tx, curUV).rgb;
-    sampleCd += curCd*invDist*.5;
+    sampleCd += curCd*invDist;
     curUV =  uv + vec2( 1.0, 1.0 )*texelRes*dist ;
     curCd = texture2D(tx, curUV).rgb;
-    sampleCd += curCd*invDist*.5;
+    sampleCd += curCd*invDist;
   }
   return sampleCd;
 }
@@ -83,7 +83,7 @@ void main() {
   //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0)*.1);
 
   int reachSteps = 7 + BaseQuality*6 ;
-  vec2 texelRes = vec2(texelSize.x*20.0*reachDist,0.0);
+  vec2 texelRes = vec2(texelSize.x*25.0*GlowBrightness*reachDist,0.0);
   
 	vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux2, uv, texelRes, reachSteps)*sampleCd.a;
 

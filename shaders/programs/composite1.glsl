@@ -37,17 +37,12 @@ uniform vec2 texelSize;
 
 varying vec2 texcoord;
 
-const int boxSamplesCount = 8;
-const vec2 boxSamples[8] = vec2[8](
+const int diagSamplesCount = 4;
+const vec2 diagSamples[4] = vec2[4](
                               vec2( -1.0, -1.0 ),
-                              vec2( -1.0, 0.0 ),
                               vec2( -1.0, 1.0 ),
 
-                              vec2( 0.0, -1.0 ),
-                              vec2( 0.0, 1.0 ),
-
                               vec2( 1.0, -1.0 ),
-                              vec2( 1.0, 0.0 ),
                               vec2( 1.0, 1.0 )
                             );
 
@@ -61,8 +56,8 @@ vec3 boxBlurSampleHSV( sampler2D tx, vec2 uv, vec2 texelRes){
   vec3 curCd;
   vec3 curMix;
   float delta=0.0;
-  for( int x=0; x<boxSamplesCount; ++x){
-    curUV =  uv + boxSamples[x]*texelRes*sampleCd.z ;
+  for( int x=0; x<diagSamplesCount; ++x){
+    curUV =  uv + diagSamples[x]*texelRes*sampleCd.z ;
 		
     curCd = texture2D(tx, curUV).rgb;
     sampleCd = mix(sampleCd, max( sampleCd, curCd), curCd.z*.5);
@@ -80,8 +75,8 @@ void main() {
 
   float glowBrightness = sampleCd.b * sampleCd.b;
   
-	vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*10.0*sampleDepth);
-	baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth));
+	vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*25.0*glowBrightness*sampleDepth);
+	//baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth));
   baseBloomCd.b *= GLOW_PERC;
   baseBloomCd = hsv2rgb(baseBloomCd);
 

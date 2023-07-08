@@ -7,6 +7,7 @@ uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
+uniform vec4 entityColor;
 uniform vec3 sunPosition;
 uniform float far;
 uniform float near;
@@ -37,17 +38,18 @@ varying float vDepth;
 
 void main() {
 
-  vec3 toCamPos = gl_Vertex.xyz*.01;
+  vec3 toCamPos = gl_Vertex.xyz*.005;
 	vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
   position.xyz = position.xyz+normalize(position.xyz)*near*2.50;
 
   vPos = gl_ProjectionMatrix * position;
+  //vPos = ftransform();
 
 	gl_Position = vPos;
   
   vDepth = clamp(length((gl_ModelViewMatrix * gl_Vertex).xyz)/far, 0.0, 1.0);
 
-	color = gl_Color;
+	color = gl_Color;// * vec4(entityColor.rgb,1.0);
 
 
   texelSize = vec2(1.0/viewWidth,1.0/viewHeight);
@@ -110,6 +112,7 @@ uniform float far;
 
 uniform vec3 sunPosition;
 uniform vec4 spriteBounds; 
+uniform vec4 entityColor;
 uniform float isGlowing;
 
 //#include "utils/texSamplers.glsl"
@@ -214,6 +217,11 @@ void main() {
   
   vec4 outCd = txCd * color;//vec4(color.rgb,1.0);
   
+  
+  //vec3 colorMix = min(vec3(1.0),entityColor.rgb*1.5);
+  //outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.5+entityColor.g*.3) );
+  
+  
   vec3 glowHSV = rgb2hsv(outCd.rgb);
 
   vec4 outData = vec4(0.0);
@@ -229,7 +237,7 @@ void main() {
   glowHSV.z *= .0;
   float outEffectGlow = 0.0;
   
-  
+  //outCd.rgb=entityColor.rrr;
   
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);

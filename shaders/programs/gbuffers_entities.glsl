@@ -202,9 +202,9 @@ vec4 diffuseSampleLocal( sampler2D tx, vec2 uv, vec2 res, float thresh){
 void main() {
 
   vec2 tuv = texcoord.st;
-  vec4 baseCd = texture2D(texture, tuv);;
+  vec4 baseCd = texture2D(texture, tuv);
   vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
-  
+  float avgDelta = 0.0;
   /*
   if ( DetailBluring >0.0 ){
     //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
@@ -213,9 +213,9 @@ void main() {
       float debugDetailBluring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
       //debugDetailBluring *= debugDetailBluring;
       debugDetailBluring = mix( DetailBluring, debugDetailBluring, step(screenSpace.x,0.75));
-      txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, debugDetailBluring );
+      diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, debugDetailBluring, baseCd, txCd, avgDelta );
     #else
-      txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, DetailBluring);
+      diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, DetailBluring, baseCd, txCd, avgDelta);
     #endif
     
   }else{
@@ -232,9 +232,9 @@ void main() {
   
   //outCd.rgb *= (1.0-rainStrength*.3);
   
-  vec3 colorMix = min(vec3(1.0),entityColor.rgb*1.5);
-  outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.5+entityColor.g*.3) );
-  
+  vec3 colorMix = min(vec3(1.0),entityColor.rgb*2.5);
+  outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.6+entityColor.g) );
+  //outCd.rgb = ( 1.0 - (1.0-outCd.rgb)*max(vec3(0.0), 1.0-entityColor.rgb*5.0) );
   
   float highlights = dot(normalize(sunPosition),vNormal.xyz);
   highlights = (highlights-.5)*0.3;

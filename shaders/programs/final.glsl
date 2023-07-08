@@ -411,7 +411,8 @@ void main() {
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
   vec3 outGlowCd = max(blurMidCd, blurLowCd);
-  outCd.rgb += outGlowCd * GlowBrightness;// * lavaSnowFogInf;
+  outCd.rgb += outCd.rgb*outGlowCd * GlowBrightness;// * lavaSnowFogInf;
+  
   
   float edgeCdInf = step(depthBase, .9999);
   // TODO : Check skyBrightness for inner edges when in caves
@@ -435,7 +436,9 @@ void main() {
   
   //outCd.rgb = vec3(edgeOutsidePerc);
   
-  
+  // Shadow Helper Mini Window
+  //   hmmmmm picture-in-picture
+  //     drooollllssss
   #if ( DebugView >= 2 )
     //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
     float fitWidth = 1.0 + aspectRatio*.45;

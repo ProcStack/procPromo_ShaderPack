@@ -45,7 +45,7 @@ attribute vec4 at_tangent;
 
 // Doesn't run on gl 1.20
 //in vec3 at_velocity; // vertex offset to previous frame
-//in vec4 vaColor;                                color (r, g, b, a)                          1.17+
+in vec4 vaColor;                                color (r, g, b, a)                          1.17+
 //in vec2 vaUV0;                                  texture (u, v)                              1.17+
 //in ivec2 vaUV1;                                 overlay (u, v)                              1.17+
 //in ivec2 vaUV2;                                 lightmap (u, v)                             1.17+
@@ -147,7 +147,7 @@ void main() {
   
   // -- -- --
   
-  float avgBlend = .3;
+  float avgBlend = .935;
   
   ivec2 txlOffset = ivec2(2);
   vec3 mixColor;
@@ -173,7 +173,7 @@ void main() {
   #endif
   #endif
   //mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
-  mixColor = mix( vec3(vColor.rgb), mixColor, step(.1, length(mixColor)) );
+  mixColor = mix( vec3(vColor.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
 
   vAvgColor = vec4( mixColor, vColor.a); // 1.0);
 
@@ -213,7 +213,7 @@ void main() {
   //shadowPushAmmount = max( abs(vWorldNormal.z), vWorldNormal.y)*0.2;
   
   //float shadowPushAmmount =  (depth*.5 + 0.9-abs(dayNight)*0.85) ;
-  float shadowPushAmmount =  (depth*.5 + 0.25) ;
+  float shadowPushAmmount =  (depth*.5 + .025 ) ;
   shadowPushAmmount *=  max( abs(vWorldNormal.x), max( vWorldNormal.y, abs(vWorldNormal.z) ));
   vec3 shadowPush = gl_Normal*shadowPushAmmount ;
   
@@ -312,9 +312,10 @@ void main() {
 
   // Single plane cross blocks;
   //   Grass, flowers, etc.
-  /*
-  vCamViewVec=vec3(0.0);
+  //vCamViewVec=vec3(0.0);
+    /*
   if (mc_Entity.x == 801){
+  
     //vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(vPos.x, 0.0, vPos.z)) ));
     vCrossBlockCull = abs(dot(vec3(vWorldNormal.x, 0.0, vWorldNormal.z),normalize(vec3(1.0, 0.0, 1.0)) ));
     //vCrossBlockCull = abs( dot( normalize(vLocalPos.xyz), normalize(vec3(1.0, 0.0, 1.0)) ) );
@@ -370,6 +371,9 @@ void main() {
   vAlphaRemove = 0.0;
   if((mc_Entity.x == 810 || mc_Entity.x == 8101) && SolidLeaves ){
     vAvgColor = mc_Entity.x == 810 ? vColor * (vAvgColor.g*.5+.5) : vAvgColor;
+    vColor = mc_Entity.x == 8101 ? vAvgColor*1.85 : vColor;
+    
+    
     vAlphaRemove = 1.0;
     shadowPos.w = -2.0;
   }
@@ -382,7 +386,7 @@ void main() {
 
   if( mc_Entity.x == 801 ||  mc_Entity.x == 811 || mc_Entity.x == 8013 ){
     texcoord.zw = texcoord.st;
-    vColorOnly = mc_Entity.x == 801 ? 0.65 : 0.0;
+    vColorOnly = mc_Entity.x == 801 ? 0.85 : 0.0;
     //vColorOnly = mc_Entity.x == 811 ? vColor.b*.5 : vColorOnly;
     vAvgColor*=vColor;
     vDepthAvgColorInf=vColor.r;
@@ -432,9 +436,16 @@ void main() {
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if( mc_Entity.x == 805 ){
-    vCdGlow=0.04;
+    vCdGlow=0.03;
 #ifdef NETHER
     vCdGlow=0.04;
+#endif
+    //vDepthAvgColorInf = 0.20;
+  }
+  if( mc_Entity.x == 8051 ){
+    vCdGlow=0.015;
+#ifdef NETHER
+    vCdGlow=0.035;
 #endif
     //vDepthAvgColorInf = 0.20;
   }
@@ -464,6 +475,8 @@ void main() {
 	//vColor = vec4(fract(cameraPosition),1.0);
 
 
+	//vColor = gl_Color;
+	//vColor = vaColor;
 // gbufferModelView;
 // gbufferProjection;
 // gbufferModelViewInverse;
@@ -612,28 +625,35 @@ void main() {
 
     float isLava = vIsLava;
     vec4 avgShading = vAvgColor;
+    float avgDelta = 0.0;
 
     // -- -- -- -- -- -- --
     
-    vec4 txCd;
+    vec4 baseCd=vec4(1.0,1.0,0.0,1.0);
+    vec4 txCd=vec4(1.0,1.0,0.0,1.0);
     // TODO : There's gotta be a better way to do this...
     //          - There is, just gotta change it over
     if ( DetailBluring >0.0 ){
       //txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
       
+      // Split Screen "Blur Comparison" Debug View
       #if ( DebugView == 1 )
         float debugDetailBluring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
         //debugDetailBluring *= debugDetailBluring;
         debugDetailBluring = mix( DetailBluring, debugDetailBluring, step(screenSpace.x,0.75));
-        txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize*screenSpace, debugDetailBluring );
+        diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize, debugDetailBluring, baseCd, txCd, avgDelta );
       #else
-        txCd = diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize*screenSpace, DetailBluring);
+        diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize, DetailBluring, baseCd, txCd, avgDelta);
       #endif
       
     }else{
       txCd = texture2D(texture, tuv);
     }
 
+    
+
+    txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
+    
     txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
     txCd.a = mix(txCd.a, 1.0, vAlphaRemove);
     if (txCd.a * vAlphaMult < .2){
@@ -655,13 +675,43 @@ void main() {
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf));
     float depthBias = biasToOne(depth, 10.5);
     //float depthDetailing = clamp(1.195-depthBias*1.25, 0.0, 1.0);
-    float depthDetailing = clamp(1.2-depthBias, 0.0, 1.0);
+    //float depthDetailing = clamp(1.35-depthBias, 0.0, 1.0);
+    float depthDetailing = clamp(1.035-depthBias, 0.0, 1.0);
 
     // Side by side of active bluring and no bluring
     //   Other shader effects still applied though
     #if ( DebugView == 1 )
       txCd = mix( texture2D(texture, tuv), txCd, step(0.0, screenSpace.x+.75) );
     #endif
+
+
+  // -- -- -- -- -- -- -- --
+
+    vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
+
+    vec3 outCdAvgRef = outCd.rgb;
+    //outCd.rgb = vAvgColor.rgb;
+    //vec3 cdToAvgDelta = (outCdAvgRef.rgb - avgCdRef.rgb)*1.5; // Color deltas for subtle differences
+    //cdToAvgDelta = max(cdToAvgDelta, outCdAvgRef.rgb - txCd.rgb); // Strong color changes, ie birch black bark markings
+    vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
+    float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
+    //outCd.rgb = mix( outCd.rgb, outCdAvgRef.rgb, max(0.0,(cdToAvgBlender-depthBias*.5)*(1.0-vColorOnly*2.0)) );
+    outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
+    
+    float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),2.50)*2.50*depthBias);
+    //outCd.rgb =  mix( vAvgColor.rgb * (luma(outCd.rgb)*.3+.7), outCd.rgb, -min(0.0,length( outCd.rgb-vAvgColor.rgb )) );
+    outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
+    //outCd.rgb =  vec3(avgColorBlender);
+
+
+    // -- -- -- -- -- -- -- -- -- -- -- --
+    // -- Apply Shading To Base Color - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+    float avgColorMix = depthDetailing*vDepthAvgColorInf;
+    avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava*3.0);
+    //outCd = mix( vec4(avgShading.rgb,1.0), vec4(outCd.rgb,1.0),   clamp(avgColorMix+vColorOnly,0.0,1.0));
+    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
+
 
   // -- -- -- -- -- -- -- --
   // Based on shadow lookup from Chocapic13's HighPerformance Toaster
@@ -701,18 +751,19 @@ void main() {
   float reachMult = 1.5 - (min(1.0,outDepth*20.0)*.5);
   
   for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*skyBrightnessMult*.00048828125;
+    posOffset = axisSamples[x]*reachMult*skyBrightnessMult*.00058828125;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
+    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
     //shadowAvg = ( shadowAvg * shadow2D(shadow, projectedShadowPosition).x );
     
     
   #if ShadowSampleCount > 2
-    posOffset = crossSamples[x]*reachMult*skyBrightnessMult*.0008;
+    //posOffset = crossSamples[x]*reachMult*skyBrightnessMult*.0008;
+    posOffset = crossSamples[x]*reachMult*skyBrightnessMult*.00038828125;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .3);
+    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
     //shadowAvg = ( shadowAvg * shadow2D(shadow, projectedShadowPosition).x );
   #endif
     
@@ -765,7 +816,7 @@ void main() {
     //diffuseSun = smoothstep(.0,.65,diffuseSun); 
     // Mute Shadows during Rain
     //diffuseSun = mix( diffuseSun*.6+.7, 1.0, rainStrength);
-    diffuseSun = mix( diffuseSun, 1.0, rainStrength);
+    diffuseSun = mix( diffuseSun, 0.0, rainStrength);
 
     // TODO : Move sinosoidal block shading to vertex stage
     float blockLighting = shiftBlackLevels( diffuseSun ) ;//* (sin( vColor.a*PI*.5 )*.5+.5);
@@ -798,21 +849,12 @@ void main() {
 #endif
 
     
+   // outCd = mix( vec4(avgShading.rgb,1.0), vec4(outCd.rgb,1.0),   clamp((1.0-vFinalCompare)*(step(lightLuma,.75)+.04),0.0,1.0));
+    //outCd = mix( vec4(avgShading.rgb,1.0), vec4(outCd.rgb,1.0),   clamp((1.0-vFinalCompare)*(biasToOne(1.0-lightLuma)+.04),0.0,1.0));
     
-    
-    // -- -- -- -- -- -- --
-    // -- Set base color -- --
-    // -- -- -- -- -- -- -- -- --
-    vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
-    float avgColorMix = depthDetailing*vDepthAvgColorInf;
-    avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava*3.0);
-    //float combineLighting = lightCd.r;//mix( lightCd.r, max( lightCd.r, shadowAvg), shadowAvg );
-    outCd = mix( vec4(avgShading.rgb,1.0), vec4(outCd.rgb,1.0),   clamp(avgColorMix+vColorOnly+(1.0-vFinalCompare)*(step(lightLuma,.75)*.25+.4),0.0,1.0));
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly+(1.0-vFinalCompare)*(clamp((lightLuma-.65)*14.0,0.0,1.0)*.25+.4)));
-
     //outCd.rgb *= vec3(shadowAvg);
-    //outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r*.9), 1.0,shadowAvg));
-    outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r*.8), 1.0,shadowAvg));
+    // Strength of final shadow
+    outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r*.7), 1.0,shadowAvg));
 
     
 
@@ -880,11 +922,10 @@ void main() {
     // -- -- -- -- -- -- -- -- --
     // -- Lighting influence - -- --
     // -- -- -- -- -- -- -- -- -- -- --
-    outCd.rgb *=  lightCd.rrr + glowInf + vCdGlow;
+    //outCd.rgb *=  lightCd.rrr + glowInf;// + vCdGlow;
 
     // Used for correcting blended colors post environment influences
     // This shouldn't be needed, but blocks like Grass or Birch Log/Wood are persnickety
-    vec3 outCdAvgRef = outCd.rgb;
     //vec3 avgCdRef = vAvgColor.rgb * (lightCd.rrr + glowInf + vCdGlow);
 
     // -- -- -- -- -- -- --
@@ -998,7 +1039,7 @@ void main() {
     //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
     //cdBrightness *= cdBrightness;
     //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight*.1)*(1.0-rainStrength);
-   // outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight*.1)*(1.0-rainStrength)*skyBrightnessMult;
+    outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight*.1)*(1.0-rainStrength)*skyBrightnessMult;
     
     
     // -- -- -- -- -- -- -- -- -- -- -- 
@@ -1022,11 +1063,11 @@ void main() {
 
 
     vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness ;// * lightLuma;
+    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness ;// * lightLuma;
 
 
 #ifdef NETHER
-    outCd.rgb += outCd.rgb*lightCd*min(1.0,vIsLava+glowInf);
+    outCd.rgb += outCd.rgb*lightCd*min(1.0,vIsLava);//+glowInf);
 #else
     glowHSV.z *= .7+vIsLava*.5;
 #endif
@@ -1055,25 +1096,18 @@ void main() {
     
     outCd.a*=vAlphaMult;
     
-    //outCd.rgb = vAvgColor.rgb;
-    //vec3 cdToAvgDelta = (outCdAvgRef.rgb - avgCdRef.rgb)*1.5; // Color deltas for subtle differences
-    //cdToAvgDelta = max(cdToAvgDelta, outCdAvgRef.rgb - txCd.rgb); // Strong color changes, ie birch black bark markings
-    vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
-    float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
-    //outCd.rgb = mix( outCd.rgb, outCdAvgRef.rgb, max(0.0,(cdToAvgBlender-depthBias*.5)*(1.0-vColorOnly*2.0)) );
-    outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
-    //outCd.rgb = mix( vAvgColor.rgb * (luma(outCd.rgb)*.3+.7), outCd.rgb, vFinalCompare);
     
     vec3 outCdHSV = rgb2hsv(outCd.rgb);
     vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
     outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );
+    
     // Boost bright colors morso
     boostPeaks(outCd.rgb);
     
    
    
     if( GlowBrightness>0.0 ){
-      float ambientGlow = length(outCd.rgb) * (.1 + GlowBrightness*.05);
+      float ambientGlow = length(outCd.rgb) * (1.1 + GlowBrightness*.15);
       ambientGlow = ambientGlow*ambientGlow;
       glowHSV.z = min( glowHSV.z, ambientGlow );
     }
@@ -1096,13 +1130,10 @@ void main() {
       
     // TODO : Remove all instances of `sunMoonShadowInf`
     //  outCd.rgb = vec3(sunMoonShadowInf);
-    //  outCd.rgb = vec3(0.0);
-    // outCd.rgb = vec3(lightLuma);
-    // outCd.rgb = vec3(skyBrightnessMult);
-    // outCd.rgb = vec3(surfaceShading);
+    // outCd.rgb = vec3(vAvgColor.rgb);
+    // outCd.rgb = vec3(txCd.rgb);
+    // outCd.rgb = vec3(vColorOnly);
     // outCd.rgb = vec3(mix(lightLuma, 1.0, diffuseLight.r));
-    
-    
     
     
     gl_FragData[0] = outCd;

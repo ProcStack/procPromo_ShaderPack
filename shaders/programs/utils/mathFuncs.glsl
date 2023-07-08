@@ -20,6 +20,32 @@ vec3 hsv2rgb(vec3 c){
 
 // -- -- -- -- -- --
 
+// John Carmack Fast Square Root
+//   Modified for OpenGL Context
+//   https://en.wikipedia.org/wiki/Fast_inverse_square_root
+float Q_rsqrt( float number )
+{
+  int i;
+  float x2, y;
+  const float threehalfs = 1.5;
+
+  x2 = number * 0.5;
+  y  = number;
+  i  = int( y );                       // evil floating point bit level hacking
+  i  = 0x5f3759df - ( i >> 1 );               // what the fuck?
+  y  = float( i );
+  y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration
+  // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+
+  return y;
+}
+
+float fastLength( vec3 inVec ){
+  return Q_rsqrt( inVec[0]*inVec[0] + inVec[1]*inVec[1] + inVec[2]*inVec[2] );
+}
+
+// -- -- -- -- -- --
+
 vec2 rotToUV(vec3 direction){
   vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y));
   uv *= vec2(0.1591, 0.3183);

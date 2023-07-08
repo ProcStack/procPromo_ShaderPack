@@ -59,14 +59,14 @@ vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, in
   float invDist=0.0;
   for( int x=0; x<steps; ++x){
     dist = float(x+1)/float(steps+1);
-    invDist = (1.0-dist)*.5;//*dist;
+    invDist = (1.0-dist)*.4;//*dist;
     
     curUV =  uv + vec2( -1.0, -1.0 )*texelRes*dist ;
     curCd = texture2D(tx, curUV).rgb;
-    sampleCd += curCd*invDist*.5;
+    sampleCd += curCd*invDist;
     curUV =  uv + vec2( 1.0, 1.0 )*texelRes*dist ;
     curCd = texture2D(tx, curUV).rgb;
-    sampleCd += curCd*invDist*.5;
+    sampleCd += curCd*invDist;
   }
   return sampleCd;
 }

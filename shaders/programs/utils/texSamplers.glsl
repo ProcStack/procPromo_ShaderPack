@@ -133,11 +133,12 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
 }
 
 
-vec4 diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float resScalar ){
-  vec4 sampleCd = texture2D(tx, uv);
+void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+  baseCd = texture2D(tx, uv);
+  sampleCd = baseCd ;
   // Flatten Black/White to 0; -1 to 1
-  vec3 bwFlatten = vec3(1.0,.7,1.0);
-  vec3 sampleLab = linearToXYZ( sampleCd.rgb ) * bwFlatten ;
+  vec3 bwFlatten = vec3(1.200,0.930,1.20);
+  vec3 sampleLab = linearToXYZ( sampleCd.rgb ) * bwFlatten;
   // linearToXYZ( lin )
   vec2 res = texelRes * resScalar;
   
@@ -145,12 +146,11 @@ vec4 diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
   vec2 curId;
   float curUVDist=0.0;
   vec4 curCd;
-  vec3 curMix;
   vec3 curLab;
   float delta=0.0;
-  float hit=0.0;
   float uvEdge=0.0;
   float maxDelta = 0.0;
+  vec3 brightestCd = vec3(0.0);
   for( int x=0; x<boxSamplesCount; ++x){
     curUV =  uv + boxSamples[x]*res ;
     //curUV =  clamp(uv + boxSamples[x]*res, vec2(0.0), vec2(1.0) ) ;
@@ -158,32 +158,38 @@ vec4 diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
 		curUV = fract(curUV)*uvLimits.pq+uvLimits.st;
 		
     curCd = texture2D(tx, curUV);
-    curLab = linearToXYZ( curCd.rgb ) * bwFlatten;
+    curLab = linearToXYZ( curCd.rgb ) * bwFlatten ;
     
-    delta = dot(sampleLab.rgb, curLab.rgb);
-    //delta = (delta)*.5+.2;
-    delta = max(0.0,delta);//*delta;
+    delta = dot((sampleLab.rgb), (curLab.rgb));
+    delta = max(0.0,1.0-((1.0-delta)*10.20));//*delta;
     
     //delta *= 0.31-(length( sampleLab.rgb-curLab.rgb )*0.95);
     //delta = 0.09-smoothstep( delta, .15722, .87225 );
     //delta *= 0.51-(length( sampleLab.rgb-curLab.rgb )*2.35);
     //delta *= (0.71+resScalar)-(length( sampleLab.rgb-curLab.rgb )*2.35*(.5-resScalar*.5));
-    delta *= 0.51-(length( sampleLab.rgb-curLab.rgb )*(2.5-resScalar));
-    delta *= resScalar;
+    //delta *= 0.50151-(length( sampleLab.rgb-curLab.rgb )*(1.5-resScalar));
+    //delta *= resScalar;
     delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
     //delta = .4-smoothstep( delta, .15722, .87225 )*.4;
     
+    //delta = step( sampleLab.g, curLab.g );
     
-    curMix = curCd.rgb;
-    sampleCd.rgb = mix( sampleCd.rgb, curMix, delta);
+    //brightestCd = mix( brightestCd, curCd.rgb, step( curLab.g, sampleLab.g ) );
+    sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta);
     maxDelta = max( maxDelta, delta );
+    avgDelta += delta;
   }
   //sampleCd.rgb *= vec3(1.0-clamp( 1.0-length( sampleLab ), 0.0, .20 )*(maxDelta));
-  //sampleCd.rgb = vec3( hit );
 
-  //sampleCd.rgb *= vec3(maxDelta);
+  avgDelta = min(1.0, maxDelta*.75);
+  
+  //sampleCd.rgb = vec3(maxDelta);
+  //sampleCd.rgb = vec3(avgDelta);
+  //sampleCd.rgb = brightestCd;
+  //sampleCd.rgb = sampleLab.rgb;
+  //sampleCd.rgb = texture2D(tx, uv).rgb;
+  
 
-  return sampleCd;
 }
 
 
@@ -224,7 +230,6 @@ vec4 diffuseNoLimit( sampler2D tx, vec2 uv, vec2 res){
     //maxDelta = max( maxDelta, delta );
   }
   sampleCd.rgb *= vec3(sampleHSV.b*.2+.8);
-
 
   return sampleCd;
 }
