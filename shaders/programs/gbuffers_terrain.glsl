@@ -29,9 +29,6 @@ uniform float far;
 uniform int blockEntityId;
 uniform vec2 texelSize;
 
-uniform float viewWidth;
-uniform float viewHeight;
-uniform float frameTimeCounter;
 uniform int worldTime;
 
 uniform float dayNight;
@@ -58,12 +55,11 @@ varying float txGlowThreshold;
 
 varying vec4 texcoord;
 varying vec2 texcoordmid;
-varying vec4 texcoordminmax;
 varying vec4 lmcoord;
 varying vec2 texmidcoord;
 
 varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec2 vtexcoord;
+
 
 varying float sunDot;
 
@@ -82,7 +78,6 @@ varying vec4 vWorldPos;
 varying vec3 vModelPos;
 varying vec3 vNormal;
 varying float vNormalSunDot;
-varying vec4 vUVMinMax;
 
 varying vec4 vColor;
 varying vec4 vAvgColor;
@@ -137,13 +132,11 @@ void main() {
                                  
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 	//texcoord = gl_MultiTexCoord0;
-
   
 
 	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord,0.0,1.0)).st;
   texcoordmid=midcoord;
   vec2 texelhalfbound = texelSize*16.0;
-  texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
   
   // -- -- --
   
@@ -188,7 +181,7 @@ void main() {
   texmidcoord = midcoord;
 	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
 	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
-	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
+
   
 
 
@@ -260,13 +253,14 @@ void main() {
   
   // -- -- -- -- -- -- -- --
   
-  // Sun Moon Influence
-  skyBrightnessMult = 1.0;
-  dayNightMult = 0.0;
-  sunPhaseMult = 1.0;
 
 #ifdef OVERWORLD
 
+	// Sun Moon Influence
+	skyBrightnessMult = 1.0;
+	dayNightMult = 0.0;
+	sunPhaseMult = 1.0;
+  
     // Sky Influence
     //   TODO : Move to 
     //skyBrightnessMult=eyeBrightnessSmooth.y * 0.004166666666666666; //  1.0/240.0
@@ -407,7 +401,7 @@ void main() {
   if( mc_Entity.x == 701 ){
     vIsLava=.8;
 #ifdef NETHER
-    vCdGlow=.3;
+    vCdGlow=.2;
 #else
      vCdGlow=.05;
 #endif
@@ -417,7 +411,7 @@ void main() {
   if( mc_Entity.x == 702 ){
     vIsLava=0.9;
 #ifdef NETHER
-    //vCdGlow=.1;
+    vCdGlow=.5;
 #else
     vCdGlow=0.25;
 #endif
@@ -428,7 +422,7 @@ void main() {
   if( mc_Entity.x == 707 ){
     vCdGlow=0.015;
 #ifdef NETHER
-    vCdGlow=0.018;
+    vCdGlow=0.012;
 #endif
     //vAvgColor = vec4( .8, .6, .0, 1.0 );
     
@@ -436,9 +430,9 @@ void main() {
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if( mc_Entity.x == 805 ){
-    vCdGlow=0.03;
+    vCdGlow=0.025;
 #ifdef NETHER
-    vCdGlow=0.04;
+    vCdGlow=0.03;
 #endif
     //vDepthAvgColorInf = 0.20;
   }
@@ -450,6 +444,10 @@ void main() {
     //vDepthAvgColorInf = 0.20;
   }
   
+	if( mc_Entity.x == 8052 ){
+    vCdGlow=0.01;
+		vAvgColor = vColor;
+	}
 
   // Amethyst Block
   if (mc_Entity.x == 909){
@@ -532,6 +530,9 @@ uniform mat4 shadowProjection;
 uniform mat4 shadowModelView;
 
 
+uniform float viewWidth;
+uniform float viewHeight;
+
 uniform float near;
 uniform float far;
 uniform sampler2D gaux1;
@@ -567,13 +568,11 @@ varying float txGlowThreshold;
 varying vec4 vColor;
 varying vec4 texcoord;
 varying vec2 texcoordmid;
-varying vec4 texcoordminmax;
 varying vec4 lmcoord;
-varying vec4 vUVMinMax;
 
 varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec2 vtexcoord;
+
 
 varying float sunDot;
 
@@ -629,11 +628,13 @@ void main() {
 
     // -- -- -- -- -- -- --
     
-    vec4 baseCd=vec4(1.0,1.0,0.0,1.0);
-    vec4 txCd=vec4(1.0,1.0,0.0,1.0);
+    vec4 baseCd=vAvgColor;//vec4(1.0,1.0,0.0,1.0);
+    baseCd=baseCd = texture2D(texture, tuv);
+    
+		vec4 txCd=vec4(1.0,1.0,0.0,1.0);
     // TODO : There's gotta be a better way to do this...
     //          - There is, just gotta change it over
-    if ( DetailBluring >0.0 ){
+    if ( DetailBluring > 0.0 ){
       //txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
       
       // Split Screen "Blur Comparison" Debug View
@@ -643,7 +644,8 @@ void main() {
         debugDetailBluring = mix( DetailBluring, debugDetailBluring, step(screenSpace.x,0.75));
         diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize, debugDetailBluring, baseCd, txCd, avgDelta );
       #else
-        diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize, DetailBluring, baseCd, txCd, avgDelta);
+        //diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize, DetailBluring, baseCd, txCd, avgDelta);
+        diffuseSampleXYZFetch( texture, tuv, texcoordmid, texelSize, DetailBluring, baseCd, txCd, avgDelta);
       #endif
       
     }else{
@@ -793,11 +795,11 @@ void main() {
   //  Distance influence of surface shading --
   //shadowAvg *= shadowSurfaceInf;
   //shadowAvg = min( shadowAvg, shadowSurfaceInf );
-  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult;
+  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult*(1-rainStrength);
   //shadowAvg = shadowSurfaceInf;
   //shadowAvg = shadowAvg;
   // -- -- --
-    
+  //  rainStrength;skyBrightnessMult
   // TODO : Needed?  Depth based shadowings
   //diffuseSun *= mix( 0.0, shadowAvg, sunMoonShadowInf * shadowDepthInf * shadowSurfaceInf );
   diffuseSun *= mix( 0.0, shadowAvg, sunMoonShadowInf * shadowDepthInf * shadowSurfaceInf * dayNightMult );
@@ -936,7 +938,8 @@ void main() {
     // -- -- -- -- -- -- --
     // -- Night Vision - -- --
     // -- -- -- -- -- -- -- -- --
-    toFogColor = mix(toFogColor* (skyBrightnessMult*.8+.2), vec3(1.0), nightVision);
+	// TODO : Rework Night Vision & Darkness
+    toFogColor = mix(toFogColor, vec3(1.0), nightVision);
     
 
     // TODO : Move whats possible to vert
@@ -1011,12 +1014,6 @@ void main() {
     
     
     
-    // Texcoord fit to block
-    //vec2 localUV = vec2(0.0);
-    //localUV.x = (tuv.x-texcoordminmax.x) / (texcoordminmax.z-texcoordminmax.x);
-    //localUV.y = (tuv.y-texcoordminmax.y) / (texcoordminmax.w-texcoordminmax.y);
-    
-    
 
 #ifdef NETHER
     //outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
@@ -1063,7 +1060,7 @@ void main() {
 
 
     vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness ;// * lightLuma;
+    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness;// * .05;// * lightLuma;
 
 
 #ifdef NETHER
@@ -1107,7 +1104,7 @@ void main() {
    
    
     if( GlowBrightness>0.0 ){
-      float ambientGlow = length(outCd.rgb) * (1.1 + GlowBrightness*.15);
+      float ambientGlow = length(outCd.rgb) * (1.1 + GlowBrightness*.15) * .5;
       ambientGlow = ambientGlow*ambientGlow;
       glowHSV.z = min( glowHSV.z, ambientGlow );
     }
@@ -1135,7 +1132,20 @@ void main() {
     // outCd.rgb = vec3(vColorOnly);
     // outCd.rgb = vec3(mix(lightLuma, 1.0, diffuseLight.r));
     
-    
+		avgDelta = 0.0;
+    baseCd=vAvgColor;
+    txCd=vec4(1.0,1.0,0.0,1.0);
+	  diffuseSampleXYZFetch( texture, tuv, texcoordmid, texelSize, DetailBluring, baseCd, txCd, avgDelta);
+      
+	
+	//outCd.rgb = txCd.rgb;
+	//outCd.rgb = vColor.rgb;
+	//outCd.rgb = vec3(avgDelta*1.00);
+	
+	
+	
+	
+	
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

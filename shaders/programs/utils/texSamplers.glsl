@@ -20,6 +20,7 @@ const vec2 crossSamples[4] = vec2[4](
                             );
                             
 const int boxSamplesCount = 8;
+const float boxSampleFit = 0.125; // 1/8;
 const vec2 boxSamples[8] = vec2[8](
                               vec2( -1.0, -1.0 ),
                               vec2( -1.0, 0.0 ),
@@ -31,6 +32,19 @@ const vec2 boxSamples[8] = vec2[8](
                               vec2( 1.0, -1.0 ),
                               vec2( 1.0, 0.0 ),
                               vec2( 1.0, 1.0 )
+                            );
+														
+const ivec2 boxFetchSamples[8] = ivec2[8](
+                              ivec2( -1, -1 ),
+                              ivec2( -1, 0 ),
+                              ivec2( -1, 1 ),
+
+                              ivec2( 0, -1 ),
+                              ivec2( 0, 1 ),
+
+                              ivec2( 1, -1 ),
+                              ivec2( 1, 0 ),
+                              ivec2( 1, 1 )
                             );
 
 
@@ -136,16 +150,18 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
 void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
   baseCd = texture2D(tx, uv);
   sampleCd = baseCd ;
+  vec3 boxAvg=baseCd.rgb;
   // Flatten Black/White to 0; -1 to 1
   vec3 bwFlatten = vec3(1.200,0.930,1.20);
-  vec3 sampleLab = linearToXYZ( sampleCd.rgb ) * bwFlatten;
+  vec3 sampleXYZ = linearToXYZ( sampleCd.rgb ) * bwFlatten;
   // linearToXYZ( lin )
   vec2 res = texelRes * resScalar;
-  
+	
   vec2 curUV;
   vec2 curId;
   float curUVDist=0.0;
   vec4 curCd;
+  vec3 curXYZ;
   vec3 curLab;
   float delta=0.0;
   float uvEdge=0.0;
@@ -158,39 +174,129 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
 		curUV = fract(curUV)*uvLimits.pq+uvLimits.st;
 		
     curCd = texture2D(tx, curUV);
-    curLab = linearToXYZ( curCd.rgb ) * bwFlatten ;
+    curXYZ = linearToXYZ( curCd.rgb ) * bwFlatten ;
     
-    delta = dot((sampleLab.rgb), (curLab.rgb));
-    delta = max(0.0,1.0-((1.0-delta)*10.20));//*delta;
+    delta = dot(normalize(sampleXYZ.rgb), normalize(curXYZ.rgb));
+    delta = max(0.0,delta);//*delta;
+    //delta = max(0.0,1.0-((1.0-delta)*5.20));//*delta;
     
-    //delta *= 0.31-(length( sampleLab.rgb-curLab.rgb )*0.95);
+    //delta *= 0.31-(length( sampleXYZ.rgb-curXYZ.rgb )*0.95);
     //delta = 0.09-smoothstep( delta, .15722, .87225 );
-    //delta *= 0.51-(length( sampleLab.rgb-curLab.rgb )*2.35);
-    //delta *= (0.71+resScalar)-(length( sampleLab.rgb-curLab.rgb )*2.35*(.5-resScalar*.5));
-    //delta *= 0.50151-(length( sampleLab.rgb-curLab.rgb )*(1.5-resScalar));
+    //delta *= 0.51-(length( sampleXYZ.rgb-curXYZ.rgb )*2.35);
+    //delta *= (0.71+resScalar)-(length( sampleXYZ.rgb-curXYZ.rgb )*2.35*(.5-resScalar*.5));
+    //delta *= 0.50151-(length( sampleXYZ.rgb-curXYZ.rgb )*(1.5-resScalar));
     //delta *= resScalar;
     delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
-    //delta = .4-smoothstep( delta, .15722, .87225 )*.4;
+    delta = .4-smoothstep( delta, .15722, .87225 )*.4;
     
-    //delta = step( sampleLab.g, curLab.g );
+    //delta = step( sampleXYZ.g, curXYZ.g );
     
-    //brightestCd = mix( brightestCd, curCd.rgb, step( curLab.g, sampleLab.g ) );
+    //brightestCd = mix( brightestCd, curCd.rgb, step( curXYZ.g, sampleXYZ.g ) );
     sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta);
     maxDelta = max( maxDelta, delta );
     avgDelta += delta;
+		boxAvg += curCd.rgb;
   }
-  //sampleCd.rgb *= vec3(1.0-clamp( 1.0-length( sampleLab ), 0.0, .20 )*(maxDelta));
+  //sampleCd.rgb *= vec3(1.0-clamp( 1.0-length( sampleXYZ ), 0.0, .20 )*(maxDelta));
 
-  avgDelta = min(1.0, maxDelta*.75);
+  //avgDelta = min(1.0, maxDelta*.075);
+  avgDelta = min(1.0, maxDelta*boxSampleFit);
   
   //sampleCd.rgb = vec3(maxDelta);
   //sampleCd.rgb = vec3(avgDelta);
   //sampleCd.rgb = brightestCd;
-  //sampleCd.rgb = sampleLab.rgb;
+  //sampleCd.rgb = sampleXYZ.rgb;
   //sampleCd.rgb = texture2D(tx, uv).rgb;
   
-
+	boxAvg = min( vec3(1,1,1), boxAvg*boxSampleFit );
+	sampleCd.rgb = boxAvg.rrr;
 }
+
+
+
+
+
+
+
+
+void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+  sampleCd = baseCd ;
+  vec3 boxAvg=baseCd.rgb;
+	
+  // Flatten Black/White to 0; -1 to 1
+  vec3 bwFlatten = vec3(1.200,0.930,1.20);
+	
+  vec3 sampleXYZ = linearToXYZ( sampleCd.rgb ) * bwFlatten;
+  // linearToXYZ( lin )
+  vec2 res = texelRes * resScalar;
+  
+	
+	
+	float edgePixelSize =  (1.0/16.0);
+	vec2 blendEdgeInf = vec2( (uv-uvmid)*64.0+.5 );
+	
+	// To prevent blending neighboring atlas texture
+	ivec4 edgeBlendInf = ivec4(0.0);
+	edgeBlendInf.x = int( step( edgePixelSize, (blendEdgeInf.r)) );
+	edgeBlendInf.y = int( step( edgePixelSize, (blendEdgeInf.g)) );
+	edgeBlendInf.z = int( step( edgePixelSize, 1.0-(blendEdgeInf.r)) );
+	edgeBlendInf.w = int( step( edgePixelSize, 1.0-(blendEdgeInf.g)) );
+	
+	
+	
+  ivec2 curOffset;
+  float curUVDist=0.0;
+  vec4 curCd;
+  vec3 curXYZ;
+  float delta=0.0;
+  float maxDelta = 0.0;
+  float minDelta = 0.0;
+  for( int x=0; x<boxSamplesCount; ++x){
+		curOffset = boxFetchSamples[x];
+		curOffset.x = curOffset.x < 0 ? curOffset.x*edgeBlendInf.x : curOffset.x*edgeBlendInf.z;
+		curOffset.y = curOffset.y < 0 ? curOffset.y*edgeBlendInf.y : curOffset.y*edgeBlendInf.w;
+		
+		
+		
+    curCd = textureOffset(tx, uv, curOffset);
+    curXYZ = linearToXYZ( curCd.rgb ) * bwFlatten ;
+    
+    delta = clamp( dot((sampleXYZ.rgb), (curXYZ.rgb)), -1.0, 1.0 );
+
+    
+		
+		
+    delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
+    delta = smoothstep( .25, .85, delta )*.5;
+    
+    sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta);
+    maxDelta = max( maxDelta, delta );
+    avgDelta += delta;
+  }
+
+  avgDelta = min(1.0, avgDelta*boxSampleFit);
+  //avgDelta = maxDelta;
+  
+	
+  //sampleCd.rgb = mix( sampleCd.rgb, baseCd.rgb, min(1.0, length( sampleCd.rgb - baseCd.rgb )*5.0) );
+  float infVal =  min(1.0, length( sampleCd.rgb - baseCd.rgb )*10.0) ;
+	sampleCd.rgb=vec3(maxDelta);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 vec4 diffuseNoLimit( sampler2D tx, vec2 uv, vec2 res){
