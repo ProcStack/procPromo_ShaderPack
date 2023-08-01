@@ -1,4 +1,3 @@
-// Guided by Chocapic13's HighPerformance Toaster shader pack
 
 #ifdef VSH
 

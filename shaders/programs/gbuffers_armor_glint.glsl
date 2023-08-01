@@ -1,121 +1,105 @@
 
+// -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- Vertex Shader Compiler Directive -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
 #ifdef VSH
-varying vec4 texcoord;
-varying vec4 color;
-varying vec4 lmcoord;
 
-attribute vec4 mc_Entity;
-
-uniform float frameTimeCounter;
 uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
-uniform vec2 texelSize;
 
+attribute vec4 mc_Entity;
+
+varying vec4 vUv;
+varying vec4 vLightUV;
+varying vec4 vColor;
 varying vec3 vNormal;
-varying vec3 vLocalNormal;
-  
+
+// -- -- --
+
+#include "/shaders.settings"
+#include "utils/mathFuncs.glsl"
+#include "utils/shadowCommon.glsl"
+
+// -- -- --
+
 void main() {
 
-	vec4 position =  gl_ModelViewMatrix * gl_Vertex;
-  position = gl_ProjectionMatrix * position;
+	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+
+	gl_Position = gl_ProjectionMatrix * position;
+
+	vColor = gl_Color;
+
+	vUv = gl_TextureMatrix[0] * gl_MultiTexCoord0;
   
-	gl_Position = position;
-
-	color = gl_Color;
-
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+	vLightUV = gl_TextureMatrix[0] * gl_MultiTexCoord1;
   
+	//float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
+  //vLightUV.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
+
   vNormal = normalize(gl_NormalMatrix * gl_Normal);
-  vLocalNormal = gl_Normal;
-
+  
 	gl_FogFragCoord = gl_Position.z;
 }
 #endif
 
+
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- Fragment Shader Compiler Directive  -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
 #ifdef FSH
-/* RENDERTARGETS: 0,1,2,6 */
+/* RENDERTARGETS: 0,2,7 */
+//  0-gtexture     2-normals     7-colortex4 
+//      Color    (Normals,Depth)    GlowHSV
 
 /* --
-const int gcolorFormat = RGBA8;
-const int gdepthFormat = RGBA16;
-const int gnormalFormat = RGB10_A2;
+const int gcolorFormat = RGBA16;
+const int gnormalFormat = RGBA16;
+const int colortex7Format = RGB10_A2;
  -- */
  
-#include "utils/mathFuncs.glsl"
-
 uniform sampler2D texture;
-uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
-uniform vec2 texelSize;
-uniform vec3 cameraPosition;
-uniform vec3 upPosition;
+uniform sampler2D lightmap;
 
- 
-varying vec4 color;
-varying vec4 texcoord;
-
-const int GL_LINEAR = 9729;
-const int GL_EXP = 2048;
-
-uniform int fogMode;
-
+varying vec4 vUv;
+varying vec4 vLightUV;
+varying vec4 vColor;
 varying vec3 vNormal;
-varying vec3 vLocalNormal;
 
 
-const int boxSamplesCount = 8;
-const vec2 boxSamples[8] = vec2[8](
-                              vec2( -1.0, -1.0 ),
-                              vec2( -1.0, 0.0 ),
-                              vec2( -1.0, 1.0 ),
+// -- -- --
 
-                              vec2( 0.0, -1.0 ),
-                              vec2( 0.0, 1.0 ),
+#include "/shaders.settings"
+#include "utils/mathFuncs.glsl"
+#include "utils/shadowCommon.glsl"
 
-                              vec2( 1.0, -1.0 ),
-                              vec2( 1.0, 0.0 ),
-                              vec2( 1.0, 1.0 )
-                            );
-
-
-vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){
-  vec4 sampleCd = texture2D(tx, uv);
-  
-  vec2 curUV;
-  vec4 curCd;
-  for( int x=0; x<boxSamplesCount; ++x){
-    curUV =  uv + boxSamples[x]*texelRes ;
-		
-    curCd = texture2D(tx, curUV);
-    sampleCd = mix( sampleCd, curCd, (sampleCd.a*curCd.a)*.5);
-  }
-  return sampleCd;
-}
-
-
+// -- -- --
 
 void main() {
-
-  vec4 outCd = texture2D(texture, texcoord.st );
-  outCd.rgb -= vec3(abs(vLocalNormal.y)*.1);
+  vec2 tuv = vUv.st;
+  vec4 txCd = texture2D(texture, tuv);
   
-  // Glow Pass Logic
-  vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
-  screenSpace = (screenSpace*texelSize)-.5;
-  float screenDewarp = length(screenSpace)*.5;
-  float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
-  float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
-  vec3 glowCd = outCd.rgb;
-
-  vec3 glowHSV = rgb2hsv(glowCd);
-  glowHSV.z *= step(.7,outCdMin)*.1*(depth*.5+.5);
-
-	gl_FragData[0] = outCd;
-	//gl_FragData[1] = vec4(vec3(gl_FragCoord.w), 1.0);
-	gl_FragData[2] = vec4( vNormal*.5+.5, 1.0 );
-	gl_FragData[3] = vec4( glowHSV, 1.0 );
+	if( txCd.a < .05 ){
+		discard;
+	}
 		
+  vec2 luv = vLightUV.zw;
+  vec4 lightCd = texture2D( lightmap, luv );
+  
+  vec4 outCd = txCd * lightCd * vColor ;
+	
+	gl_FragData[0] = outCd;
+	gl_FragData[1] = vec4(vec3(0.0), 1.0);
+	gl_FragData[2] = vec4(vec3(0.0), 1.0);
 }
 #endif
+

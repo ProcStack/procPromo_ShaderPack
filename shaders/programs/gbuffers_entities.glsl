@@ -17,10 +17,9 @@ uniform float viewWidth;
 uniform float viewHeight;
 
 attribute vec4 mc_Entity;
-attribute vec4 mc_midTexCoord;
+attribute vec4 mc_midTexCoord;    
 attribute vec4 at_tangent;                      //xyz = tangent vector, w = handedness, added in 1.7.10
 
-in vec3 at_velocity; // vertex offset to previous frame
 
 varying vec2 texelSize;
 varying vec4 texcoord;
@@ -100,7 +99,6 @@ void main() {
   if (mc_Entity.x == 603){
     vAvgColorBlend = 0.5;
   }
-  
   
   
 }
@@ -244,7 +242,9 @@ void main() {
 
   float outDepth = min(.9999,gl_FragCoord.w);
   float outEffectGlow = 0.0;
-  
+	
+	
+	
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);

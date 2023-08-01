@@ -339,3 +339,48 @@ vec4 diffuseNoLimit( sampler2D tx, vec2 uv, vec2 res){
 
   return sampleCd;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+// Used in vertex stage block sampling 
+// vec4 avgCd = atlasSampler( texture, uv, ivec2(2), .935, vColor );
+vec4 atlasSampler( sampler2D tx, vec2 uv, ivec2 uvOffset, float avgBlend, vec4 baseCd ){
+  
+  vec4 mixColor;
+  vec4 tmpCd;
+  float avgDiv = 0.0;
+  tmpCd = texture2D(tx, uv);
+    mixColor = tmpCd;
+    avgDiv += tmpCd.a;
+		
+  tmpCd = textureOffset(tx, uv, ivec2(-uvOffset.x, uvOffset.y) );
+    mixColor = mix( mixColor, tmpCd, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+		
+  tmpCd = textureOffset(tx, uv, ivec2(uvOffset.x, -uvOffset.y) );
+    mixColor = mix( mixColor, tmpCd, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+		
+  tmpCd = textureOffset(tx, uv, ivec2(-uvOffset.x, -uvOffset.y) );
+    mixColor = mix( mixColor, tmpCd, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+		
+  tmpCd = textureOffset(tx, uv, ivec2(-uvOffset.x, uvOffset.y) );
+    mixColor = mix( mixColor, tmpCd, avgBlend*tmpCd.a);
+    avgDiv += tmpCd.a;
+		
+	// For when all samples fail
+  mixColor = mix( baseCd, mixColor, step( 0.05, mixColor.a ) );
+	return mixColor; 
+	
+
+}

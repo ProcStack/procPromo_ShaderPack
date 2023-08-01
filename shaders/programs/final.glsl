@@ -39,10 +39,10 @@ void main() {
 #ifdef FSH
 
 /* --
-const int gcolorFormat = RGBA8;
+const int gcolorFormat = RGBA16;
 const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
-const float eyeBrightnessHalflife = 4.0f;
+const int noiseTextureResolution = 64;
  -- */
  
 #include "/shaders.settings"
@@ -55,7 +55,7 @@ uniform sampler2D colortex2; // Normal Pass
 uniform sampler2D shadowcolor0;
 uniform vec3 cameraPosition;
 
-uniform sampler2D gaux1;
+uniform sampler2D colortex4;
 uniform sampler2D gaux2; // 40% Res Glow Pass
 uniform sampler2D gaux3; // 20% Res Glow Pass
 uniform sampler2D gaux4; // 20% Res Glow Pass
@@ -231,7 +231,7 @@ void main() {
   float effGlowBase = depthEffGlowBase.g;
   
   vec4 normalCd = texture2D(colortex2, uv);
-  vec3 dataCd = texture2D(gaux1, uv).xyz;
+  vec3 dataCd = texture2D(colortex4, uv).xyz;
   vec4 spectralDataCd = texture2D(colortex9, uv);
 
   
@@ -453,7 +453,11 @@ void main() {
   //outCd.rgb=baseCd.rgb;
   //outCd.rgb=outGlowCd;
   
-  //outCd.rgb = texture2D(gaux1,uv).xyz;
+  outCd.rgb = baseCd.rgb;
+  outCd.rgb = texture2D(colortex0, uv).xyz;
+  //outCd.rgb = texture2D(colortex1, uv).rrr; // Screen Space Normal
+  //outCd.rgb = texture2D(colortex2, uv).aaa; // Screen Space Normal
+  //outCd.rgb = texture2D(colortex4, uv).xyz; // Glow
   //outCd.rgb = dataCd.rgb;
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
