@@ -51,6 +51,7 @@ const int noiseTextureResolution = 64;
 uniform sampler2D colortex0; // Diffuse Pass
 uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex2; // Normal Pass
+uniform sampler2D colortex5; // Ambient Occlusion
 
 uniform sampler2D shadowcolor0;
 uniform vec3 cameraPosition;
@@ -436,6 +437,19 @@ void main() {
   
   //outCd.rgb = vec3(edgeOutsidePerc);
   
+  //outCd.rgb=baseCd.rgb;
+  //outCd.rgb=outGlowCd;
+  
+  //outCd.rgb = baseCd.rgb;
+  outCd.rgb = texture2D(colortex0, uv).xyz;
+  outCd.rgb = texture2D(colortex1, uv).rrr; // Depth
+  //outCd.rgb = texture2D(colortex2, uv).aaa; // Screen Space Normal
+  //outCd.rgb = texture2D(colortex4, uv).xyz; // Glow
+  //outCd.rgb = dataCd.rgb;
+	
+  outCd.rgb = texture2D(gaux4, uv).xyz;
+	
+	
   // Shadow Helper Mini Window
   //   hmmmmm picture-in-picture
   //     drooollllssss
@@ -450,15 +464,6 @@ void main() {
     outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
   #endif
   
-  //outCd.rgb=baseCd.rgb;
-  //outCd.rgb=outGlowCd;
-  
-  outCd.rgb = baseCd.rgb;
-  outCd.rgb = texture2D(colortex0, uv).xyz;
-  //outCd.rgb = texture2D(colortex1, uv).rrr; // Screen Space Normal
-  //outCd.rgb = texture2D(colortex2, uv).aaa; // Screen Space Normal
-  //outCd.rgb = texture2D(colortex4, uv).xyz; // Glow
-  //outCd.rgb = dataCd.rgb;
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif

@@ -1,7 +1,7 @@
 
 #ifdef VSH
 
-#define gbuffers_hand
+#include "/shaders.settings"
 
 uniform float frameTimeCounter;
 uniform int heldItemId;
@@ -41,6 +41,7 @@ varying float vWhichHandItem; // 0 = left; 1 = right
 varying float vLeftGlowPerc;
 varying float vRightGlowPerc;
 varying float vGlowPerc;
+varying float vKeepAlpha;
 
 varying vec4 vPos;
 varying vec4 normal;
@@ -134,6 +135,8 @@ void main() {
   vGlowPerc = max( vLeftGlowPerc, vRightGlowPerc );
   vWhichHandItem = isWhichHand;
   
+	
+	vKeepAlpha = ( SolidLeaves && (mc_Entity.x == 101 || mc_Entity.x == 102) ) ? 1.0 : 0.0;
   
   // Items that shouldn't have additional effects
   vTexColorOnly = float( heldItemId == 118 || heldItemId2 == 118 );
@@ -178,6 +181,7 @@ varying float vWhichHandItem; // 0 = left; 1 = right
 varying float vLeftGlowPerc;
 varying float vRightGlowPerc;
 varying float vGlowPerc;
+varying float vKeepAlpha;
 
 varying float vTexColorOnly;
 
@@ -201,6 +205,12 @@ void main() {
   
   //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
   vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
+	
+	txCd.a = min(1.0, txCd.a+vKeepAlpha);
+	/*if( txCd.a<.05 ){
+		discard;
+	}*/
+	
   float glowInf = 0.0;
   
   vec2 luv = lmcoord.st;

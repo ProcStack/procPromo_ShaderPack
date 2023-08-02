@@ -159,6 +159,23 @@ vec4 biasShadowShift(vec4 shadowSpacePos) {
   return shadowSpacePos;
 }
 
+vec3 biasShadowShift(vec3 shadowSpacePos) {
+  vec2 outUV=shadowSpacePos.xy;
+  outUV.xy = abs(outUV.xy);
+  //
+  float pLen = outUV.x*.5;
+  outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  pLen = outUV.y*.5;
+  outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  shadowSpacePos.xy /= outUV;
+  //
+  
+  #ifdef SHADOW
+    shadowSpacePos.z *= oneThird;
+  #endif
+  return shadowSpacePos;
+}
+
 // -- -- --
  
 void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
@@ -200,3 +217,138 @@ void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
   camDir.w=shiftInf;//length(posVal.xy)*shiftInf;
 }
 
+
+
+
+// -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- --
+
+// -- -- -- -- -- -- -- -- -- -- -- --
+// -- Vertex Step Shadow Functions  -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+const float shadowDepthMin = .075 ;
+const float shadowDepthMinMult = 1.0 / (1.0-shadowDepthMin) ;
+vec4 toShadowSpace( vec4 worldPos, float depth, vec3 worldNormal, in mat4 mvInverse, in mat4 projShadow, in mat4 mvShadow ){
+
+  vec3 shadowPosition = mat3(mvInverse) * worldPos.xyz + mvInverse[3].xyz;
+  
+  float shadowPushAmmount =  ( depth-shadowDepthMin )*shadowDepthMinMult*1.0 ;
+	float any = abs(worldNormal.y) ;
+  vec3 shadowPush = worldNormal*( 0.01+any*.05+shadowPushAmmount * any ) ;
+  
+  vec3 ssPos = mat3(mvShadow) * (shadowPosition.xyz+shadowPush) + mvShadow[3].xyz;
+  vec3 shadowProjDiag = diagonal3(projShadow);
+  ssPos = shadowProjDiag * ssPos + projShadow[3].xyz;
+	
+	return vec4( ssPos, shadowPushAmmount );
+}
+
+
+// -- -- --
+
+// -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- Fragment Step Shadow Functions - -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+const int shadowKernelCount = 4;
+
+const vec2 shadowCrossSamples[4] = vec2[4](
+                              vec2( -1.0, -1.0 ),
+                              vec2( -1.0, 1.0 ),
+                              vec2( 1.0, -1.0 ),
+                              vec2( 1.0, 1.0 )
+                            );
+
+const vec2 shadowAxisSamples[4] = vec2[4](
+                              vec2( -1.0, 0.0 ),
+                              vec2( 0.0, -1.0 ),
+                              vec2( 0.0, 1.0 ),
+                              vec2( 1.0, 0.0 )
+                            );
+
+
+float gatherShadowSamples( sampler2DShadow shadow, vec3 shadowPosition, vec3 shadowPositionOffset, float depth ){
+		// -- -- -- -- -- -- -- -- -- --
+		// -- Fragment Shadow Sampler -- --
+		// -- -- -- -- -- -- -- -- -- -- -- --
+		
+		// Learned from Chocapic13's HighPerformance Toaster's Shadow Sampling System
+		
+		float shadowAvg = 0.0;
+		
+	#ifdef OVERWORLD
+	
+
+	#if ShadowSampleCount > 0
+
+		//vec4 shadowProjOffset = vec4( fitShadowOffset( cameraPosition ), 0.0);
+
+		vec3 localShadowOffset = shadowPositionOffset;
+		vec3 shadowPosLocal = shadowPosition;
+		
+		shadowPosLocal = biasShadowShift( shadowPosLocal );
+		vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+		
+		shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
+
+	#if ShadowSampleCount > 1
+
+		// Modded for multi sampling the shadow
+		// TODO : Functionize this rolled up for loop dooky
+		
+		vec2 posOffset;
+		//float reachMult = 1.5 - (min(1.0,depth*20.0)*.5);
+		float reachMult = 1.5 - (min(1.0,depth*20.0)*.5);
+		for( int x=0; x<shadowKernelCount; ++x){
+		
+			posOffset = shadowAxisSamples[x]*reachMult * .000358828125; // * skyBrightnessMult;
+			projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+		
+			shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
+			
+		#if ShadowSampleCount > 2
+			posOffset = shadowCrossSamples[x]*reachMult * .000258828125; // * skyBrightnessMult;
+			projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+		
+			shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
+		#endif
+		
+			
+		}
+	
+	//shadowAvg = clamp( ((shadowAvg-.5)*1.5)+.5, 0.0, 1.0 );
+	
+	#endif
+	#endif
+	#endif
+	
+	return shadowAvg;
+}
+
+
+
+const float shadowInfFit = 0.025;
+const float shadowInfFitInv = 40.0; // 1.0/shadowInfFit;
+float shadowPositionInfluence(float inShadow, vec4 position, vec3 normal, float depth, vec3 lightPosition ){
+		float shadow = inShadow;
+
+		//shadow = shadow + min(1.0, (length(position.xz)*.0025)*1.5);
+		shadow = shadow + min(1.0, (length(position.xz)*.002)*1.5);
+		
+		float shadowSurfaceInf = min(1.0, max(0.0,( shadowInfFit-(-dot( normalize(lightPosition), normal)) ) * shadowInfFitInv )*1.5);
+
+		// -- -- --
+		
+		//  Distance influence of surface shading --
+		//shadow = mix( (shadow*shadowSurfaceInf), min(shadow,shadowSurfaceInf), shadow);
+		shadow = shadow*shadowSurfaceInf ;
+
+		// -- -- --
+		
+		return shadow;
+}
+
+
+const float distantVibrance = 0.073;// Higher gives distant block colors a boost

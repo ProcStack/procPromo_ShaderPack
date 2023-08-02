@@ -6,7 +6,6 @@
 
 #define FSH
 
-#define GLOW_REACH .50
-#define GLOW_PERC .80
+#define GLOW_REACH 0.50
 
 #include "/programs/composite1.glsl"

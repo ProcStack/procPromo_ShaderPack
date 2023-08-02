@@ -1,7 +1,4 @@
 
-vec2 limitUVs(vec2 uv){
-  return clamp( uv, vec2(0.0), vec2(1.0) );
-}
 
 const int axisSamplesCount = 4;
 const vec2 axisSamples[4] = vec2[4](
@@ -46,6 +43,13 @@ const ivec2 boxFetchSamples[8] = ivec2[8](
                               ivec2( 1, 0 ),
                               ivec2( 1, 1 )
                             );
+
+			
+			
+vec2 limitUVs(vec2 uv){
+  return clamp( uv, vec2(0.0), vec2(1.0) );
+}
+
 
 
 vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){

@@ -44,7 +44,7 @@
     vIsLeaves=0.0;
     
     // Leaves
-    if ( SolidLeaves && (mc_Entity.x == 810 || mc_Entity.x == 8101) ){
+    if ( SolidLeaves && (mc_Entity.x == 101 || mc_Entity.x == 102) ){
       vIsLeaves = 1.0;
     }
     
@@ -70,6 +70,10 @@
 
     shadowCd.a= min(1.0, shadowCd.a+vIsLeaves);
 
+		if( shadowCd.a < .05 ){
+			discard;
+		}
+	
     #if ( DebugView >= 2 )
       shadowCd.rb -= vec2(vBiasStretch);
     #endif

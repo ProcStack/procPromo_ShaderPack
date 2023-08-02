@@ -28,10 +28,10 @@ void main() {
 
 uniform sampler2D colortex8;
 uniform sampler2D gaux2;
+uniform sampler2D gaux3;
 uniform vec2 texelSize;
 
 varying vec2 texcoord;
-
 
 const int boxSamplesCount = 8;
 const vec2 boxSamples[8] = vec2[8](
@@ -48,6 +48,7 @@ const vec2 boxSamples[8] = vec2[8](
                             );
 
 
+
 vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, int steps){
   vec2 curUV;
   vec2 curId;
@@ -58,7 +59,7 @@ vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, in
   float invDist=0.0;
   for( int x=0; x<steps; ++x){
     dist = float(x+1)/float(steps+1);
-    invDist = (1.0-dist)*.5;//*dist;
+    invDist = (1.0-dist)*.4;//*dist;
     
     curUV =  uv + vec2( -1.0, -1.0 )*texelRes*dist ;
     curCd = texture2D(tx, curUV).rgb;
@@ -71,25 +72,24 @@ vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, in
 }
 
 void main() {
-  vec2 uv = texcoord*.4;
-  vec4 sampleCd = texture2D(gaux2, uv);
-  //float sCdMax = max(sampleCd.r,max(sampleCd.g,sampleCd.b));
-  float sCdMax = (sampleCd.r+sampleCd.g+sampleCd.b)*0.5773502691896258;// .33333;
-  float reachDist = sampleCd.a;
+  vec2 uv = texcoord*.3;
+  vec3 sampleCd = texture2D(gaux3, uv).rgb;
+  float sampleCdAlpha = texture2D(gaux2, texcoord*.4).a;
+
+  float reachDist = sampleCdAlpha;
 
   reachDist*=GLOW_PERC;
   reachDist*=GLOW_REACH;
   reachDist*=GlowBrightness*2.0;
-  //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0)*.1);
-
-  int reachSteps = 7 + BaseQuality*6 ;
-  vec2 texelRes = vec2(texelSize.x*25.0*GlowBrightness*reachDist,0.0);
+  //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0));
   
-	vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux2, uv, texelRes, reachSteps)*sampleCd.a;
-
+  int reachSteps = 7 + BaseQuality*6 ;
+  vec2 texelRes = vec2(0.0,texelSize.x*20.0*reachDist);
+  
+  
+	vec3 baseBloomCd = directionBlurSample(sampleCd, gaux3, uv, texelRes, reachSteps)*sampleCdAlpha;
 	gl_FragData[0] = vec4(baseBloomCd, 1.0);
 }
-
 #endif
 
 
