@@ -236,7 +236,7 @@ vec4 toShadowSpace( vec4 worldPos, float depth, vec3 worldNormal, in mat4 mvInve
   
   float shadowPushAmmount =  ( depth-shadowDepthMin )*shadowDepthMinMult*1.0 ;
 	float any = abs(worldNormal.y) ;
-  vec3 shadowPush = worldNormal*( 0.01+any*.05+shadowPushAmmount * any ) ;
+  vec3 shadowPush = worldNormal*( 0.025+any*.05+shadowPushAmmount * any ) ;
   
   vec3 ssPos = mat3(mvShadow) * (shadowPosition.xyz+shadowPush) + mvShadow[3].xyz;
   vec3 shadowProjDiag = diagonal3(projShadow);

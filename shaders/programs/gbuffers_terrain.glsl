@@ -153,7 +153,7 @@ void main() {
 	// Remove alpha from target blocks, only Leaves currently
 	vAvgColor = ( SolidLeaves && mc_Entity.x == 101 ) ? vAvgColor*avgCd : vAvgColor;
 	vKeepAlpha = ( SolidLeaves && (mc_Entity.x == 101 || mc_Entity.x == 102) ) ? 1.0 : 0.0;
-	vKeepFrag = ( mc_Entity.x == 301 ) ? 1.0 : step( 0.0, dot( -normalize(vWorldPos.xyz), vWorldNormal ) );
+	vKeepFrag = ( mc_Entity.x == 301 ) ? 1.0 : step( -0.10, dot( -normalize(vWorldPos.xyz), vWorldNormal ) );
 	vAvgColorBlend = vKeepAlpha;
 	
 	vGlowCdInf = 1.0;
@@ -301,6 +301,7 @@ void main() {
 #endif
 
 	// Apply Lighting contributions to Diffuse color
+	lightCd = shiftBlackLevels( lightCd );
 	diffuse.rgb = diffuse.rgb * lightCd;
 	
 	

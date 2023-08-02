@@ -1,10 +1,3 @@
-/* -- -- -- -- -- --
-  -Shadow Pass is not being used.
-    Buffer currently has Sun Shadow written to it
-    Should be block luminance;
-      Transparent blocks included
-   -- -- -- -- -- -- */
-
 
 #ifdef VSH
 
@@ -449,6 +442,7 @@ void main() {
 	
   outCd.rgb = texture2D(gaux4, uv).xyz;
 	
+	boostPeaks( outCd.rgb );
 	
   // Shadow Helper Mini Window
   //   hmmmmm picture-in-picture
