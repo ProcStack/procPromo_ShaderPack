@@ -50,10 +50,12 @@ uniform sampler2D shadowcolor0;
 uniform vec3 cameraPosition;
 
 uniform sampler2D colortex4;
-uniform sampler2D gaux2; // 40% Res Glow Pass
-uniform sampler2D gaux3; // 20% Res Glow Pass
-uniform sampler2D gaux4; // 20% Res Glow Pass
-uniform sampler2D colortex9; // Known working from terrain gbuffer
+uniform sampler2D colortex6; 
+uniform sampler2D colortex7; 
+
+uniform sampler2D colortex9; // 40% Res Glow Pass
+uniform sampler2D colortex10; // 20% Res Axial Glow Pass
+uniform sampler2D colortex11; // SSAO
 
 uniform sampler2D gcolor;
 uniform sampler2D gdepth;
@@ -72,7 +74,7 @@ uniform vec3 skyColor;
 uniform float rainStrength;
 uniform int worldTime;
 uniform float nightVision;
-
+uniform float BiomeTemp;
 
 uniform float darknessFactor; //                   strength of the darkness effect (0.0-1.0)
 uniform float darknessLightFactor; //              lightmap variations caused by the darkness effect (0.0-1.0) 
@@ -226,37 +228,23 @@ void main() {
   
   vec4 normalCd = texture2D(colortex2, uv);
   vec3 dataCd = texture2D(colortex4, uv).xyz;
-  vec4 spectralDataCd = texture2D(colortex9, uv);
+  vec4 spectralDataCd = vec4(0.0);// texture2D(colortex9, uv);
 
   
   
   // -- -- -- -- -- -- -- --
   // -- Glow Passes -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
-  vec3 blurMidCd = texture2D(gaux2, uv*.4).rgb;
-  vec3 blurLowCd = texture2D(gaux3, uv*.3).rgb;
+  vec3 blurMidCd = texture2D(colortex9, uv*.4).rgb;
+  vec3 blurLowCd = texture2D(colortex10, uv*.3).rgb;
   
   // -- -- -- -- -- -- -- --
   // -- Depth Tweaks - -- -- --
   // -- -- -- -- -- -- -- -- -- --
   float depth = 1.0-depthBase;//biasToOne(depthBase);
-  //depth = min(1.0, depth*depth*min(1.0,1.5-depth));
   float depthCos = cos(depth*PI*.5);//*-.5+.5;
   
-  // -- -- -- -- -- -- -- --
-  // -- Screen Space - -- -- --
-  // -- -- -- -- -- -- -- -- -- --
-  
-  
-  // -- -- -- -- -- 
-  // -- Shadows  -- --
-  // -- -- -- -- -- -- --
-  //float shadow = dataCd.x;
-  //float shadowDepth = dataCd.y;
-  //shadowDepth = 1.0-(1.0-shadowDepth)*(1.0-shadowDepth);
-  //shadowDepth *= shadowDepth;
-
-
+	
   // -- -- -- -- -- -- -- --
   // -- Depth Blur -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
@@ -337,43 +325,15 @@ void main() {
 
   edgeInsidePerc *= 1.0-min(1.0,max(0,isEyeInWater)*.5);
   edgeInsidePerc *= dotToCamClamp*1.5-reachOffset*4.5;
-  //edgeInsidePerc *= abs(dotToCam);
+	
   edgeInsidePerc *= min(1.0,depthCos*4.5);
   edgeInsidePerc = clamp(edgeInsidePerc,0.0,1.0);
   edgeOutsidePerc = min(edgeOutsidePerc,depthBase*.3+.1);
   edgeOutsidePerc = clamp(edgeOutsidePerc,0.0,1.0);
   
   
-	//const vec3 moonlight = vec3(0.5, 0.9, 1.8) * Moonlight;
-  //edgeInsidePerc = smoothstep(.0,.8,min(1.0,edgeInsidePerc));
-
-
   float edgeInsideOutsidePerc = max(edgeInsidePerc,edgeOutsidePerc);
   
-  
-  // -- -- -- -- -- -- -- -- --
-  // -- Sun & Moon Edge Influence -- --
-  // -- -- -- -- -- -- -- -- -- -- --
-#ifdef OVERWORLD
-/*
-    float sunNightInf = abs(dayNight)*.3;
-    float sunInf = dot( avgNormal, sunVecNorm ) * max(0.0, dayNight);
-    float moonInf = dot( avgNormal, vec3(1.0-sunVecNorm.x, sunVecNorm.yz) ) * max(0.0, -dayNight);
-    //vec3 colorHSV = rgb2hsv(outCd.rgb);
-    
-    float sunMoonValue = max(0.0, sunInf+moonInf) * edgeInsideOutsidePerc * sunNightInf * shadow;
-    //float sunMoonValue = max(0.0, sunInf+moonInf) * sunNightInf;// * edgeInsideOutsidePerc;// * shadow;
-    
-    //colorHSV.b += sunMoonValue;
-  //colorHSV.b += sunMoonValue;//-(shadow*.2+depthBase*.2)*EdgeShading;
-    //colorHSV.b *= 1.0*(shadow+.2);//+depthBase*.2)*EdgeShading;
-  //outCd.rgb = hsv2rgb(colorHSV);
-    //outCd.rgb = mix( baseCd.rgb, mix(baseCd.rgb*1.5,outCd.rgb,shadow)*edgeInsideOutsidePerc, EdgeShading*.25+.5);
-  //outCd.rgb = mix( outCd.rgb, hsv2rgb(colorHSV), EdgeShading*.25+.75);
-    //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);
-*/
-#endif
-
 
 
   // -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -381,7 +341,6 @@ void main() {
   // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
   
 #ifdef NETHER
-  //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
   
   edgeInsidePerc *= .8;
@@ -391,7 +350,6 @@ void main() {
 
 #ifdef OVERWORLD
   float sunEdgeInf = dot( sunVecNorm, avgNormal );
-  //outCd.rgb += outCd.rgb * (edgeOutsidePerc*sunEdgeInf*.5);// * (shadow*.3+.7);
   outCd.rgb+= outCd.rgb * sunEdgeInf*edgeOutsidePerc ;
   outCd.rgb += mix( outCd.rgb, skyColor, sunEdgeInf*.5*dataCd.r*skyBrightnessMult)*edgeOutsidePerc*dataCd.r;
 #endif
@@ -402,6 +360,7 @@ void main() {
   // -- -- -- -- -- -- -- --
   // -- Glow Mixing -- -- -- --
   // -- -- -- -- -- -- -- -- -- --
+	/*
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
   vec3 outGlowCd = max(blurMidCd, blurLowCd);
@@ -410,7 +369,6 @@ void main() {
   
   float edgeCdInf = step(depthBase, .9999);
   // TODO : Check skyBrightness for inner edges when in caves
-  //edgeCdInf *= (skyBrightnessInf*.5+.5) * rainInf;
   edgeCdInf *= lavaSnowFogInf;
 
   outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
@@ -419,30 +377,22 @@ void main() {
   float depthInfBase = spectralDataCd.g;
   depthInfBase *= depthInfBase*depthInfBase;
   
-  float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
-  //spectralInt *= spectralInt*spectralInt;
-  //outCd.rgb += outCd.rgb*spectralInt;
+  float spectralInt = spectralDataCd.b;
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
-  //outCd.rgb = vec3( spectralDataCd.rgb );
-  
-  //outCd = baseCd;
-  //outCd.rgb = vec3(smoothTo);
-  
-  //outCd.rgb = vec3(edgeOutsidePerc);
-  
-  //outCd.rgb=baseCd.rgb;
-  //outCd.rgb=outGlowCd;
-  
-  //outCd.rgb = baseCd.rgb;
-  outCd.rgb = texture2D(colortex0, uv).xyz;
-  outCd.rgb = texture2D(colortex1, uv).rrr; // Depth
-  //outCd.rgb = texture2D(colortex2, uv).aaa; // Screen Space Normal
-  //outCd.rgb = texture2D(colortex4, uv).xyz; // Glow
-  //outCd.rgb = dataCd.rgb;
+  */
 	
-  outCd.rgb = texture2D(gaux4, uv).xyz;
 	
-	boostPeaks( outCd.rgb );
+	
+  //outCd.rgb = texture2D(colortex0, uv).xyz;
+  //outCd.rgb = texture2D(colortex1, uv).rrr; // Depth
+  //outCd.rgb = texture2D(colortex11, uv).xyz;
+	
+	
+	
+	
+	boostPeaks( outCd.rgb, BiomeTemp*.05 );
+	
+	
 	
   // Shadow Helper Mini Window
   //   hmmmmm picture-in-picture

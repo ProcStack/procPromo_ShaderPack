@@ -19,6 +19,7 @@ const bool shadowHardwareFiltering = true;
 
 const int shadowMapResolution = 2048; // [512 1024 2048 4096 8192 16384]
 const float shadowMapTexelSize = 1.0/float(shadowMapResolution);
+const float shadowInfluence = 0.575;
 
 const float shadowMapFov = 90.0; 
 const float shadowDistance = 256.0;//224.0;//128.0;
@@ -42,6 +43,8 @@ const float shadowThreshReciprical = 0.5 - shadowThreshold;
 
 const vec3 shadowPosOffset = vec3(0.5,0.5,shadowThreshReciprical);
 const vec3 shadowPosMult = vec3(0.5,0.5,thirdHalf);
+
+const float distantVibrance = 0.073;// Higher gives distant block colors a boost
 
 // -- -- -- -- -- -- -- --
 
@@ -88,6 +91,9 @@ vec3 fitShadowOffset( vec3 posOffset ){
 //    https://youtu.be/WZNt9p4LWeA
 //
 
+// TODO : Had positional offsets working at some point,
+//          Now positions float through shadow space
+
 float radialBias(vec2 shadowSpaceUV, float offset, float mult){
   float pLen = length(shadowSpaceUV)*.5;
   return pow(pLen+offset,(.65)-pLen*(mult));
@@ -96,7 +102,7 @@ float radialBias(vec2 shadowSpaceUV){
   return radialBias(shadowSpaceUV, shadowRadialBiasOffset, shadowRadialBiasMult);
 }
 
-vec4 biasShadowRadial(vec4 shadowSpacePos) {
+vec4 shadowRadialBias(vec4 shadowSpacePos) {
   float distortFactor = radialBias(shadowSpacePos.xy);
   shadowSpacePos.xy /= distortFactor;
   #ifdef SHADOW
@@ -109,9 +115,11 @@ vec4 biasShadowRadial(vec4 shadowSpacePos) {
 
 //
 // Bias toward Axial-Weighting; Individually Biased X/Y 
+//   Flattening out positions to reduce scalping in shadows of a radial shadow position bias
 //    https://youtu.be/GBkT19uH2RQ
 //
 
+// Read - Square out shadow position in Light space
 vec2 axisBias(vec2 shadowSpaceUV, float offset, float mult){
   vec2 outUV=shadowSpaceUV;
   outUV.xy = abs(outUV.xy);
@@ -120,6 +128,8 @@ vec2 axisBias(vec2 shadowSpaceUV, float offset, float mult){
   outUV.y=outUV.x;
   return outUV;
 }
+
+// Read - Rectangular flattening out shadow position in Light space
 vec2 perAxisBias(vec2 shadowSpaceUV, float offset, float mult){
   vec2 outUV=shadowSpaceUV;
   float pLen = abs(outUV.x)*.5;
@@ -128,9 +138,15 @@ vec2 perAxisBias(vec2 shadowSpaceUV, float offset, float mult){
   outUV.y = pow(pLen+offset,(.65)-pLen*(mult));
   return outUV;
 }
+
+// Read - Parent Bias function; a developer buffer
 vec2 axisBias(vec2 shadowSpaceUV){
   return axisBias(shadowSpaceUV, shadowAxisBiasOffset, shadowAxisBiasMult);
+  //return perAxisBias(shadowSpaceUV, shadowAxisBiasOffset, shadowAxisBiasMult);
 }
+
+// Write - Shadow Pass Projected Postion Bias
+//           Used elsewhere for reading from Light space 
 vec4 biasShadowAxis(vec4 shadowSpacePos) {
   vec2 distortFactor = axisBias(shadowSpacePos.xy);
   shadowSpacePos.xy /= distortFactor;
@@ -228,17 +244,20 @@ void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
 // -- Vertex Step Shadow Functions  -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-const float shadowDepthMin = .075 ;
+const float shadowDepthMin = .0075 ;
 const float shadowDepthMinMult = 1.0 / (1.0-shadowDepthMin) ;
 vec4 toShadowSpace( vec4 worldPos, float depth, vec3 worldNormal, in mat4 mvInverse, in mat4 projShadow, in mat4 mvShadow ){
 
   vec3 shadowPosition = mat3(mvInverse) * worldPos.xyz + mvInverse[3].xyz;
   
-  float shadowPushAmmount =  ( depth-shadowDepthMin )*shadowDepthMinMult*1.0 ;
+  float shadowPushAmmount =  ( depth-shadowDepthMin )*shadowDepthMinMult*0.90 ;
 	float any = abs(worldNormal.y) ;
-  vec3 shadowPush = worldNormal*( 0.025+any*.05+shadowPushAmmount * any ) ;
+	// WN * Position Offset Amount
+  //vec3 shadowPush = worldNormal*( 1.635+any*.05+shadowPushAmmount * any ) ;
+  vec3 shadowPush = abs( worldNormal*(0.635+shadowPushAmmount  )) ;
   
   vec3 ssPos = mat3(mvShadow) * (shadowPosition.xyz+shadowPush) + mvShadow[3].xyz;
+  //vec3 ssPos = mat3(mvShadow) * (shadowPosition.xyz) + mvShadow[3].xyz;
   vec3 shadowProjDiag = diagonal3(projShadow);
   ssPos = shadowProjDiag * ssPos + projShadow[3].xyz;
 	
@@ -270,8 +289,9 @@ const vec2 shadowAxisSamples[4] = vec2[4](
 
 
 float gatherShadowSamples( sampler2DShadow shadow, vec3 shadowPosition, vec3 shadowPositionOffset, float depth ){
+		
 		// -- -- -- -- -- -- -- -- -- --
-		// -- Fragment Shadow Sampler -- --
+		// -- Shadow Sampler -- --
 		// -- -- -- -- -- -- -- -- -- -- -- --
 		
 		// Learned from Chocapic13's HighPerformance Toaster's Shadow Sampling System
@@ -334,8 +354,8 @@ const float shadowInfFitInv = 40.0; // 1.0/shadowInfFit;
 float shadowPositionInfluence(float inShadow, vec4 position, vec3 normal, float depth, vec3 lightPosition ){
 		float shadow = inShadow;
 
-		//shadow = shadow + min(1.0, (length(position.xz)*.0025)*1.5);
-		shadow = shadow + min(1.0, (length(position.xz)*.002)*1.5);
+		shadow = shadow + min(1.0, (length(position.xz)*.0025)*1.5);
+		//shadow = shadow + min(1.0, (length(position.xz)*.2)*1.5);
 		
 		float shadowSurfaceInf = min(1.0, max(0.0,( shadowInfFit-(-dot( normalize(lightPosition), normal)) ) * shadowInfFitInv )*1.5);
 
@@ -343,12 +363,9 @@ float shadowPositionInfluence(float inShadow, vec4 position, vec3 normal, float 
 		
 		//  Distance influence of surface shading --
 		//shadow = mix( (shadow*shadowSurfaceInf), min(shadow,shadowSurfaceInf), shadow);
-		shadow = shadow*shadowSurfaceInf ;
+		shadow = shadow*shadowSurfaceInf + (1.0-shadowSurfaceInf);
 
 		// -- -- --
 		
 		return shadow;
 }
-
-
-const float distantVibrance = 0.073;// Higher gives distant block colors a boost

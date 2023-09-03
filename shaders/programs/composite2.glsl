@@ -13,7 +13,7 @@ void main() {
 
 #ifdef FSH
 
-/* RENDERTARGETS: 6 */
+/* RENDERTARGETS: 10 */
 
 #ifndef GLOW_REACH
   #define GLOW_REACH 1.0
@@ -26,9 +26,9 @@ void main() {
 #include "/shaders.settings"
 //#include "utils/texSampler.glsl"
 
-uniform sampler2D colortex8;
-uniform sampler2D gaux2;
-uniform sampler2D gaux3;
+uniform sampler2D colortex9;
+uniform sampler2D colortex10;
+
 uniform vec2 texelSize;
 
 varying vec2 texcoord;
@@ -73,8 +73,8 @@ vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, in
 
 void main() {
   vec2 uv = texcoord*.3;
-  vec3 sampleCd = texture2D(gaux3, uv).rgb;
-  float sampleCdAlpha = texture2D(gaux2, texcoord*.4).a;
+  vec3 sampleCd = texture2D(colortex10, uv).rgb;
+  float sampleCdAlpha = texture2D(colortex9, texcoord*.4).a;
 
   float reachDist = sampleCdAlpha;
 
@@ -87,7 +87,7 @@ void main() {
   vec2 texelRes = vec2(0.0,texelSize.x*20.0*reachDist);
   
   
-	vec3 baseBloomCd = directionBlurSample(sampleCd, gaux3, uv, texelRes, reachSteps)*sampleCdAlpha;
+	vec3 baseBloomCd = directionBlurSample(sampleCd, colortex10, uv, texelRes, reachSteps)*sampleCdAlpha;
 	gl_FragData[0] = vec4(baseBloomCd, 1.0);
 }
 #endif

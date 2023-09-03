@@ -115,7 +115,13 @@ void boostPeaks( inout vec3 outCd ){
     float peakMult = mix( (cdPeak *LightWhiteLevel + (1.0-LightWhiteLevel)), 1.0, LightWhiteLevel );
     outCd *= peakMult;
 }
-
+void boostPeaks( inout vec3 outCd, float boost ){
+    float cdPeak = ( outCd.r * outCd.g * outCd.b );
+    cdPeak = max(0.0, 1.0- cdPeak*5.0);
+		float whiteBoost = LightWhiteLevel + boost;
+    float peakMult = mix( (cdPeak *whiteBoost + (1.0-whiteBoost)), 1.0, whiteBoost );
+    outCd *= peakMult;
+}
 
 // -- -- -- -- -- --
 

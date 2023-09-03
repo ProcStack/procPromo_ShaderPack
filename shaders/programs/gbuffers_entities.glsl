@@ -201,7 +201,7 @@ void main() {
 
   vec2 tuv = texcoord.st;
   vec4 baseCd = texture2D(texture, tuv);
-  vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
+  vec4 txCd = baseCd;// diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
   float avgDelta = 0.0;
   /*
   if ( DetailBluring >0.0 ){

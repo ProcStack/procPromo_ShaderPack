@@ -13,7 +13,7 @@ void main() {
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 7 */
+/* RENDERTARGETS: 11 */
 
 /* COLORTEX9FORMAT:RGBA16 */
 /*
@@ -27,6 +27,7 @@ const int colortex9Format = RGBA16F;
 uniform sampler2D colortex0; // Diffuse Pass
 uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex2; // Normal Pass
+uniform sampler2D colortex8; // Tangent Pass
 
 uniform vec2 texelSize;
 uniform vec2 far;
@@ -38,8 +39,9 @@ void main() {
 
   
   vec4 outCd = texture2D(colortex0, vUv);
-  //outCd = texture2D(colortex1, vUv);
+  outCd = texture2D(colortex1, vUv);
   //outCd = texture2D(colortex2, vUv);
+  outCd = texture2D(colortex8, vUv);
 	gl_FragData[0] = outCd;
   
   

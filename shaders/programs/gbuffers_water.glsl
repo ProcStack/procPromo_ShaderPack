@@ -212,8 +212,8 @@ void main() {
   vec2 tuv = texcoord.st;
   //vec4 txCd = diffuseSample( texture, tuv, texelSize, 0.0 );
   //vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize-.0005, 1.0 );
-  vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*0.50 );
-  //vec4 txCd =  texture2D(texture, tuv);// 
+  //vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*0.50 );
+  vec4 txCd =  texture2D(texture, tuv);// 
   
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);

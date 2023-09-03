@@ -284,7 +284,7 @@ void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, fl
 	
   //sampleCd.rgb = mix( sampleCd.rgb, baseCd.rgb, min(1.0, length( sampleCd.rgb - baseCd.rgb )*5.0) );
   float infVal =  min(1.0, length( sampleCd.rgb - baseCd.rgb )*10.0) ;
-	sampleCd.rgb=vec3(maxDelta);
+	//sampleCd.rgb=vec3(maxDelta);
 }
 
 

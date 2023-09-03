@@ -1,6 +1,5 @@
 
 // Glow Color down res pass; 40% res
-//   Output - colortex8
 
 #ifdef VSH
 
@@ -14,7 +13,7 @@ void main() {
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 5 */
+/* RENDERTARGETS: 9 */
 
 #ifndef GLOW_REACH
   #define GLOW_REACH 1.0
@@ -28,11 +27,8 @@ void main() {
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D colortex1; // Depth Pass
-uniform sampler2D colortex6;
-uniform sampler2D colortex8;
-uniform sampler2D colortex9;
-uniform sampler2D colortex16;
-uniform sampler2D gaux4;
+uniform sampler2D colortex7;
+
 uniform vec2 texelSize;
 
 varying vec2 texcoord;
@@ -66,7 +62,7 @@ vec3 boxBlurSampleHSV( sampler2D tx, vec2 uv, vec2 texelRes){
 }
 
 void main() {
-  vec3 sampleCd = texture2D(colortex6, texcoord).rgb;
+  vec3 sampleCd = texture2D(colortex7, texcoord).rgb;
   float sampleDepth = texture2D(colortex1, texcoord).x;
 
   sampleDepth*=GLOW_PERC;
@@ -75,8 +71,8 @@ void main() {
 
   float glowBrightness = sampleCd.b * sampleCd.b;
   
-	vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*25.0*glowBrightness*sampleDepth);
-	//baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth));
+	vec3 baseBloomCd = boxBlurSampleHSV(colortex7, texcoord, texelSize*25.0*glowBrightness*sampleDepth);
+	//baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex7, texcoord, texelSize*15.0*sampleDepth));
   baseBloomCd.b *= GLOW_PERC;
   baseBloomCd = hsv2rgb(baseBloomCd);
 
