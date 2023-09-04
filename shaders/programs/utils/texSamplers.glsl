@@ -345,6 +345,47 @@ vec4 diffuseNoLimit( sampler2D tx, vec2 uv, vec2 res){
 }
 
 
+vec4 diffuseNoLimitFetch( sampler2D tx, vec2 uv, ivec2 res){
+  vec4 sampleCd = texture2D(tx, uv);
+  ///vec3 sampleHSV = rgb2hsv( sampleCd.rgb );
+  
+  ivec2 curOffset;
+  vec2 curId;
+  float curUVDist=0.0;
+  vec4 curCd;
+  vec3 curMix;
+  vec3 curHSV;
+  float delta=0.0;
+  float hit=0.0;
+  float uvEdge=0.0;
+  //float maxDelta = 0.0;
+  for( int x=0; x<boxSamplesCount; ++x){
+    curCd = textureOffset(tx, uv, boxFetchSamples[x]*res);
+    
+		//curHSV = rgb2hsv( curCd.rgb );
+    //curHSV = 1.0-abs( curHSV-sampleHSV );// * (DetailBluring*.15);
+    /*
+    delta = clamp( dot(sampleCd.rgb, curCd.rgb), 0.0, 1.0 );
+    //delta = mix( delta, length(sampleCd.rgb - curCd.rgb), .5);
+    delta *= min(1.0, curHSV.r*curHSV.g + curHSV.b*.3-max(curHSV.r,curHSV.g)*.4);//*curHSV.b;
+    delta *= min(1.0, curHSV.r*curHSV.g );//*curHSV.b;
+  //delta *= curHSV.g*.5;//curHSV.r*curHSV.g*curHSV.b;//*curHSV.b;
+    delta *= delta * delta ;
+    delta *= sampleCd.a * curCd.a;
+    delta = clamp( delta, 0.0, 1.0 );
+    
+    
+    curMix = curCd.rgb;
+    sampleCd.rgb = mix( sampleCd.rgb, curMix, delta);
+    //maxDelta = max( maxDelta, delta );
+		*/
+  }
+  //sampleCd.rgb *= vec3(sampleHSV.b*.2+.8);
+
+  return sampleCd;
+}
+
+
 
 
 

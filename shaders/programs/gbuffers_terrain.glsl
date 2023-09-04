@@ -80,6 +80,7 @@ varying float vBoostColor;
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 #include "utils/shadowCommon.glsl"
+const float eyeBrightnessHalflife = 4.0f;
 
 // -- -- --
 
@@ -171,14 +172,14 @@ void main() {
   float shadowInfFitInv = 40.0;// 1.0/shadowInfFit;
   float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))*shadowInfFitInv )*1.5);
 	
-	vShadowSurface = shadowSurfaceInf;
+	vShadowSurface = shadowSurfaceInf*.5+.5;
 	
 	
 #endif
 
 	// -- -- --
 
-	vec4 avgCd = atlasSampler( texture, midcoord, ivec2(6), .455, vColor );
+	vec4 avgCd = atlasSampler( texture, midcoord, ivec2(5), .2455, vColor );
 	
 	//vColor = avgCd;
 	vAvgColor = mix( vColor, avgCd, step( 2.9, vColor.x + vColor.y + vColor.z) );
@@ -196,9 +197,11 @@ void main() {
 		vKeepFrag = 1.0;
 	}*/
 	
+	// Lava & Flowing Lava
 	if( mc_Entity.x == 701 || mc_Entity.x == 702 ){
 		vBoostColor = .3;
-		vAvgColorBlend = .3;
+		vAvgColorBlend = .8;
+		vAvgColor = avgCd;
 	}
 	
 	vGlowCdInf = 1.0;
@@ -307,6 +310,14 @@ void main() {
 	// Texture Sampler
 	vec4 baseCd = vAvgColor;
 	vec4 baseTxCd=texture2D(texture, tuv);
+	
+	// Alpha Test
+	baseTxCd.a = max(baseTxCd.a, vKeepAlpha) * vKeepFrag * vColor.a ;
+
+	if( baseTxCd.a < .05 ){
+		discard;
+	}
+	
 	vec4 txCd=baseTxCd;
 	float avgDelta = 0.0;
 	
@@ -329,16 +340,14 @@ void main() {
 	// Alpha Test
 	txCd.a = max(baseTxCd.a, vKeepAlpha) * vKeepFrag * vColor.a ;
 
-	if( txCd.a < .05 ){
-		discard;
-	}
 	
 	
 	// Blend sampled texture with block average color
 	txCd.rgb = mix( txCd.rgb * vColor.rgb, vAvgColor.rgb, vAvgColorBlend );
 	
 	
-  vec3 lightCd = texture2D(lightmap, luv).rgb;
+  vec3 lightBaseCd = texture2D(lightmap, luv).rgb;
+  vec3 lightCd = lightBaseCd;
 	vec3 lightCdFit = clamp((lightCd-.1) * 1.5, 0.0, 1.0);
 	float lightLuma = luma( lightCdFit );
 	
@@ -379,7 +388,7 @@ void main() {
 	diffuseSun *= dayNightMult * sunMoonShadowInf * skyBrightnessMult * vRainInfluence * shadowInf;
 	//diffuseSun =    shadowInf;
 
-	float rainInf = vRainInfluence*skyBrightnessMult+(1.0-skyBrightnessMult);
+	float rainInf = vRainInfluence;//*skyBrightnessMult-(1.0-skyBrightnessMult);
 
 	float inSunlight =  max(0.0, 1.0-(1.0-diffuseSun)*shadowInfluence*shadowInf) * rainInf;
 	lightCd = lightCd * mix( max( lightCd, vec3(diffuseSun) ), vec3(inSunlight), sunPhaseMult*skyBrightnessMult ) ;
@@ -388,8 +397,11 @@ void main() {
 	vec4 shcd=texture2D(shadowcolor0, biasShadowShift(vShadowPos).xy*.5+.5 );
 	//lightCd = length(1.0-shcd.rgb	)*.5*(dayNightMult*sunMoonShadowInf*skyBrightnessMult) + lightCd * shcd.rgb * vShadowSurface + vec3(1.0-vShadowSurface)*.3;// * shcd.a ;
 	lightCd =  length(1.0-shcd.rgb	)*.5 + lightCd * shcd.rgb * vShadowSurface + vec3(vShadowSurface*sunMoonShadowInf*dayNightMult)*.3;// * shcd.a ;
-	lightCd =  mix( fogColor, lightCd, shadowInf ) ;
-
+	lightCd =  mix( fogColor, lightCd, shadowInf ) ; // Near, color;  Far, fog color
+	//lightCd =  mix( lightBaseCd, max(min(vec3(1.0),max(vec3(0.0),lightCd-.35)*5.0),lightCd*lightBaseCd+(1.0-shadowInf))*vShadowSurface, skyBrightnessMult ) ;  // Yer inna cave there!
+	lightCd =  mix( lightBaseCd, lightCd*lightBaseCd, inSunlight  ) ;  // Yer inna cave there!
+	//lightCd =  lightBaseCd;
+	//lightCd =  vec3(vShadowSurface);
 	
 #endif
 
@@ -397,6 +409,17 @@ void main() {
 	//lightCd = shiftBlackLevels( lightCd );
 	diffuse.rgb = diffuse.rgb * shiftBlackLevels( lightCd );
 	
+	
+	/*
+#ifdef OVERWORLD
+	diffuse.rgb *= min(vec3(1.0), max(vec3(lightCd.rrr), (1.0-(1.0-lightCd.rgb)*.5)*lightCd.rrr-.1)*1.65) ;
+	diffuse.rgb *= max(lightBaseCd.rgb, vec3(diffuseSun) );
+#elif defined NETHER
+	//diffuse.rgb = min(vec3(1.0), max(vec3(0.0), (lightCd.rrr-.2)*1.65)) ;
+	//diffuse.rgb = vec3( depthFit ) ;
+	diffuse.rgb = mix( diffuse.rgb, vAvgColor.rgb*lightBaseCd, min(1.0,max(0.0, (lightCd.r+depthFit-.15))*1.5) ) ;
+#endif
+	*/
 	
 	diffuse.rgb = diffuse.rgb + diffuse.rgb*vBoostColor ;
 	
@@ -409,6 +432,9 @@ void main() {
 	float darknessInf = depthFit * darknessFactor * ((20.0 + 10.0*darknessLightFactor*lightLuma) * (1.0-lightLuma*lightLuma) ) ;
 	diffuse.rgb = diffuse.rgb - diffuse.rgb * darknessInf;
 
+	//diffuse.rgb = min(vec3(1.0), max(vec3(0.0), lightCd.rgb*lightCd.rrr-.2)*1.65) ;
+	//
+	
 	
 	gl_FragData[0] = diffuse; 
 	gl_FragData[1] = vec4( vNormal, 1.0 ); 

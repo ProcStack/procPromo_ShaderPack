@@ -203,20 +203,23 @@ void main() {
   
   
   
-  //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
-  vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
+  vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.04) );
+  //vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(2.5,2.82)  );
+  //vec4 txCd = diffuseNoLimitFetch( texture, tuv, ivec2(2) );
 	
 	txCd.a = min(1.0, txCd.a+vKeepAlpha);
 	/*if( txCd.a<.05 ){
 		discard;
 	}*/
 	
+	//txCd = texture2D(texture, tuv);
+	
   float glowInf = 0.0;
   
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);
   
-  vec4 outCd = txCd * lightCd * color;
+  vec4 outCd = txCd * 1.1 * lightCd * color;
   
   
   vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
@@ -255,6 +258,15 @@ void main() {
   }
   vec3 glowHSV = rgb2hsv(outCd.rgb);
   glowHSV.z *= glowInf*glowInf*.7;//glowVal;
+
+
+//outCd.rgb = color.rgb;
+	/*vec3 cdToHSV = floor(outCd.rgb*10.0)*.1;
+	cdToHSV = rgb2hsv(cdToHSV.rgb);
+	cdToHSV.b=1.0;
+	outCd.rgb = rgb2hsv(outCd.rgb);
+	outCd.r = cdToHSV.r;
+	outCd.rgb = hsv2rgb(outCd.rgb);*/
 
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);
