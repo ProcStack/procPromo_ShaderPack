@@ -403,7 +403,7 @@ void main() {
 #ifdef NETHER
     vCdGlow=.2;
 #else
-     vCdGlow=.05;
+     vCdGlow=.025;
 #endif
     vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
