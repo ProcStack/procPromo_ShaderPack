@@ -753,7 +753,8 @@ void main() {
   float reachMult = 1.5 - (min(1.0,outDepth*20.0)*.5);
   
   for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*skyBrightnessMult*.00058828125;
+    //posOffset = axisSamples[x]*reachMult*skyBrightnessMult*.00058828125;
+    posOffset = axisSamples[x]*reachMult*.00058828125;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
     shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
@@ -762,7 +763,8 @@ void main() {
     
   #if ShadowSampleCount > 2
     //posOffset = crossSamples[x]*reachMult*skyBrightnessMult*.0008;
-    posOffset = crossSamples[x]*reachMult*skyBrightnessMult*.00038828125;
+    //posOffset = crossSamples[x]*reachMult*skyBrightnessMult*.00038828125;
+    posOffset = crossSamples[x]*reachMult*.00038828125;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
     shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
@@ -795,7 +797,8 @@ void main() {
   //  Distance influence of surface shading --
   //shadowAvg *= shadowSurfaceInf;
   //shadowAvg = min( shadowAvg, shadowSurfaceInf );
-  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult*(1-rainStrength);
+  //shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult*(1-rainStrength);
+  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*(1-rainStrength);
   //shadowAvg = shadowSurfaceInf;
   //shadowAvg = shadowAvg;
   // -- -- --
@@ -1036,7 +1039,7 @@ void main() {
     //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
     //cdBrightness *= cdBrightness;
     //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight*.1)*(1.0-rainStrength);
-    outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight*.1)*(1.0-rainStrength)*skyBrightnessMult;
+    outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight*.1)*(1.0-rainStrength);//*skyBrightnessMult;
     
     
     // -- -- -- -- -- -- -- -- -- -- -- 
@@ -1050,7 +1053,8 @@ void main() {
     //outCd.rgb*=mix(vec3(1.0), max(diffuseLight,lightCd.rgb), min(1.0, max(lightLuma, skyBrightnessMult*sunPhaseMult)));
 
 // Check this for shadow infulences--    
-    outCd.rgb*=mix(vec3(1.0), max(diffuseLight,lightCd.rgb), min(1.0,  skyBrightnessMult*sunPhaseMult));
+    //outCd.rgb*=mix(vec3(1.0), max(diffuseLight,lightCd.rgb), min(1.0,  skyBrightnessMult*sunPhaseMult));
+    outCd.rgb*=mix(vec3(1.0), max(diffuseLight,lightCd.rgb), min(1.0,  sunPhaseMult));
     
 #endif
     
