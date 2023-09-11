@@ -52,6 +52,7 @@ varying vec4 vAtlasFit; // .st for add, .pq for mul
 
 #ifdef OVERWORLD
 	varying float vRainInfluence;
+	varying float vRainInfluenceFit;
   varying float skyBrightnessMult;
   varying float dayNightMult;
   varying float sunPhaseMult;
@@ -122,7 +123,8 @@ void main() {
   // -- Specifics - -- --
 	// -- -- -- -- -- -- -- --
 
-	vRainInfluence = 1.0 - rainStrength*.7 ;
+	vRainInfluence = 1.0-rainStrength;
+	vRainInfluenceFit = 1.0-rainStrength*.8;
 
 
 	// -- -- --
@@ -159,7 +161,7 @@ void main() {
 #ifdef OVERWORLD
 	vec4 ssPos = toShadowSpace( position, depth, vWorldNormal, gbufferModelViewInverse, shadowProjection, shadowModelView );
 	vShadowPos = ssPos.rgb;
-	vShadowInf = (1.0 - ssPos.a*ssPos.a) * (1.0-rainStrength)  ;
+	vShadowInf = (1.0 - ssPos.a*ssPos.a) * vRainInfluenceFit  ;
 	//vShadowInf = abs( sunVec.x-vNormal.x );
 	//vShadowInf =  step(0.0, sunVec.x-vWorldNormal.x );
 	//vShadowInf =  abs( sunPosition.x-vNormal.x );
@@ -204,10 +206,81 @@ void main() {
 		vAvgColor = avgCd;
 	}
 	
-	vGlowCdInf = 1.0;
-	vGlowCdMult = 1.0;
+	
+	
+	
+	//vGlowCdInf = 1.0;
+	//vGlowCdMult = 1.0;
 	
 	gl_FogFragCoord = gl_Position.z;
+
+  /*
+  
+  // Lava
+  if( mc_Entity.x == 701 ){
+    vIsLava=.8;
+#ifdef NETHER
+    vCdGlow=.2;
+#else
+     vCdGlow=.05;
+#endif
+    vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+  }
+  // Flowing Lava
+  if( mc_Entity.x == 702 ){
+    vIsLava=0.9;
+#ifdef NETHER
+    vCdGlow=.5;
+#else
+    vCdGlow=0.25;
+#endif
+    vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+  }
+  
+  // Fire / Soul Fire
+  if( mc_Entity.x == 707 ){
+    vCdGlow=0.015;
+#ifdef NETHER
+    vCdGlow=0.012;
+#endif
+    //vAvgColor = vec4( .8, .6, .0, 1.0 );
+    
+    //vDepthAvgColorInf =  0.0;
+  }
+  // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
+  if( mc_Entity.x == 805 ){
+    vCdGlow=0.025;
+#ifdef NETHER
+    vCdGlow=0.03;
+#endif
+    //vDepthAvgColorInf = 0.20;
+  }
+  if( mc_Entity.x == 8051 ){
+    vCdGlow=0.015;
+#ifdef NETHER
+    vCdGlow=0.035;
+#endif
+    //vDepthAvgColorInf = 0.20;
+  }
+
+
+  // Amethyst Block
+  if (mc_Entity.x == 909){
+    texcoord.zw = texcoord.st;
+    vCdGlow = 0.1;
+    vAvgColor.rgb = vec3(.35,.15,.7);
+    //vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .7 );
+  }
+  // Amethyst Clusters
+  if (mc_Entity.x == 910){
+    texcoord.zw = texcoord.st;
+    vCdGlow = 0.1;
+    //vColor.rgb = vAvgColor.rgb;//mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
+  }
+	
+	*/
+	
+	
 }
 #endif
 
@@ -255,7 +328,6 @@ uniform float sunMoonShadowInf;
 uniform float darknessFactor;
 uniform float darknessLightFactor;
 
-uniform float rainStrength;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
 
@@ -275,6 +347,7 @@ varying vec4 vAtlasFit; // .st for add, .pq for mul
 
 #ifdef OVERWORLD
   varying float vRainInfluence;
+  varying float vRainInfluenceFit;
   varying float skyBrightnessMult;
   varying float dayNightMult;
   varying float sunPhaseMult;
@@ -308,7 +381,6 @@ void main() {
 	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 	
 	// Texture Sampler
-	vec4 baseCd = vAvgColor;
 	vec4 baseTxCd=texture2D(texture, tuv);
 	
 	// Alpha Test
@@ -318,7 +390,8 @@ void main() {
 		discard;
 	}
 	
-	vec4 txCd=baseTxCd;
+	//vec4 txCd=baseTxCd;
+	vec4 txCd=vec4(1.0,1.0,0.0,1.0);
 	float avgDelta = 0.0;
 	
 	// TODO : There's gotta be a better way to do this...
@@ -329,27 +402,35 @@ void main() {
 		#if ( DebugView == 1 )
 			float debugDetailBluring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
 			debugDetailBluring = mix( DetailBluring, debugDetailBluring, step(screenSpace.x,0.75));
-			diffuseSampleXYZ( texture, tuv, vAtlasFit, texelSize, debugDetailBluring, baseTxCd, txCd, avgDelta );
+			//diffuseSampleXYZ( texture, tuv, vAtlasFit, texelSize, debugDetailBluring, baseTxCd, txCd, avgDelta );
+			diffuseSampleXYZ( texture, tuv, vAtlasMid, texelSize, debugDetailBluring, baseTxCd, txCd, avgDelta );
 		#else
 			//diffuseSampleXYZ( texture, tuv, vAtlasFit, texelSize, DetailBluring, baseTxCd, txCd, avgDelta);
 			diffuseSampleXYZFetch( texture, tuv, vAtlasMid, texelSize, DetailBluring, baseTxCd, txCd, avgDelta);
 		#endif
-		
 	}
-	
-	// Alpha Test
-	txCd.a = max(baseTxCd.a, vKeepAlpha) * vKeepFrag * vColor.a ;
-
-	
+	vec4 txCdPreMix = txCd;
+	txCd.rgb = mix(vAvgColor.rgb, txCd.rgb, avgDelta);
 	
 	// Blend sampled texture with block average color
-	txCd.rgb = mix( txCd.rgb * vColor.rgb, vAvgColor.rgb, vAvgColorBlend );
+	txCd.rgb = mix( txCd.rgb + (vAvgColor.rgb*vColor.rgb-txCd.rgb)*.5, vAvgColor.rgb*vColor.rgb, vAvgColorBlend );
 	
 	
-  vec3 lightBaseCd = texture2D(lightmap, luv).rgb;
-  vec3 lightCd = lightBaseCd;
-	vec3 lightCdFit = clamp((lightCd-.1) * 1.5, 0.0, 1.0);
-	float lightLuma = luma( lightCdFit );
+	
+	
+	// Alpha Test
+	//txCd.a = max(baseTxCd.a, vKeepAlpha) * vKeepFrag * vColor.a ;
+	
+	
+  vec3 lightCdBase = texture2D(lightmap, luv).rgb;
+	vec3 lightCdBaseFit = clamp((lightCdBase-.1) * 1.1, 0.0, 1.0);
+	
+  vec3 lightCd = lightCdBase;
+	//float lightLuma = luma( lightCdBaseFit );
+	float lightLuma = maxComponent( lightCdBaseFit );
+	
+	float lightLumaFit = max( 0.0, 1.0 - ( (1.0-lightLuma*lightWhiteClipMult) * lightBlackClipMult ) );
+
 	
 	float aoNative = biasToOne(vColor.a)*.45+.55;
 	lightCd *= vec3(aoNative);
@@ -388,20 +469,16 @@ void main() {
 	diffuseSun *= dayNightMult * sunMoonShadowInf * skyBrightnessMult * vRainInfluence * shadowInf;
 	//diffuseSun =    shadowInf;
 
-	float rainInf = vRainInfluence;//*skyBrightnessMult-(1.0-skyBrightnessMult);
-
-	float inSunlight =  max(0.0, 1.0-(1.0-diffuseSun)*shadowInfluence*shadowInf) * rainInf;
+	float inSunlight =  max(0.0, 1.0-(1.0-diffuseSun)*shadowInfluence*shadowInf) * vRainInfluenceFit;
 	lightCd = lightCd * mix( max( lightCd, vec3(diffuseSun) ), vec3(inSunlight), sunPhaseMult*skyBrightnessMult ) ;
 	//lightCd = vec3( skyBrightnessMult );
 	
 	vec4 shcd=texture2D(shadowcolor0, biasShadowShift(vShadowPos).xy*.5+.5 );
 	//lightCd = length(1.0-shcd.rgb	)*.5*(dayNightMult*sunMoonShadowInf*skyBrightnessMult) + lightCd * shcd.rgb * vShadowSurface + vec3(1.0-vShadowSurface)*.3;// * shcd.a ;
-	lightCd =  length(1.0-shcd.rgb	)*.5 + lightCd * shcd.rgb * vShadowSurface + vec3(vShadowSurface*sunMoonShadowInf*dayNightMult)*.3;// * shcd.a ;
-	lightCd =  mix( fogColor, lightCd, shadowInf ) ; // Near, color;  Far, fog color
-	//lightCd =  mix( lightBaseCd, max(min(vec3(1.0),max(vec3(0.0),lightCd-.35)*5.0),lightCd*lightBaseCd+(1.0-shadowInf))*vShadowSurface, skyBrightnessMult ) ;  // Yer inna cave there!
-	lightCd =  mix( lightBaseCd, lightCd*lightBaseCd, inSunlight  ) ;  // Yer inna cave there!
-	//lightCd =  lightBaseCd;
-	//lightCd =  vec3(vShadowSurface);
+	////lightCd =  length(1.0-shcd.rgb	)*.5 + lightCd * shcd.rgb * vShadowSurface + vec3(vShadowSurface*sunMoonShadowInf*dayNightMult)*.3;// * shcd.a ;////lightCd =  mix( fogColor, lightCd, shadowInf ) ; // Near, color;  Far, fog color
+	//lightCd =  mix( lightCdBaseFit, max(min(vec3(1.0),max(vec3(0.0),lightCd-.35)*5.0),lightCd*lightCdBaseFit+(1.0-shadowInf))*vShadowSurface, skyBrightnessMult ) ;  // Yer inna cave there!
+	lightCd =  mix( lightCd*lightCdBaseFit, lightCdBaseFit, inSunlight  ) ;  // Yer inna cave there!
+
 	
 #endif
 
@@ -413,11 +490,11 @@ void main() {
 	/*
 #ifdef OVERWORLD
 	diffuse.rgb *= min(vec3(1.0), max(vec3(lightCd.rrr), (1.0-(1.0-lightCd.rgb)*.5)*lightCd.rrr-.1)*1.65) ;
-	diffuse.rgb *= max(lightBaseCd.rgb, vec3(diffuseSun) );
+	diffuse.rgb *= max(lightCdBaseFit.rgb, vec3(diffuseSun) );
 #elif defined NETHER
 	//diffuse.rgb = min(vec3(1.0), max(vec3(0.0), (lightCd.rrr-.2)*1.65)) ;
 	//diffuse.rgb = vec3( depthFit ) ;
-	diffuse.rgb = mix( diffuse.rgb, vAvgColor.rgb*lightBaseCd, min(1.0,max(0.0, (lightCd.r+depthFit-.15))*1.5) ) ;
+	diffuse.rgb = mix( diffuse.rgb, vAvgColor.rgb*lightCdBaseFit, min(1.0,max(0.0, (lightCd.r+depthFit-.15))*1.5) ) ;
 #endif
 	*/
 	
@@ -431,10 +508,12 @@ void main() {
 	
 	float darknessInf = depthFit * darknessFactor * ((20.0 + 10.0*darknessLightFactor*lightLuma) * (1.0-lightLuma*lightLuma) ) ;
 	diffuse.rgb = diffuse.rgb - diffuse.rgb * darknessInf;
-
-	//diffuse.rgb = min(vec3(1.0), max(vec3(0.0), lightCd.rgb*lightCd.rrr-.2)*1.65) ;
-	//
 	
+	//diffuse.rgb =  txCdPreMix.rgb  ;
+	//diffuse.rgb =  baseTxCd.rgb  ;
+	//diffuse.rgb = vec3( avgDelta ) ;
+	//diffuse.rgb = vec3( vAvgColor.rgb*vColor.rgb ) ;
+
 	
 	gl_FragData[0] = diffuse; 
 	gl_FragData[1] = vec4( vNormal, 1.0 ); 

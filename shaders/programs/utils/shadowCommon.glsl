@@ -48,6 +48,12 @@ const float distantVibrance = 0.073;// Higher gives distant block colors a boost
 
 // -- -- -- -- -- -- -- --
 
+// Mix Shadows into Environment Lighting
+const float lightWhiteClipMult = 1.1;
+const float lightBlackClipMult = 2.0;
+
+// -- -- -- -- -- -- -- --
+
 
 // == Chocapic13's HighPerformance Toaster; Shadow-space helpers ==
 //      If it aint broke, don't fix it
