@@ -882,7 +882,7 @@ void main() {
     surfaceShading *= mix( dayNightMult, vNormalSunDot, dayNight*.5+.5 );
     //surfaceShading *= sunPhaseMult;
     //surfaceShading *= dayNightMult;
-    surfaceShading *= 1.0-(rainStrength*.8+.2);
+    surfaceShading *= 1.0-(rainStrength*.8+.2)*dayNightMult;
     
 #endif
     
