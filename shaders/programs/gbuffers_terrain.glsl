@@ -179,6 +179,8 @@ void main() {
 	
 #endif
 
+	
+	
 	// -- -- --
 
 	vec4 avgCd = atlasSampler( texture, midcoord, ivec2(5), .2455, vColor );
@@ -192,8 +194,11 @@ void main() {
 	vAvgColor = ( SolidLeaves && mc_Entity.x == 101 ) ? vAvgColor*avgCd : vAvgColor;
 	vKeepAlpha = ( SolidLeaves && (mc_Entity.x == 101 || mc_Entity.x == 102) ) ? 1.0 : 0.0;
 	vKeepFrag = ( mc_Entity.x == 301 ) ? 1.0 : step( -0.10, dot( -normalize(vWorldPos.xyz), vWorldNormal ) );
-	vAvgColorBlend = vKeepAlpha;
 	vBoostColor = 0.0 ;
+	
+	// -- -- --
+	
+	float avgColorBlender = vKeepAlpha;
 	
 	/*if( !SolidLeaves && (mc_Entity.x == 101 || mc_Entity.x == 102) ){
 		vKeepFrag = 1.0;
@@ -202,7 +207,7 @@ void main() {
 	// Lava & Flowing Lava
 	if( mc_Entity.x == 701 || mc_Entity.x == 702 ){
 		vBoostColor = .3;
-		vAvgColorBlend = .8;
+		avgColorBlender = .8;
 		vAvgColor = avgCd;
 	}
 	
@@ -279,6 +284,10 @@ void main() {
   }
 	
 	*/
+	
+	
+	avgColorBlender = max( avgColorBlender, clamp( gl_Position.z*avgCdDepthBlend, 0.0, 1.0 ) );
+	vAvgColorBlend = avgColorBlender;
 	
 	
 }
@@ -409,11 +418,16 @@ void main() {
 			diffuseSampleXYZFetch( texture, tuv, vAtlasMid, texelSize, DetailBluring, baseTxCd, txCd, avgDelta);
 		#endif
 	}
-	vec4 txCdPreMix = txCd;
-	txCd.rgb = mix(vAvgColor.rgb, txCd.rgb, avgDelta);
+	//txCd.rgb = mix(vAvgColor.rgb, txCd.rgb, avgDelta);
+	
+	//avgDelta = clamp( avgDelta*1.750-.5, 0.0, 1.0 );
+	//avgDelta =  avgDelta*0.750+0.25;
+	
+	//txCd.rgb = mix( txCd.rgb, vAvgColor.rgb*baseTxCd.rgb, avgDelta);
+	txCd.rgb = mix( baseTxCd.rgb, vAvgColor.rgb*txCd.rgb,  avgDelta);
 	
 	// Blend sampled texture with block average color
-	txCd.rgb = mix( txCd.rgb + (vAvgColor.rgb*vColor.rgb-txCd.rgb)*.5, vAvgColor.rgb*vColor.rgb, vAvgColorBlend );
+	txCd.rgb = mix( txCd.rgb + (vAvgColor.rgb*vColor.rgb-txCd.rgb)*.5, vAvgColor.rgb, vAvgColorBlend );
 	
 	
 	
@@ -508,11 +522,6 @@ void main() {
 	
 	float darknessInf = depthFit * darknessFactor * ((20.0 + 10.0*darknessLightFactor*lightLuma) * (1.0-lightLuma*lightLuma) ) ;
 	diffuse.rgb = diffuse.rgb - diffuse.rgb * darknessInf;
-	
-	//diffuse.rgb =  txCdPreMix.rgb  ;
-	//diffuse.rgb =  baseTxCd.rgb  ;
-	//diffuse.rgb = vec3( avgDelta ) ;
-	//diffuse.rgb = vec3( vAvgColor.rgb*vColor.rgb ) ;
 
 	
 	gl_FragData[0] = diffuse; 

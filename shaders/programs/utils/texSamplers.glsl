@@ -1,4 +1,5 @@
 
+const float avgCdDepthBlend = 0.025; // Higher grows distance detail can be seen in environment; Depth Average Color Blend
 
 const int axisSamplesCount = 4;
 const vec2 axisSamples[4] = vec2[4](
@@ -205,6 +206,7 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
 
   //avgDelta = min(1.0, maxDelta*.075);
   avgDelta = min(1.0, maxDelta*boxSampleFit);
+  //avgDelta = min(1.0, avgDelta*boxSampleFit);
   
   //sampleCd.rgb = vec3(maxDelta);
   //sampleCd.rgb = vec3(avgDelta);
