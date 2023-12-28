@@ -4,9 +4,9 @@
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
 <br/> Softer details, edge highlights, sharp shadows, and glowiness.*
 
-*(Currently being updated to work with all versions of Minecraft)*
-<br/>*(There will be some issues until I have more time for this)*
-<br/>*(For version specific procPromo v0.1, see the 1.18.# branch)*
+*(Currently being refactored)*
+<br/>*(See refactor branch for newest dev, there will be bugs though)*
+<br/>*(For 1.18 specific procPromo v0.1, see the 1.18.# branch)*
 
 <img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;"/>
 
@@ -61,12 +61,10 @@ Gotta love personal projects though,
 
 ### My Working Environment
 ```
-  _ Nvidia 1080 GTX @ 4k display
-  _ Minecraft 1.18.1
-  _ Optifine HD U H4
-  _ Fabric 0.12.12; api 0.45.2
-  _ Optifabric 1.12.10
-  _ Minihud 0.21.5
+  _ Nvidia 1080 GTX @ 4k
+  _ Nvidia RTX 3080 Laptop @ 2.5k
+  _ Minecraft 1.18.1-1.20.2
+  _ Optifine, Fabric, Optifabric, & Minihud
 ```
 
 If you get any insano color glitches;
@@ -77,12 +75,7 @@ If you get any insano color glitches;
 
 ### Edu & Inpiration
 Mojang's Promotional Art style'n'vibe!
-<br/>Their ads and splash images in the launcher
-
-<br>Any Alt Textures from the atlases were generated from Minecraft using `texturedump v1.18.1` in Forge
-<br/>Then recreated or heavily modified and painted over.
-<br/>A stop-gap until I can get the detail bluring logic working more universally
-
+<br/>Their ads & splash images in the launcher
 
 #### Shadow Inspiration and Learning Model
 *[Chocapic13's HighPerformance Toaster](https://www.curseforge.com/minecraft/customization/chocapic13-high-performance-shaders)*
