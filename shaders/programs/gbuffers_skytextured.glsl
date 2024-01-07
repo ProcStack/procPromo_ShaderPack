@@ -14,7 +14,7 @@ uniform vec3 skyColor;
 
 varying vec4 vTexcoord;
 varying vec4 vColor;
-varying vec3 vPos;
+varying vec4 vPos;
 varying vec3 vGlowEdgeCd;
 varying vec2 vFittedUV;
 varying float vDfLenMult;
@@ -22,7 +22,8 @@ varying float vDfLenMult;
 void main() {
 
 	vec4 position = gl_ModelViewMatrix * gl_Vertex;
-
+	vPos=position;
+	
 	gl_Position = gl_ProjectionMatrix * position;
 
   float moonPhaseMult = (1.0-abs(((mod(moonPhase+3,8))-3))*.25)*.7+.3;
@@ -63,12 +64,14 @@ void main() {
 #ifdef FSH
 /* RENDERTARGETS: 0,6 */
 
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 
+varying vec4 vPos;
 varying vec4 vColor;
 varying vec4 vTexcoord;
 varying vec3 vGlowEdgeCd;
@@ -85,8 +88,8 @@ void main() {
   vec2 uv = vTexcoord.st;
   vec2 fituv = fract(vFittedUV);
   
-  vec4 outCd = texture2D(texture, uv) * vColor;
-  
+  vec4 baseCd = texture2D(texture, uv) * vColor;
+  vec4 outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
   
   
@@ -107,6 +110,10 @@ void main() {
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
 #endif
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, baseCd, debugBlender);
+	#endif
   
 	gl_FragData[0] = outCd;
 	gl_FragData[1] = vec4(vec3(0.0),1.0);

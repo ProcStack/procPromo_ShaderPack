@@ -2,9 +2,6 @@
 
 
 #ifdef VSH
-varying vec4 texcoord;
-varying vec4 color;
-varying vec4 lmcoord;
 
 attribute vec4 mc_Entity;
 
@@ -14,6 +11,9 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform vec2 texelSize;
 
+varying vec4 texcoord;
+varying vec4 lmcoord;
+varying vec4 color;
 varying vec3 normal;
   
 void main() {
@@ -47,6 +47,7 @@ const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
  -- */
  
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
@@ -114,6 +115,8 @@ void main() {
   vec3 glowHSV = rgb2hsv(glowCd);
   glowHSV.z *= (max(0.0,outCdMin-.4)*.20)*(depth);//*glowInf;//*.5+.5);
   
+	
+	
 	gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
 	gl_FragData[2] = vec4( normal*.5+.5, 1.0 );

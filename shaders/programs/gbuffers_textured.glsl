@@ -41,7 +41,7 @@ const int gcolorFormat = RGBA8;
 const int gdepthFormat = RGBA16; //it's to inacurrate otherwise
 const int gnormalFormat = RGB10_A2;
  -- */
- 
+
 varying vec4 color;
 varying vec4 texcoord;
 

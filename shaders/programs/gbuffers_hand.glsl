@@ -200,6 +200,7 @@ void main() {
   
   
   //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
+  //vec4 txCd = diffuseNoLimit( texture, tuv, texelSize );
   vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
   float glowInf = 0.0;
   
@@ -246,6 +247,12 @@ void main() {
   vec3 glowHSV = rgb2hsv(outCd.rgb);
   glowHSV.z *= glowInf*glowInf*.7;//glowVal;
 
+	#if ( DebugView == 4 )
+		vec4 baseCd = texture2D( texture, tuv );
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, baseCd, debugBlender);
+	#endif
+	
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);
 	gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);

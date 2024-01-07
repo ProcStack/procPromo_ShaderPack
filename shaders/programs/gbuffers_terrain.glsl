@@ -549,10 +549,13 @@ uniform ivec2 eyeBrightness;
 // To Implement
 //uniform float wetness;  //rainStrength smoothed with wetnessHalfLife or drynessHalfLife
 //uniform int fogMode;
-//uniform float fogStart;
-//uniform float fogEnd;
+//fogMode==GL_LINEAR
+//fogMode==GL_EXP
+//fogMode==GL_EXP2
+uniform float fogStart;
+uniform float fogEnd;
 //uniform int fogShape;
-//uniform float fogDensity;
+uniform float fogDensity;
 //uniform int heldBlockLightValue;
 //uniform int heldBlockLightValue2;
 uniform float rainStrength;
@@ -673,6 +676,7 @@ void main() {
     // TODO : Its a block game.... move the screen space stuff to vert stage
     //          Vert interpolation is good enough
     float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
+		screenDewarp*=screenDewarp*.7+.3;
     //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf));
     float depthBias = biasToOne(depth, 10.5);
@@ -972,41 +976,32 @@ void main() {
 // TODO : MOVE TO POST PROCESSING ... ya dingus
 
 #ifdef THE_END
-      float depthEnd = min(1.0, gl_FragCoord.w*8.0-screenDewarp*.15);
-      depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
+      float depthEnd = max(0.0, min(1.0, outDepth*6.0-screenDewarp*.025));
+			depthEnd = depthEnd*.4+.6;
+      //depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
     
-      float lightMax = max( lightCd.r, max( lightCd.g, lightCd.b ) );
+			float lightShift=.47441;
+			float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
+      float lightInf = min(1.0, (max((lightCd.r-.35)*1.2,lightLumaBase)-lightShift)*lightShiftMult + depthEnd*.4);
     
       
-      
-      vec3 endFogCd = vec3(.75,.5,.75);
-      
-      float timeOffset = (worldTime*0.00004166666)*90.0;
-      vec3 worldPos = fract(abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05));
-      worldPos = fract( worldPos+texture2D( noisetex, worldPos.xz).rgb );
+      vec3 endFogCd = fogColor+vec3(.3,.25,.3);
+      float timeOffset = (float(worldTime)*0.00004166666)*(30.0);
+      vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
+      worldPos = ( worldPos+texture2D( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
 
-      vec3 noiseX = texture2D( noisetex, worldPos.xy + (timeOffset*vec2(1.,.5))).rgb;
-      vec3 noiseZ = texture2D( noisetex, fract(worldPos.zy*1.5+noiseX.rg + vec2(timeOffset) )).rgb;
+      vec3 noiseX = texture2D( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
+      vec3 noiseZ = texture2D( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
       
-      float noiseInf = min(1.0, (depthEnd+max(0.0,lightMax-.4+glowInf*.8))*.8+.1 );
+      float noiseInf = min(1.0, (depthEnd+max(0.0,lightInf-.4+glowInf*.8))*depthEnd );
       
-      outCd.rgb *= mix(  (noiseZ*endFogCd*lightCd), vec3(1.0), noiseInf );
+      outCd.rgb *= mix(  mix((noiseX*endFogCd*lightCd),endFogCd,noiseInf+depthEnd*.3), vec3(lightInf), noiseInf );
+			//outCd.rgb=lightCd.rgb;//vAvgColor.rgb*lightInf;
+			//outCd.rgb=noiseX;//vAvgColor.rgb*lightInf;
+			
+
 #endif
     
-    /*
-    // World Space Position influenced animated Noise
-    //float timeOffset = (worldTime*0.00004166666)*80.0;
-    vec3 worldPos = fract(abs(cameraPosition+vLocalPos.xyz)*.08);
-    worldPos = fract( worldPos+texture2D( noisetex, worldPos.xz).rgb );
-    vec3 noiseInit = texture2D( noisetex, tuv).rgb;
-    //vec3 noiseAnim = texture2D( softnoisetex, fract(tuv+noiseInit.rg + noiseInit.br)).rgb;
-
-    vec3 noiseX = texture2D( noisetex, worldPos.xy).rgb;
-    vec3 noiseZ = texture2D( noisetex, fract(worldPos.zy+noiseX.rg + vec2(timeOffset) )).rgb;
-    vec3 noiseY = texture2D( noisetex, fract(worldPos.xz+noiseZ.br + vec2(timeOffset*.1) )).rgb;
-    vec3 noiseCd = mix( noiseX, noiseZ, abs(vWorldNormal.x));
-    noiseCd = mix( noiseCd, noiseY, abs(vWorldNormal.y));
-    */
     
     //if( glowMultVertColor > 0.0 ){
       //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
@@ -1147,8 +1142,21 @@ void main() {
 	//outCd.rgb = vec3(avgDelta*1.00);
 	
 	
-	
-	
+    
+		#if ( DebugView == 4 )
+			vec4 debugCd = texture2D(texture, tuv);
+			vec4 debugLightCd = texture2D(lightmap, luv);
+			screenDewarp*=screenDewarp*.7+.3;
+			float debugBlender = step( .0, screenSpace.x);
+			float debugFogInf = min(1.0,depth*2.0);
+			
+			debugFogInf=clamp(((1.0-gl_FragCoord.w)-.997)*800.0+screenDewarp*.2,0.0,1.0);
+			debugCd.rgb = mix( debugCd.rgb, fogColor, debugFogInf);
+  
+			debugCd = debugCd * debugLightCd * vColor.aaaa;
+      outCd = mix( outCd, debugCd, debugBlender);
+			
+    #endif
 	
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);

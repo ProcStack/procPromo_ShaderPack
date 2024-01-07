@@ -467,7 +467,6 @@ void main() {
     // -- -- -- -- -- -- --
     
     vec4 txCd;
-    // Why was #if breaking?????
     if( DetailBluring > 0 ){
         txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
@@ -570,6 +569,10 @@ void main() {
     //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
     glowHSV.z *= vGlowMultiplier * glowValueMult;
 
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, texture2D(texture, tuv), debugBlender);
+	#endif
 
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);

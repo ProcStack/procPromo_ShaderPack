@@ -213,7 +213,7 @@ void main() {
   //vec4 txCd = diffuseSample( texture, tuv, texelSize, 0.0 );
   //vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize-.0005, 1.0 );
   vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*0.50 );
-  //vec4 txCd =  texture2D(texture, tuv);// 
+  vec4 baseCd =  texture2D(texture, tuv);// 
   
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);
@@ -262,6 +262,10 @@ void main() {
       outCd.rgb = vec3( luma(color.rgb) * lightCd.r );
     }
 
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, baseCd, debugBlender);
+	#endif
 
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);

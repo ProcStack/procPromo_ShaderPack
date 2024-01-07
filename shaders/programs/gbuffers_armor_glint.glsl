@@ -44,6 +44,7 @@ const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
  -- */
  
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
@@ -98,7 +99,8 @@ vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){
 
 void main() {
 
-  vec4 outCd = texture2D(texture, texcoord.st );
+  vec4 baseCd = texture2D(texture, texcoord.st );
+  vec4 outCd = baseCd;
   outCd.rgb -= vec3(abs(vLocalNormal.y)*.1);
   
   // Glow Pass Logic
@@ -111,6 +113,12 @@ void main() {
 
   vec3 glowHSV = rgb2hsv(glowCd);
   glowHSV.z *= step(.7,outCdMin)*.1*(depth*.5+.5);
+	
+	#if ( DebugView == 4 )
+		//vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
+		float debugBlender = step( .0, screenSpace.x);
+		outCd = mix( baseCd, outCd, debugBlender);
+	#endif
 
 	gl_FragData[0] = outCd;
 	//gl_FragData[1] = vec4(vec3(gl_FragCoord.w), 1.0);

@@ -140,7 +140,8 @@ void main() {
   vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
-  vec4 outCd = texture2D(texture, texcoord.st);
+  vec4 baseCd = texture2D(texture, texcoord.st);
+	vec4 outCd = baseCd;
   outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
   outCd.rgb *= vec3(toUpFitted);
   outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
@@ -260,6 +261,10 @@ void main() {
   //outCd.a = 1.0;
   
 
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, baseCd, debugBlender);
+	#endif
 
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);

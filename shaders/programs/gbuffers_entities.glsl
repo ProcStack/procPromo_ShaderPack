@@ -111,7 +111,7 @@ void main() {
 
 /* RENDERTARGETS: 0,1,2,7,6 */
 
-//#include "shaders.settings"
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
 /* --
@@ -203,8 +203,10 @@ void main() {
 
   vec2 tuv = texcoord.st;
   vec4 baseCd = texture2D(texture, tuv);
-  vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
+  vec4 txCd = baseCd;//diffuseSampleLocal( texture, tuv, texelSize*10.0, 10.0 );
   float avgDelta = 0.0;
+  vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
+  screenSpace = (screenSpace*texelSize)-.5;
   /*
   if ( DetailBluring >0.0 ){
     //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
@@ -245,6 +247,11 @@ void main() {
   float outDepth = min(.9999,gl_FragCoord.w);
   float outEffectGlow = 0.0;
   
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, baseCd, debugBlender);
+	#endif
+	
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);

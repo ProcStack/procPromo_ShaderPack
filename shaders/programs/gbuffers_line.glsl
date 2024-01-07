@@ -1,6 +1,5 @@
 
 #ifdef VSH
-#include "/shaders.settings"
 
 varying vec4 texcoord;
 varying vec4 color;
@@ -32,6 +31,9 @@ void main() {
 
 #ifdef FSH
 /* RENDERTARGETS: 1,6 */
+
+#include "/shaders.settings"
+
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 

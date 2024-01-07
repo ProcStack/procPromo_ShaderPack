@@ -34,6 +34,9 @@ void main() {
 
 #ifdef FSH
 /* RENDERTARGETS: 0,6 */
+
+#include "/shaders.settings"
+
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 

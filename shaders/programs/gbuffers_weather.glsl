@@ -42,6 +42,9 @@ const int gcolorFormat = RGBA16;
 const int gdepthFormat = RGBA16;
 const int gnormalFormat = RGB10_A2;
  -- */
+ 
+#include "/shaders.settings"
+
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 
