@@ -281,8 +281,8 @@ void main() {
     float eyeWaterInf = (1.0-isEyeInWater*.2);
     float fogBlendDepth = (depthCos*.7+.3);
     depthBlurCd.rgb *= mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf);
-    blurMidCd*=depthBase;
-    blurLowCd*=depthBase;
+    //blurMidCd*=depthBase;
+    //blurLowCd*=depthBase;
     
     baseCd = depthBlurCd;
     outCd = depthBlurCd;
@@ -426,20 +426,13 @@ void main() {
   depthInfBase *= depthInfBase*depthInfBase;
   
   float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
-  //spectralInt *= spectralInt*spectralInt;
-  //outCd.rgb += outCd.rgb*spectralInt;
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
-  //outCd.rgb = vec3( spectralDataCd.rgb );
   
-  //outCd = baseCd;
-  //outCd.rgb = vec3(smoothTo);
-  
-  //outCd.rgb = vec3(edgeOutsidePerc);
   
   // Shadow Helper Mini Window
   //   hmmmmm picture-in-picture
   //     drooollllssss
-  #if ( DebugView >= 2 )
+  #if ( DebugView == 2 ||  DebugView == 3 )
     //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
     float fitWidth = 1.0 + aspectRatio*.45;
     vec2 debugShadowUV = vec2((uv.x-.5)*fitWidth+.5,uv.y)*2.35 + vec2(-2.25,-.04);
@@ -449,12 +442,14 @@ void main() {
     shadowCd = mix( vec3(0.0), shadowCd.rgb, step(shadowHelperMix, 0.50));
     outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
   #endif
+	
+	
+	#if ( DebugView == 4 )
+		//vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
+		float debugBlender = step( .5, uv.x);
+		outCd = mix( baseCd, outCd, debugBlender);
+	#endif
   
-  //outCd.rgb=baseCd.rgb;
-  //outCd.rgb=outGlowCd;
-  
-  //outCd.rgb = texture2D(gaux1,uv).xyz;
-  //outCd.rgb = dataCd.rgb;
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif

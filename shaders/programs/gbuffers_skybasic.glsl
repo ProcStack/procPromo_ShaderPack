@@ -7,6 +7,7 @@ uniform float sunAngle;
 
 varying vec4 texcoord;
 varying vec4 lmcoord;
+varying vec4 vPos;
 varying vec4 vColor;
 varying vec3 vNormal;
 varying float vAmbiance;
@@ -27,6 +28,7 @@ void main() {
 	vNormal = normalize(gl_NormalMatrix * gl_Normal);
   
 	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+	vPos = position;
 
 	gl_Position = gl_ProjectionMatrix * position;
 
@@ -54,6 +56,7 @@ void main() {
 #ifdef FSH
 /* RENDERTARGETS: 0,1,6 */
 
+#include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
 uniform sampler2D texture;
@@ -71,6 +74,7 @@ uniform float viewWidth;
 
 varying vec4 texcoord;
 varying vec4 lmcoord;
+varying vec4 vPos;
 varying vec4 vColor;
 varying vec3 vNormal;
 varying float vAmbiance;
@@ -105,6 +109,14 @@ void main() {
   //outCd = texture2D(lightmap, texcoord.xy);
   outCd.a = vDayNight*upDot;
     
+		
+		
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
+	#endif
+		
+		
 	gl_FragData[0] = outCd;
     //gl_FragData[1] = vec4(vec3( 0.0 ), 1.0);
     gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);

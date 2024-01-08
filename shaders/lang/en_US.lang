@@ -73,4 +73,5 @@ value.DebugView.0=Off
 value.DebugView.1=Detail Bluring
 value.DebugView.2=Shadow Cam
 value.DebugView.3=Shadow Debug
+value.DebugView.4=Vanilla vs procPromo
 option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Bluring, test bluring methods and side-by-side views.  Shadow Cam, see what the sun & moon see. Left in for funsies.

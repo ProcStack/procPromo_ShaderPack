@@ -467,7 +467,6 @@ void main() {
     // -- -- -- -- -- -- --
     
     vec4 txCd;
-    // Why was #if breaking?????
     if( DetailBluring > 0 ){
         txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
         //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
@@ -475,10 +474,13 @@ void main() {
       txCd = texture2D(texture, tuv);
     }
 
-    if (txCd.a < .2){
+	#if ( DebugView == 4 )
+		float debugDiscard = step( .0, vPos.x);
+    if (txCd.a < .2 && debugDiscard==0.0){
       discard;
     }
-    
+	#endif
+	
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
     float depthBias = biasToOne(depth, 4.5);
     
@@ -570,7 +572,13 @@ void main() {
     //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
     glowHSV.z *= vGlowMultiplier * glowValueMult;
 
-
+	#if ( DebugView == 4 )
+		float debugBlender = step( vPos.x, .0 );
+		float debugCdMult=color.r*color.g*color.b;
+		debugCdMult = step(.998, debugCdMult);
+		outCd = mix( outCd, (texture2D(texture, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
+	#endif
+	
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

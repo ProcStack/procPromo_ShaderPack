@@ -23,7 +23,9 @@ attribute vec4 at_tangent;                      //xyz = tangent vector, w = hand
 in vec3 at_velocity; // vertex offset to previous frame
 
 varying vec2 texelSize;
+varying vec2 texcoordmid;
 varying vec4 texcoord;
+varying vec4 vtexcoordam;
 varying vec4 color;
 varying vec4 lmcoord;
 
@@ -56,8 +58,12 @@ void main() {
 	gl_FogFragCoord = gl_Position.z;
 
 	
-	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+	//vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord.st,0.0,1.0)).st;
+  texcoordmid=midcoord;
 	vec2 texcoordminusmid = texcoord.xy-midcoord;
+	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
+	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
   
   
   vNormal.xyz = normalize(gl_NormalMatrix * gl_Normal);
@@ -111,14 +117,16 @@ void main() {
 
 /* RENDERTARGETS: 0,1,2,7,6 */
 
-//#include "shaders.settings"
-#include "utils/mathFuncs.glsl"
 
 /* --
 const int gcolorFormat = RGBA8;
 const int gdepthFormat = RGBA16; //it's to inacurrate otherwise
 const int gnormalFormat = RGB10_A2;
  -- */
+
+#include "/shaders.settings"
+#include "utils/mathFuncs.glsl"
+#include "utils/texSamplers.glsl"
 
 uniform sampler2D texture;
 uniform sampler2D lightmap;
@@ -135,6 +143,8 @@ varying vec4 texcoord;
 varying vec4 lmcoord;
 
 varying vec2 texelSize;
+varying vec2 texcoordmid;
+varying vec4 vtexcoordam;
 
 varying float sunDot;
 
@@ -146,110 +156,88 @@ varying float vAvgColorBlend;
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
 
-const int boxSamplesCount = 8;
-const vec2 boxSamples[8] = vec2[8](
-                              vec2( -1.0, -1.0 ),
-                              vec2( -1.0, 0.0 ),
-                              vec2( -1.0, 1.0 ),
-
-                              vec2( 0.0, -1.0 ),
-                              vec2( 0.0, 1.0 ),
-
-                              vec2( 1.0, -1.0 ),
-                              vec2( 1.0, 0.0 ),
-                              vec2( 1.0, 1.0 )
-                            );
-
-
-
-vec4 diffuseSampleLocal( sampler2D tx, vec2 uv, vec2 res, float thresh){
-  vec4 sampleCd = texture2D(tx, uv);
-  vec3 sampleHSV = rgb2hsv( sampleCd.rgb );
-  
-  vec2 curUV;
-  vec2 curId;
-  float curUVDist=0.0;
-  vec4 curCd;
-  vec3 curMix;
-  vec3 curHSV;
-  float delta=0.0;
-  for( int x=0; x<boxSamplesCount; ++x){
-    curUV =  uv + boxSamples[x]*res ;
-		
-    curCd = texture2D(tx, curUV);
-    curHSV = rgb2hsv( curCd.rgb );
-    curHSV = abs(sampleHSV-curHSV );
-    curHSV.r = 1.0-min(1.0,curHSV.r*1.0);
-    curHSV.g = mix( curHSV.g*curHSV.g, biasToOne(curHSV.g), step(.5,curHSV.g));
-    curHSV.b = 1.0-max(0.0,curHSV.b-.3)*10.0;
-
-    
-    delta = max( 0.0, dot(normalize(sampleCd.rgb), normalize(curCd.rgb)) );
-    delta = max(0.0, 1.0-length(sampleCd.rgb-curCd.rgb)*2.0);
-    delta *= curHSV.r*curHSV.g*curHSV.b;
-    delta = clamp( delta, 0.0, 1.0 );
-    
-    curMix = curCd.rgb;//mix(sampleCd.rgb, curCd.rgb, .5);
-    //curMix = mix(sampleCd.rgb, curCd.rgb, .5);
-
-    sampleCd.rgb = mix( sampleCd.rgb, curMix, delta);
-  }
-  
-  return sampleCd;
-}
 
 
 void main() {
 
   vec2 tuv = texcoord.st;
   vec4 baseCd = texture2D(texture, tuv);
-  vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
+  vec4 txCd = baseCd;
   float avgDelta = 0.0;
-  /*
-  if ( DetailBluring >0.0 ){
-    //txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
-    
-    #if ( DebugView == 1 )
-      float debugDetailBluring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
-      //debugDetailBluring *= debugDetailBluring;
-      debugDetailBluring = mix( DetailBluring, debugDetailBluring, step(screenSpace.x,0.75));
-      diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, debugDetailBluring, baseCd, txCd, avgDelta );
-    #else
-      diffuseSampleXYZ( texture, tuv, vtexcoordam, vTexelSize*screenSpace, DetailBluring, baseCd, txCd, avgDelta);
-    #endif
-    
-  }else{
-    txCd = texture2D(texture, tuv);
-  }
-  */
-  
-  
+  vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
+  screenSpace = (screenSpace*texelSize)-.5;
+
+	//diffuseSampleXYZFetch( texture, tuv, texcoordmid, texelSize*1.0, DetailBluring, baseCd, txCd, avgDelta);
+	diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize*2.0, DetailBluring, baseCd, txCd, avgDelta);
+  //txCd = diffuseNoLimit( texture, tuv, vec2(0.10) );
+	
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);
   
-  vec4 outCd = txCd;
-  outCd.rgb *= lightCd.rgb * color.rgb;
-  
-  //outCd.rgb *= (1.0-rainStrength*.3);
-  
-  vec3 colorMix = min(vec3(1.0),entityColor.rgb*2.5);
-  outCd.rgb = mix( outCd.rgb, color.rgb*colorMix, step(.2,entityColor.a)*(.6+entityColor.g) );
-  //outCd.rgb = ( 1.0 - (1.0-outCd.rgb)*max(vec3(0.0), 1.0-entityColor.rgb*5.0) );
+  vec4 outCd = txCd * color;
+  baseCd *= color;
+	
+	float avgColorBlender = max(0.0, dot(outCd.rgb,(txCd.rgb)));
+	avgColorBlender = clamp( (avgColorBlender-.75)*4.75+.35, 0.0, 1.0 );
+	//avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
+	outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
   
   float highlights = dot(normalize(sunPosition),vNormal.xyz);
   highlights = (highlights-.5)*0.3;
 
-
-  outCd.rgb = mix( outCd.rgb, vAvgColor*lightCd.rgb, vAvgColorBlend );
-
   float outDepth = min(.9999,gl_FragCoord.w);
   float outEffectGlow = 0.0;
   
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x );
+		outCd = mix( baseCd, outCd, debugBlender);
+	#endif
+	float entityCd = maxComponent(entityColor.rgb);
+	lightCd = vec4( lightCd.r );// * (1.0+rainStrength*.2));
+	outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
+//outCd.rgb=vec3(baseCd.rgb);
+//outCd.rgb=vec3(txCd.rgb);
+//outCd.rgb=vec3(baseCd.rgb);
+//outCd.rgb=vec3(avgColorBlender);// * color.rgb);
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
 	gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
 	gl_FragData[4] = vec4(vec3(0.0),1.0);
+
+
+
+/*
+
+  vec2 luv = lmcoord.st;
+  vec4 lightCd = texture2D(lightmap, luv);
+	
+  vec4 outCd = txCd;
+	
+	float avgColorBlender = clamp(dot((baseCd.rgb),(txCd.rgb)), 0.0, 1.0);
+	
+  txCd *= color;
+  baseCd *= color;
+	
+	//avgColorBlender = avgColorBlender*maxComponent(baseCd.rgb);
+	avgColorBlender = 1.0-clamp( (avgColorBlender-.35)*4.75+.25, 0.0, 1.0 );
+	//avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
+	outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
+  
+  float highlights = dot(normalize(sunPosition),vNormal.xyz);
+  highlights = (highlights-.5)*0.3;
+
+  float outDepth = min(.9999,gl_FragCoord.w);
+  float outEffectGlow = 0.0;
+  
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x );
+		outCd = mix( baseCd, outCd, debugBlender);
+	#endif
+	float entityCd = maxComponent(entityColor.rgb);
+	lightCd = vec4( lightCd.r * (1.0-rainStrength));
+	outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
+	*/
 
 }
 #endif

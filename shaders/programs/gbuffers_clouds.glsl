@@ -140,7 +140,8 @@ void main() {
   vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
-  vec4 outCd = texture2D(texture, texcoord.st);
+  vec4 baseCd = texture2D(texture, texcoord.st);
+	vec4 outCd = baseCd;
   outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
   outCd.rgb *= vec3(toUpFitted);
   outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
@@ -176,11 +177,11 @@ void main() {
   outCd.rgb += vec3( sunMoonGlow*.8 );
   
   // Opacity Logic
-  outCd.a *= color.a*.5+(1.0-distMix)*.5;
+  outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.8+.2;//*.5;
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*.2*(depth*.9+.1);
-  glowHSV.z *= glowHSV.z*.5+.5;
+  glowHSV.z *= glowHSV.z*.5+.3;
   float glowReach = 1.0-depth*.5+.5;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
@@ -252,14 +253,12 @@ void main() {
 #endif
   
   // -- -- --
-
-
-  //glowHSV.z=0.0;
-  //glowReach=0.0;
-  //outCd.rgb = vec3(0.0,1.0,1.0);
-  //outCd.a = 1.0;
   
 
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vLocalPos.x);
+		outCd = mix( baseCd*color, outCd, debugBlender);
+	#endif
 
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);

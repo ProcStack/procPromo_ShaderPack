@@ -239,6 +239,11 @@ void main() {
   
   //outCd.rgb=entityColor.rrr;
   
+	#if ( DebugView == 4 )
+		float debugBlender = step( .0, vPos.x);
+		outCd = mix( outCd, txCd, debugBlender);
+	#endif
+	
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);

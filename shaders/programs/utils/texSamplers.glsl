@@ -187,7 +187,7 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
     //delta *= 0.50151-(length( sampleXYZ.rgb-curXYZ.rgb )*(1.5-resScalar));
     //delta *= resScalar;
     delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
-    delta = .4-smoothstep( delta, .15722, .87225 )*.4;
+    delta = .3-smoothstep( delta, .15722, .87225 )*.3;
     
     //delta = step( sampleXYZ.g, curXYZ.g );
     
@@ -209,7 +209,7 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
   //sampleCd.rgb = texture2D(tx, uv).rgb;
   
 	boxAvg = min( vec3(1,1,1), boxAvg*boxSampleFit );
-	sampleCd.rgb = boxAvg.rrr;
+	//sampleCd.rgb = boxAvg.rrr;
 }
 
 
@@ -233,7 +233,7 @@ void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, fl
 	
 	
 	float edgePixelSize =  (1.0/16.0);
-	vec2 blendEdgeInf = vec2( (uv-uvmid)*64.0+.5 );
+	vec2 blendEdgeInf = vec2( (uv-uvmid)*(64.0*resScalar)+.5 );
 	
 	// To prevent blending neighboring atlas texture
 	ivec4 edgeBlendInf = ivec4(0.0);
@@ -280,7 +280,7 @@ void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, fl
 	
   //sampleCd.rgb = mix( sampleCd.rgb, baseCd.rgb, min(1.0, length( sampleCd.rgb - baseCd.rgb )*5.0) );
   float infVal =  min(1.0, length( sampleCd.rgb - baseCd.rgb )*10.0) ;
-	sampleCd.rgb=vec3(maxDelta);
+	//sampleCd.rgb=vec3(maxDelta);
 }
 
 
