@@ -216,14 +216,9 @@ void main() {
   vec4 baseCd =  texture2D(texture, tuv);// 
   
   vec2 luv = lmcoord.st;
-  vec4 lightCd = texture2D(lightmap, luv);
-	float lightmapLuma = luma( texture2D(gaux1,lmtexcoord.zw*texelSize).xyz );
-  //lightCd.rgb = mix(lightCd.rgb, vec3(lightmapLuma), .05);
-  lightCd.rgb = lightCd.rgb;//*lightmapLuma;
+  float lightVal = texture2D(lightmap, luv).r;
   
-  vec4 outCd = lightCd;
-  //outCd.rgb *= color.rgb;
-  outCd *= color;
+  vec4 outCd = color * vec4(vec3(lightVal),1.0);
   outCd*= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
   
 
@@ -238,7 +233,7 @@ void main() {
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.30,depth));
-      outCd.rgb *= fogColor*lightCd.rgb* ( 1.3-(1.0-smoothDepth)*.5 );
+      outCd.rgb *= fogColor*lightVal* ( 1.3-(1.0-smoothDepth)*.5 );
     }else if( isEyeInWater >= 2 ){ // Lava
       outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
     }
@@ -259,14 +254,14 @@ void main() {
 
 
     if( WorldColor ){ // Greyscale
-      outCd.rgb = vec3( luma(color.rgb) * lightCd.r );
+      outCd.rgb = vec3( luma(color.rgb) * lightVal );
     }
 
 	#if ( DebugView == 4 )
 		float debugBlender = step( .0, vPos.x);
-		outCd = mix( outCd, baseCd, debugBlender);
+		outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal, outCd, debugBlender);
 	#endif
-
+	
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);

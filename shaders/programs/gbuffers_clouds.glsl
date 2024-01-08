@@ -177,7 +177,7 @@ void main() {
   outCd.rgb += vec3( sunMoonGlow*.8 );
   
   // Opacity Logic
-  outCd.a *= color.a*.5+(1.0-distMix)*.5;
+  outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.8+.2;//*.5;
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*.2*(depth*.9+.1);
@@ -262,8 +262,8 @@ void main() {
   
 
 	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x);
-		outCd = mix( outCd, baseCd, debugBlender);
+		float debugBlender = step( .0, vLocalPos.x);
+		outCd = mix( baseCd*color, outCd, debugBlender);
 	#endif
 
 	gl_FragData[0] = outCd;

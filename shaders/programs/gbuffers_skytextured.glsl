@@ -112,7 +112,7 @@ void main() {
 #endif
 	#if ( DebugView == 4 )
 		float debugBlender = step( .0, vPos.x);
-		outCd = mix( outCd, baseCd, debugBlender);
+		outCd = mix( baseCd, outCd, debugBlender);
 	#endif
   
 	gl_FragData[0] = outCd;

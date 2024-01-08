@@ -99,6 +99,7 @@ varying float vCdGlow;
 varying float vDepthAvgColorInf;
 varying float vFinalCompare;
 varying float vColorOnly;
+varying float vDeltaPow;
 
 
 
@@ -140,7 +141,7 @@ void main() {
   
   // -- -- --
   
-  float avgBlend = .935;
+  float avgBlend = .95;
   
   ivec2 txlOffset = ivec2(2);
   vec3 mixColor;
@@ -206,16 +207,16 @@ void main() {
   //shadowPushAmmount = max( abs(vWorldNormal.z), vWorldNormal.y)*0.2;
   
   //float shadowPushAmmount =  (depth*.5 + 0.9-abs(dayNight)*0.85) ;
-  float shadowPushAmmount =  (depth*.5 + .025 ) ;
-  shadowPushAmmount *=  max( abs(vWorldNormal.x), max( vWorldNormal.y, abs(vWorldNormal.z) ));
+  float shadowPushAmmount =  (depth*.5 + .010 ) ;
+  shadowPushAmmount *=  min( 1.0, max(abs(vWorldNormal.x), max( vWorldNormal.y, abs(vWorldNormal.z) )));//+(1.0-skyBrightnessMult*.5) );
   vec3 shadowPush = gl_Normal*shadowPushAmmount ;
   
   //shadowPush = (vNormal*shadowPushAmmount) ;
   shadowPos.xyz = mat3(shadowModelView) * (shadowPosition.xyz+shadowPush) + shadowModelView[3].xyz;
   vec3 shadowProjDiag = diagonal3(shadowProjection);
-  shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+  shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);// * (skyBrightnessMult*.5+.5);
   //shadowPos = biasShadowAxis( shadowPos );
-  
+
   
   // --
   vec4 ndcDir = vec4(1.0);
@@ -393,6 +394,12 @@ void main() {
   // Slab & Stairs with detail blending UV issues
   //if( mc_Entity.x == 812 ){
   //}
+	
+  // Ore Detail Blending Mitigation
+	vDeltaPow=2.2;
+  if( mc_Entity.x == 8012 ){
+		vDeltaPow=.80;
+  }
 
   
   
@@ -465,20 +472,6 @@ void main() {
   
 
 
-	//vColor = gl_Color;
-	//vColor = vec4(fract( length(position.xyz)*.1 ));
-	//vColor = vec4(min(0.0, length(position.xyz)*.005 ));
-	//vColor = vec4(vec3(depth),1.0);
-	//vColor = vec4(gl_Vertex.xyz+cameraPosition, 1.0);
-	//vColor = vec4(fract(cameraPosition),1.0);
-
-
-	//vColor = gl_Color;
-	//vColor = vaColor;
-// gbufferModelView;
-// gbufferProjection;
-// gbufferModelViewInverse;
-// gbufferProjectionInverse;
 }
 
 #endif
@@ -613,6 +606,7 @@ varying float vIsLava;
 varying float vCdGlow;
 varying float vDepthAvgColorInf;
 varying float vFinalCompare;
+varying float vDeltaPow;
 
 void main() {
   
@@ -660,8 +654,15 @@ void main() {
     txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
     
     txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
-    txCd.a = mix(txCd.a, 1.0, vAlphaRemove);
-    if (txCd.a * vAlphaMult < .2){
+		
+		float discardMult = vAlphaMult;
+		#if ( DebugView == 4 )
+			txCd.a = mix(txCd.a, 1.0, step(screenSpace.x,.0)*vAlphaRemove);
+			discardMult=1.0;
+		#else
+			txCd.a = mix(txCd.a, 1.0, vAlphaRemove);
+		#endif
+    if (txCd.a * discardMult < .2){
       discard;
     }
     
@@ -677,11 +678,8 @@ void main() {
     //          Vert interpolation is good enough
     float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
 		screenDewarp*=screenDewarp*.7+.3;
-    //float depth = min(1.0, max(0.0, gl_FragCoord.w-screenDewarp));
     float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf));
     float depthBias = biasToOne(depth, 10.5);
-    //float depthDetailing = clamp(1.195-depthBias*1.25, 0.0, 1.0);
-    //float depthDetailing = clamp(1.35-depthBias, 0.0, 1.0);
     float depthDetailing = clamp(1.035-depthBias, 0.0, 1.0);
 
     // Side by side of active bluring and no bluring
@@ -696,18 +694,12 @@ void main() {
     vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
 
     vec3 outCdAvgRef = outCd.rgb;
-    //outCd.rgb = vAvgColor.rgb;
-    //vec3 cdToAvgDelta = (outCdAvgRef.rgb - avgCdRef.rgb)*1.5; // Color deltas for subtle differences
-    //cdToAvgDelta = max(cdToAvgDelta, outCdAvgRef.rgb - txCd.rgb); // Strong color changes, ie birch black bark markings
     vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
     float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
-    //outCd.rgb = mix( outCd.rgb, outCdAvgRef.rgb, max(0.0,(cdToAvgBlender-depthBias*.5)*(1.0-vColorOnly*2.0)) );
-    outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
+    //outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
     
-    float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),2.50)*2.50*depthBias);
-    //outCd.rgb =  mix( vAvgColor.rgb * (luma(outCd.rgb)*.3+.7), outCd.rgb, -min(0.0,length( outCd.rgb-vAvgColor.rgb )) );
+    float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow)*3.0*depthBias);
     outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
-    //outCd.rgb =  vec3(avgColorBlender);
 
 
     // -- -- -- -- -- -- -- -- -- -- -- --
@@ -715,7 +707,6 @@ void main() {
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
     float avgColorMix = depthDetailing*vDepthAvgColorInf;
     avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava*3.0);
-    //outCd = mix( vec4(avgShading.rgb,1.0), vec4(outCd.rgb,1.0),   clamp(avgColorMix+vColorOnly,0.0,1.0));
     outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
 
 
@@ -737,6 +728,7 @@ void main() {
   //vec4 shadowProjOffset = vec4( fitShadowOffset( cameraPosition ), 0.0);
 
   vec3 localShadowOffset = shadowPosOffset;
+	//localShadowOffset.z *= (skyBrightnessMult*.5+.5);
   //localShadowOffset.z *= min(1.0,outDepth*20.0+.7)*.1+.9;
   
   vec4 shadowPosLocal = shadowPos;
@@ -758,10 +750,10 @@ void main() {
   
   for( int x=0; x<axisSamplesCount; ++x){
     //posOffset = axisSamples[x]*reachMult*skyBrightnessMult*.00058828125;
-    posOffset = axisSamples[x]*reachMult*.00058828125;
+    posOffset = axisSamples[x]*reachMult*.00058828125*skyBrightnessMult;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
+    //shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
     //shadowAvg = ( shadowAvg * shadow2D(shadow, projectedShadowPosition).x );
     
     
@@ -771,7 +763,7 @@ void main() {
     posOffset = crossSamples[x]*reachMult*.00038828125;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
+    //shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
     //shadowAvg = ( shadowAvg * shadow2D(shadow, projectedShadowPosition).x );
   #endif
     
@@ -825,7 +817,7 @@ void main() {
     //diffuseSun = smoothstep(.0,.65,diffuseSun); 
     // Mute Shadows during Rain
     //diffuseSun = mix( diffuseSun*.6+.7, 1.0, rainStrength);
-    diffuseSun = mix( diffuseSun, 0.0, rainStrength);
+    diffuseSun = mix( diffuseSun, 0.50, rainStrength);
 
     // TODO : Move sinosoidal block shading to vertex stage
     float blockLighting = shiftBlackLevels( diffuseSun ) ;//* (sin( vColor.a*PI*.5 )*.5+.5);
@@ -886,7 +878,7 @@ void main() {
     surfaceShading *= mix( dayNightMult, vNormalSunDot, dayNight*.5+.5 );
     //surfaceShading *= sunPhaseMult;
     //surfaceShading *= dayNightMult;
-    surfaceShading *= 1.0-(rainStrength*.8+.2)*dayNightMult;
+    //surfaceShading *= 1.0-(rainStrength*.8+.2)*dayNightMult;
     
 #endif
     
@@ -940,7 +932,8 @@ void main() {
     // -- -- -- -- -- -- --
     // -- Fog Coloring - -- --
     // -- -- -- -- -- -- -- -- --
-    vec3 toFogColor = fogColor;
+    vec3 toFogColor = mix( skyColor, fogColor, depth);
+		toFogColor = mix( vec3(1.0), toFogColor, skyBrightnessMult);
 
     // -- -- -- -- -- -- --
     // -- Night Vision - -- --
@@ -993,7 +986,7 @@ void main() {
       vec3 noiseX = texture2D( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
       vec3 noiseZ = texture2D( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
       
-      float noiseInf = min(1.0, (depthEnd+max(0.0,lightInf-.4+glowInf*.8))*depthEnd );
+      float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.4)+glowInf*.8))*depthEnd );
       
       outCd.rgb *= mix(  mix((noiseX*endFogCd*lightCd),endFogCd,noiseInf+depthEnd*.3), vec3(lightInf), noiseInf );
 			//outCd.rgb=lightCd.rgb;//vAvgColor.rgb*lightInf;
@@ -1007,7 +1000,7 @@ void main() {
       //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
       float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
       //float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
-      glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.5+.5));
+      glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.8+.2));
     //}
     
     
@@ -1108,6 +1101,7 @@ void main() {
       glowHSV.z = min( glowHSV.z, ambientGlow );
     }
     
+		//glowHSV.z+=vCdGlow*(depth*.8+.2);//*glowInf;
   
     #if ( DebugView == 1 )
       outCd.rgb=mix( outCd.rgb, vec3((screenSpace.y/(aspectRatio*.8))*.5+.5), step(abs(screenSpace.x+.75), .05));
@@ -1123,41 +1117,23 @@ void main() {
       outCd.rgb=mix(outCd.rgb, vec3(lightCd), step(0.0,screenSpace.x));
     #endif
     
-      
-    // TODO : Remove all instances of `sunMoonShadowInf`
-    //  outCd.rgb = vec3(sunMoonShadowInf);
-    // outCd.rgb = vec3(vAvgColor.rgb);
-    // outCd.rgb = vec3(txCd.rgb);
-    // outCd.rgb = vec3(vColorOnly);
-    // outCd.rgb = vec3(mix(lightLuma, 1.0, diffuseLight.r));
     
-		avgDelta = 0.0;
-    baseCd=vAvgColor;
-    txCd=vec4(1.0,1.0,0.0,1.0);
-	  diffuseSampleXYZFetch( texture, tuv, texcoordmid, texelSize, DetailBluring, baseCd, txCd, avgDelta);
-      
-	
-	//outCd.rgb = txCd.rgb;
-	//outCd.rgb = vColor.rgb;
-	//outCd.rgb = vec3(avgDelta*1.00);
-	
-	
     
 		#if ( DebugView == 4 )
 			vec4 debugCd = texture2D(texture, tuv);
 			vec4 debugLightCd = texture2D(lightmap, luv);
-			screenDewarp*=screenDewarp*.7+.3;
+			
 			float debugBlender = step( .0, screenSpace.x);
 			float debugFogInf = min(1.0,depth*2.0);
 			
 			debugFogInf=clamp(((1.0-gl_FragCoord.w)-.997)*800.0+screenDewarp*.2,0.0,1.0);
 			debugCd.rgb = mix( debugCd.rgb, fogColor, debugFogInf);
   
-			debugCd = debugCd * debugLightCd * vColor.aaaa;
+			//debugCd = debugCd * debugLightCd * vec4(vColor.rgb*(1.0-debugBlender)+(debugBlender),1.0) * vColor.aaaa;
+			debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
       outCd = mix( outCd, debugCd, debugBlender);
-			
     #endif
-	
+		
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

@@ -77,13 +77,12 @@ void main() {
   float sCdMax = (sampleCd.r+sampleCd.g+sampleCd.b)*0.5773502691896258;// .33333;
   float reachDist = sampleCd.a;
 
-  reachDist*=GLOW_PERC;
-  reachDist*=GLOW_REACH;
-  reachDist*=GlowBrightness*2.0;
+  reachDist*=GLOW_PERC * GLOW_REACH * GlowBrightness;//*2.0;
   //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0)*.1);
 
   int reachSteps = 7 + BaseQuality*6 ;
-  vec2 texelRes = vec2(texelSize.x*25.0*GlowBrightness*reachDist,0.0);
+	float texScalar = 17.0-reachDist*4.0;
+  vec2 texelRes = vec2( texelSize.x * texScalar * reachDist, 0.0 );
   
 	vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux2, uv, texelRes, reachSteps)*sampleCd.a;
 

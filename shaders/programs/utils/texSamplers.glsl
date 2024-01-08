@@ -233,7 +233,7 @@ void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, fl
 	
 	
 	float edgePixelSize =  (1.0/16.0);
-	vec2 blendEdgeInf = vec2( (uv-uvmid)*64.0+.5 );
+	vec2 blendEdgeInf = vec2( (uv-uvmid)*(64.0*resScalar)+.5 );
 	
 	// To prevent blending neighboring atlas texture
 	ivec4 edgeBlendInf = ivec4(0.0);

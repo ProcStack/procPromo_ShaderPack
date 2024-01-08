@@ -69,14 +69,12 @@ void main() {
   vec3 sampleCd = texture2D(colortex6, texcoord).rgb;
   float sampleDepth = texture2D(colortex1, texcoord).x;
 
-  sampleDepth*=GLOW_PERC;
-  sampleDepth*=GLOW_REACH;
-  sampleDepth*=GlowBrightness*2.0;
+  float depthInf = GLOW_PERC * GLOW_REACH * GlowBrightness*2.0;
 
-  float glowBrightness = sampleCd.b * sampleCd.b;
+  float glowBrightness = sampleCd.b;// * sampleCd.b;
   
-	vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*25.0*glowBrightness*sampleDepth);
-	//baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth));
+	vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*20.0*glowBrightness*sampleDepth*depthInf);
+	//baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth*depthInf));
   baseBloomCd.b *= GLOW_PERC;
   baseBloomCd = hsv2rgb(baseBloomCd);
 

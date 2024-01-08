@@ -113,7 +113,7 @@ void main() {
 		
 	#if ( DebugView == 4 )
 		float debugBlender = step( .0, vPos.x);
-		outCd = mix( outCd, vColor, debugBlender);
+		outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
 	#endif
 		
 		
