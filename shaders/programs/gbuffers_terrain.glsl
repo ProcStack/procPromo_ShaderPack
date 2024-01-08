@@ -100,6 +100,7 @@ varying float vDepthAvgColorInf;
 varying float vFinalCompare;
 varying float vColorOnly;
 varying float vDeltaPow;
+varying float vDeltaMult;
 
 
 
@@ -396,9 +397,14 @@ void main() {
   //}
 	
   // Ore Detail Blending Mitigation
-	vDeltaPow=2.2;
+	vDeltaPow=3.2;
+	vDeltaMult=3.0;
   if( mc_Entity.x == 8012 ){
 		vDeltaPow=.80;
+  }
+  if( mc_Entity.x == 9011 ){
+		vDeltaPow=4.0;
+		vDeltaMult=1.10;
   }
 
   
@@ -607,6 +613,7 @@ varying float vCdGlow;
 varying float vDepthAvgColorInf;
 varying float vFinalCompare;
 varying float vDeltaPow;
+varying float vDeltaMult;
 
 void main() {
   
@@ -698,7 +705,7 @@ void main() {
     float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
     //outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
     
-    float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow)*3.0*depthBias);
+    float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow)*vDeltaMult*depthBias);
     outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
 
 
@@ -753,7 +760,7 @@ void main() {
     posOffset = axisSamples[x]*reachMult*.00058828125*skyBrightnessMult;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    //shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
+    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .25);
     //shadowAvg = ( shadowAvg * shadow2D(shadow, projectedShadowPosition).x );
     
     
@@ -763,7 +770,7 @@ void main() {
     posOffset = crossSamples[x]*reachMult*.00038828125;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    //shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
+    shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .35);
     //shadowAvg = ( shadowAvg * shadow2D(shadow, projectedShadowPosition).x );
   #endif
     
@@ -791,16 +798,9 @@ void main() {
   
   // -- -- --
   //  Distance influence of surface shading --
-  //shadowAvg *= shadowSurfaceInf;
-  //shadowAvg = min( shadowAvg, shadowSurfaceInf );
-  //shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult*(1-rainStrength);
-  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*(1-rainStrength);
-  //shadowAvg = shadowSurfaceInf;
-  //shadowAvg = shadowAvg;
+  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * (1-rainStrength);
   // -- -- --
-  //  rainStrength;skyBrightnessMult
   // TODO : Needed?  Depth based shadowings
-  //diffuseSun *= mix( 0.0, shadowAvg, sunMoonShadowInf * shadowDepthInf * shadowSurfaceInf );
   diffuseSun *= mix( 0.0, shadowAvg, sunMoonShadowInf * shadowDepthInf * shadowSurfaceInf * dayNightMult );
 
   
