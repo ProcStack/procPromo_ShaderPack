@@ -209,7 +209,7 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
   //sampleCd.rgb = texture2D(tx, uv).rgb;
   
 	boxAvg = min( vec3(1,1,1), boxAvg*boxSampleFit );
-	sampleCd.rgb = boxAvg.rrr;
+	//sampleCd.rgb = boxAvg.rrr;
 }
 
 

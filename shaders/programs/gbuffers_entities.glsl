@@ -178,8 +178,8 @@ void main() {
   vec4 outCd = txCd * color;
   baseCd *= lightCd * color;
 	
-	float avgColorBlender = max(0.0, dot(outCd.rgb,(baseCd.rgb)));
-	avgColorBlender = clamp( (avgColorBlender-.75)*10.75+.35, 0.0, 1.0 );
+	float avgColorBlender = max(0.0, dot(baseCd.rgb,(txCd.rgb)));
+	avgColorBlender = clamp( (avgColorBlender-.75)*4.75+.35, 0.0, 1.0 );
 	//avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
 	outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
   
@@ -194,10 +194,11 @@ void main() {
 		outCd = mix( baseCd, outCd, debugBlender);
 	#endif
 	float entityCd = maxComponent(entityColor.rgb);
-	outCd.rgb = mix( outCd.rgb, entityColor.rgb, entityCd); 
-//outCd.rgb=vec3(avgColorBlender);
+	outCd.rgb = mix( outCd.rgb, entityColor.rgb, entityCd);  
+//outCd.rgb=vec3(baseCd.rgb);
 //outCd.rgb=vec3(txCd.rgb);
-outCd.rgb=vec3(avgDelta);
+//outCd.rgb=vec3(baseCd.rgb);
+//outCd.rgb=vec3(avgColorBlender);// * color.rgb);
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
