@@ -222,9 +222,9 @@ void main() {
   outCd*= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
   
 
-    float depth = min(1.0, max(0.0, gl_FragCoord.w));
-    //outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
-    outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 );
+	float depth = min(1.0, max(0.0, gl_FragCoord.w));
+	//outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
+	outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 ) * lightVal;
 
 
 
@@ -259,7 +259,7 @@ void main() {
 
 	#if ( DebugView == 4 )
 		float debugBlender = step( .0, vPos.x);
-		outCd = mix( baseCd*vec4(color.rgb,1.0), outCd, debugBlender) * lightVal;
+		outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal, outCd, debugBlender);
 	#endif
 	
     gl_FragData[0] = outCd;
