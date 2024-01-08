@@ -218,7 +218,7 @@ void main() {
   vec2 luv = lmcoord.st;
   float lightVal = texture2D(lightmap, luv).r;
   
-  vec4 outCd = color * vec4(vec3(lightVal),1.0);
+  vec4 outCd = color;// * vec4(vec3(lightVal),1.0);
   outCd*= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
   
 
@@ -259,7 +259,7 @@ void main() {
 
 	#if ( DebugView == 4 )
 		float debugBlender = step( .0, vPos.x);
-		outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal, outCd, debugBlender);
+		outCd = mix( baseCd*vec4(color.rgb,1.0), outCd, debugBlender) * lightVal;
 	#endif
 	
     gl_FragData[0] = outCd;

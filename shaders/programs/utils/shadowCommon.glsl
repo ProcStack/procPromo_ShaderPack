@@ -34,7 +34,7 @@ const float shadowAxisBiasPosOffset = 0.02;
 
 // const float shadowThreshold = 0.0006*shadowDistance/ // 45.;
 // const float shadowThreshold =0.00001*shadowDistance/shadowMapFov;// * 2048./shadowMapResolution;
-const float shadowThreshold = 0.00001*shadowDistance/(shadowMapFov*.5);// * 2048./shadowMapResolution;
+const float shadowThreshold = 0.0001*shadowDistance/(shadowMapFov*.5);// * 2048./shadowMapResolution;
 
 const float oneThird = 1.0 / 3.0;
 const float thirdHalf = .5 * oneThird;
