@@ -178,7 +178,8 @@ void main() {
   baseCd *= color;
 	
 	float avgColorBlender = max(0.0, dot(outCd.rgb,(txCd.rgb)));
-	avgColorBlender = clamp( (avgColorBlender-.75)*4.75+.35, 0.0, 1.0 );
+	float cdComp=1.0-abs(min(1.0,maxComponent(baseCd.rgb)*1.0)-.5)*2.0;
+	avgColorBlender = clamp( (avgColorBlender-.85)*1.75+.25, 0.0, 1.0 )*cdComp;
 	//avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
 	outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
   
@@ -195,9 +196,6 @@ void main() {
 	float entityCd = maxComponent(entityColor.rgb);
 	lightCd = vec4( lightCd.r );// * (1.0+rainStrength*.2));
 	outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
-//outCd.rgb=vec3(baseCd.rgb);
-//outCd.rgb=vec3(txCd.rgb);
-//outCd.rgb=vec3(baseCd.rgb);
 //outCd.rgb=vec3(avgColorBlender);// * color.rgb);
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
@@ -205,39 +203,6 @@ void main() {
 	gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
 	gl_FragData[4] = vec4(vec3(0.0),1.0);
 
-
-
-/*
-
-  vec2 luv = lmcoord.st;
-  vec4 lightCd = texture2D(lightmap, luv);
-	
-  vec4 outCd = txCd;
-	
-	float avgColorBlender = clamp(dot((baseCd.rgb),(txCd.rgb)), 0.0, 1.0);
-	
-  txCd *= color;
-  baseCd *= color;
-	
-	//avgColorBlender = avgColorBlender*maxComponent(baseCd.rgb);
-	avgColorBlender = 1.0-clamp( (avgColorBlender-.35)*4.75+.25, 0.0, 1.0 );
-	//avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
-	outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
-  
-  float highlights = dot(normalize(sunPosition),vNormal.xyz);
-  highlights = (highlights-.5)*0.3;
-
-  float outDepth = min(.9999,gl_FragCoord.w);
-  float outEffectGlow = 0.0;
-  
-	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x );
-		outCd = mix( baseCd, outCd, debugBlender);
-	#endif
-	float entityCd = maxComponent(entityColor.rgb);
-	lightCd = vec4( lightCd.r * (1.0-rainStrength));
-	outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
-	*/
 
 }
 #endif

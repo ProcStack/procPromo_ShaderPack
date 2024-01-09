@@ -360,8 +360,8 @@ void main() {
   // -- -- -- -- -- -- -- -- --
   // -- Sun & Moon Edge Influence -- --
   // -- -- -- -- -- -- -- -- -- -- --
-#ifdef OVERWORLD
 /*
+//#ifdef OVERWORLD
     float sunNightInf = abs(dayNight)*.3;
     float sunInf = dot( avgNormal, sunVecNorm ) * max(0.0, dayNight);
     float moonInf = dot( avgNormal, vec3(1.0-sunVecNorm.x, sunVecNorm.yz) ) * max(0.0, -dayNight);
@@ -377,8 +377,8 @@ void main() {
     //outCd.rgb = mix( baseCd.rgb, mix(baseCd.rgb*1.5,outCd.rgb,shadow)*edgeInsideOutsidePerc, EdgeShading*.25+.5);
   //outCd.rgb = mix( outCd.rgb, hsv2rgb(colorHSV), EdgeShading*.25+.75);
     //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);
+//#endif
 */
-#endif
 
 
 

@@ -330,7 +330,7 @@ void main() {
   vAlphaRemove = 0.0;
   if((mc_Entity.x == 810 || mc_Entity.x == 8101) && SolidLeaves ){
     vAvgColor = mc_Entity.x == 810 ? vColor * (vAvgColor.g*.5+.5) : vAvgColor;
-    vColor = mc_Entity.x == 8101 ? vAvgColor*1.85 : vColor;
+    vColor = mc_Entity.x == 8101 ? vAvgColor : vColor;
     
     
     vAlphaRemove = 1.0;
@@ -793,7 +793,7 @@ void main() {
 	lightCd = max( lightCd, diffuseSun);
 	
 	// Strength of final shadow
-	outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r*.7), 1.0,shadowAvg));
+	outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r*.8), 1.0,shadowAvg));
 
 	fogColorBlend = skyBrightnessMult;
 	

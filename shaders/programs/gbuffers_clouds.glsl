@@ -181,7 +181,7 @@ void main() {
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*.2*(depth*.9+.1);
-  glowHSV.z *= glowHSV.z*.5+.3;
+  glowHSV.z *= glowHSV.z*.4+.25;
   float glowReach = 1.0-depth*.5+.5;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
