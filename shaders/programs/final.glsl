@@ -321,7 +321,7 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
   float edgeDistanceThresh = .003;
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
-  float reachMult = mix(0.8, .5-skyBrightnessMult*.15+reachOffset, depthCos );//1.0;//depthBase*.5+.5 ;
+  float reachMult = mix(0.8, .45-skyBrightnessMult*.15+reachOffset, depthCos );//1.0;//depthBase*.5+.5 ;
 
 #ifdef NETHER
   skyBrightnessInf = 1.0;
@@ -395,7 +395,7 @@ void main() {
 #ifdef OVERWORLD
 	// Edge boost around well lit areas
   float sunEdgeInf = dot( sunVecNorm, avgNormal );
-  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.3*depthCos;
+  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.2*depthCos;
 #endif
   
   
