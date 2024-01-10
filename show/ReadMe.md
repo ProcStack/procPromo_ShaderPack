@@ -3,11 +3,12 @@
 <br/>
 The Light Bringer
 <img src="LightBringer_2024-01-08.png" alt="The Light Bringer" style="margin-left:auto;margin-right:auto;">
-<br/><img src="LightBringer_compare_2024-01-08.png" alt="The Light Bringer Compared" style="margin-left:auto;margin-right:auto;">
+Vanilla -vs- procPromo
+<img src="LightBringer_compare_2024-01-08.png" alt="The Light Bringer Compared" style="margin-left:auto;margin-right:auto;">
 
 Alien Flora!
 <img src="AlienFlora_2024-01-08.png" alt="Alien Flora" style="margin-left:auto;margin-right:auto;">
-<br/><img src="AlienFlora_highAngle_2024-01-08.png" alt="Alien Flora High Angle" style="margin-left:auto;margin-right:auto;">
+<img src="AlienFlora_highAngle_2024-01-08.png" alt="Alien Flora High Angle" style="margin-left:auto;margin-right:auto;">
 
 The Nether Lakes
 <img src="NetherLavaLake_2024-01-10.png" alt="Nether Lakes" style="margin-left:auto;margin-right:auto;">
