@@ -275,12 +275,12 @@ void main() {
     
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
     vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 * (1.0-nightVision));
-    //vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
-    vec4 depthBlurCd = baseCd;
+    vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .25 );
+    depthBlurCd.rgb = mix( fogColor*depthCos, depthBlurCd.rgb, min(1.0,(1.0-depth)*4.5));
     
     float eyeWaterInf = (1.0-isEyeInWater*.2);
     float fogBlendDepth = ((depth+.5)*depth+.8);
-    depthBlurCd.rgb = min(vec3(1.0), depthBlurCd.rgb*mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf));
+    //depthBlurCd.rgb = min(vec3(1.0), depthBlurCd.rgb*mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf));
 
     
     baseCd = depthBlurCd;

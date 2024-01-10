@@ -859,7 +859,7 @@ void main() {
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
       //outCd.rgb *=  1.0+lightLuma+glowInf;
-      outCd.rgb *=  1.0+lightLuma*1.2;//+.5;
+      outCd.rgb *=  toFogColor;//*(.8+lightLuma*lightLuma*.3);//+.5;
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
