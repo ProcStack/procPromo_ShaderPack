@@ -375,18 +375,22 @@ void main() {
   
   // Lava
   if( mc_Entity.x == 701 ){
-    vIsLava=.8;
+    vIsLava=0.85;
+    vCdGlow=.08;
 #ifdef NETHER
     vCdGlow=.2;
-#else
-     vCdGlow=.02;
+    vIsLava=0.7;
 #endif
     vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   // Flowing Lava
   if( mc_Entity.x == 702 ){
-    vIsLava=0.9;
-    vCdGlow=0.25;
+    vIsLava=0.85;
+    vCdGlow=0.15;
+#ifdef NETHER
+    vIsLava=0.7;
+    vCdGlow=.2;
+#endif
     vColor.rgb = mix( vAvgColor.rgb, texture2D(texture, midcoord).rgb, .5 );
   }
   
@@ -503,6 +507,7 @@ uniform float aspectRatio;
 
 uniform int worldTime;
 uniform ivec2 eyeBrightness;
+uniform ivec2 eyeBrightnessSmooth;
 
 // To Implement
 //uniform float wetness;  //rainStrength smoothed with wetnessHalfLife or drynessHalfLife
@@ -791,8 +796,12 @@ void main() {
 	diffuseSun = mix( diffuseSun, 0.50, rainStrength);          
 	
 	lightCd = max( lightCd, diffuseSun);
+	//lightCd = max(lightCd,vec3(diffuseSun) );//vec3( mix(  max(diffuseSun,lightLumaBase), diffuseSun*lightLumaBase,  skyBrightnessMult ) );
+	//lightCd = vec3( mix(  max(diffuseSun,lightLumaBase), diffuseSun*lightLumaBase,  dayNightMult*skyBrightnessMult ) );
 	
 	// Strength of final shadow
+	//outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r), 1.0,shadowAvg));
+	//outCd.rgb *= vec3(mix(lightCd.r, 1.0,shadowAvg));
 	outCd.rgb *= vec3(mix(max(shadowAvg,lightCd.r*.8), 1.0,shadowAvg));
 
 	fogColorBlend = skyBrightnessMult;
@@ -800,6 +809,9 @@ void main() {
 	//lightCd = mix( vec3(shadowAvg), lightCd, 1.0-shadowAvg);// * dayNightMult;
 	//lightCd = max( vec3(shadowAvg*dayNightMult), lightCd) ;
 	lightCd = mix( lightCd.rrr, max(lightCd.rrr, vec3(shadowAvg)*dayNightMult), shadowAvg) ;
+	//lightCd = mix( lightCd.rrr*shadowAvg, max(lightCd.rrr, vec3(shadowAvg)*dayNightMult), shadowAvg) ;
+	
+
 
 	surfaceShading *= mix( dayNightMult, vNormalSunDot, dayNight*.5+.5 );
     
@@ -807,7 +819,7 @@ void main() {
     
 		// Add Fake Fresnel To Blocks
 		float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
-		outCd*=mix(1.0, dotToCam*.5+.5, vIsLava);
+		outCd*=mix(1.0, dotToCam*.35+.65, vIsLava*.5);
 		
 		
     // Apply Black Level Shift from User Settings
@@ -824,7 +836,7 @@ void main() {
     depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*1.0)))*distantVibrance) ); 
     //surfaceShading = 1.0-(1.0-surfaceShading)*.4;
     
-    outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing ; // *fogColor; // -.2;
+    outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing  *fogColor; // -.2;
 
     // -- -- -- -- -- -- 
 
@@ -841,7 +853,7 @@ void main() {
     // -- -- -- -- -- -- --
     // -- Fog Coloring - -- --
     // -- -- -- -- -- -- -- -- --
-    vec3 toFogColor = mix( skyColor, fogColor, depth);
+    vec3 toFogColor = mix( skyColor*.5+outCd.rgb*.5, fogColor, depth);
 		toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
 
     // -- -- -- -- -- -- --
@@ -877,15 +889,16 @@ void main() {
 
 // TODO : MOVE TO POST PROCESSING ... ya dingus
 
+    
 #ifdef THE_END
+    
       float depthEnd = max(0.0, min(1.0, outDepth*6.0-screenDewarp*.025));
 			depthEnd = depthEnd*.4+.6;
       //depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
-    
+			
 			float lightShift=.47441;
 			float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
       float lightInf = min(1.0, (max((lightCd.r-.35)*1.2,lightLumaBase)-lightShift)*lightShiftMult + depthEnd*.4);
-    
       
       vec3 endFogCd = fogColor+vec3(.3,.25,.3);
       float timeOffset = (float(worldTime)*0.00004166666)*(30.0);
@@ -920,7 +933,7 @@ void main() {
     outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf*.5));
     outCd.rgb *= mix(1.0, toCamNormalDot, depth*.7+.3);
 #else
-    outCd.rgb *= mix(1.0, toCamNormalDot*.5+.5, depth*.7+.3);
+    outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*.5+.5), min(1.0,depth*.7+.3+lightCd.r));
 #endif
 
 
@@ -948,7 +961,7 @@ void main() {
     outCd.rgb *= skyBrightMultFit;
 		
 // Check this for shadow infulences--    
-    outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult));
+    outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightnessMult));
     
 #endif
     
@@ -1036,7 +1049,9 @@ void main() {
 			debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
-		
+		//outCd.rgb=vec3(float(eyeBrightness.x)*(1.0/15.0));
+		//outCd.rgb=vec3(step(15.00/16.0,lightLumaBase));
+
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
