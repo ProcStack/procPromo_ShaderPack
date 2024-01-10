@@ -154,7 +154,7 @@ void main() {
   
   
   
-  float distMix = min(1.0,gl_FragCoord.w*2.0);
+  float distMix = min(1.0,gl_FragCoord.w*5.0);
   outCd.rgb = mix( outCd.rgb*mix(fogColor, vec3(1,1,1), distMix*.55+.45), outCd.rgb, distMix );
 
   // Sun Glow Mult / Moon Phase Glow Mult
@@ -177,12 +177,11 @@ void main() {
   outCd.rgb += vec3( sunMoonGlow*.8 );
   
   // Opacity Logic
-  outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.8+.2;//*.5;
+  outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.9+.1;//*.5;
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
-  glowHSV.z *= outCd.a*.2*(depth*.9+.1);
-  glowHSV.z *= glowHSV.z*.4+.25;
-  float glowReach = 1.0-depth*.5+.5;
+  glowHSV.z *= outCd.a*.2*(glowHSV.z*.4+.2) *(depth*1.2+.2);
+  float glowReach = (1.0-depth*.5)+.35;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
   toNorm=normalize(toNorm)*.5+.5;

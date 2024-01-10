@@ -6,7 +6,6 @@ uniform int renderStage;
 uniform float sunAngle;
 
 varying vec4 texcoord;
-varying vec4 lmcoord;
 varying vec4 vPos;
 varying vec4 vColor;
 varying vec3 vNormal;
@@ -32,13 +31,9 @@ void main() {
 
 	gl_Position = gl_ProjectionMatrix * position;
 
-	vColor = gl_Vertex;//*step(1.0,(gl_Vertex.y+60.0)*.015);//*step(0.0, gl_Vertex.y);
+	vColor = gl_Vertex;// * step(1.0,(gl_Vertex.y+60.0)*.015);//*step(0.0, gl_Vertex.y);
 
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
-	
-  float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
-  lmcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
   
   vAmbiance = 1.0;
   
@@ -73,7 +68,6 @@ uniform float viewHeight;
 uniform float viewWidth;
 
 varying vec4 texcoord;
-varying vec4 lmcoord;
 varying vec4 vPos;
 varying vec4 vColor;
 varying vec3 vNormal;
@@ -89,11 +83,10 @@ uniform int fogMode;
 void main() {
   
   vec4 outCd = vColor;
-  vec2 luv = lmcoord.zw;
-  vec4 lightCd = texture2D(lightmap, luv);
   
-  vec4 pos = vec4(gl_FragCoord.xy / vec2(viewWidth, viewHeight)*2.0 - 1.0, 1.0, 1.0);
-  pos = gbufferProjectionInverse * pos;
+  vec4 basePos = vec4(gl_FragCoord.xy / vec2(viewWidth, viewHeight)*2.0 - 1.0, 1.0, 1.0);
+  vec4 pos = gbufferProjectionInverse * basePos;
+  //pos = gbufferModelView * vPos;
   
   float upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
   upDot = 1.0-(1.0-upDot)*(1.0-upDot);
@@ -112,10 +105,10 @@ void main() {
 		
 		
 	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x);
+		float debugBlender = step( .0, basePos.x);
 		outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
 	#endif
-		
+		//outCd.rgb=skyCd.xyz;
 		
 	gl_FragData[0] = outCd;
     //gl_FragData[1] = vec4(vec3( 0.0 ), 1.0);

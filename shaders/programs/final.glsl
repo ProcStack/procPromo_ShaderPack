@@ -3,7 +3,11 @@
     Buffer currently has Sun Shadow written to it
     Should be block luminance;
       Transparent blocks included
-   -- -- -- -- -- -- */
+   -- -- -- -- -- -- 
+  Notes :
+	  Highlighted Block edge thickness is set in gbuffer_basic.glsl
+	 
+*/
 
 
 #ifdef VSH
@@ -143,28 +147,23 @@ vec4 boxSample( sampler2D tex, vec2 uv, vec2 reachMult, float blend ){
 void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
                   vec2 uv, vec2 uvOffset,
                   float depthRef, vec3 normalRef, float thresh,
-                  inout float depthOut, inout vec3 avgNormal, inout float edgeOut ){
+                  inout vec3 avgNormal, inout float innerEdge, inout float outerEdge ){
 
-  vec2 uvDepthLimit = uv+uvOffset;//limitUVs(uv+uvOffset);
-  vec2 uvNormalLimit = uv+uvOffset*1.5;//limitUVs(uv+uvOffset*1.5);
+  vec2 uvDepthLimit = uv+uvOffset;
+  vec2 uvNormalLimit = uv+uvOffset*1.5;
   float curDepth = texture2D(txDepth, uvDepthLimit).r;
   vec3 curNormal = texture2D(txNormal, uvNormalLimit).rgb*2.0-1.0;
   
   float curInf = step( abs(curDepth - depthRef), thresh );
 
-  curDepth = ( abs(curDepth - depthRef)*1.5 );
-  //curDepth = smoothstep(0.0, .85, curDepth ); // Commented for performance, looks better tho
+  curDepth = max(0.0, abs(curDepth - depthRef)-.009)*50.5;
 
-  depthOut = max( depthOut, curDepth );
+  outerEdge = max( outerEdge, curDepth );
   
-  //edgeOut = mix( max(edgeOut, step(0.075, depthOut)*.5 ), 1.0-abs(dot(normalRef, curNormal))*curInf, .125 );
   float curEdge = 1.0-abs(dot(normalRef, curNormal));
-  edgeOut = mix( edgeOut, curEdge, .125*curInf );
-  //curInf *= dot(avgNormal, curNormal)*.5+.5;
+	curEdge *= curEdge;
+  innerEdge = mix( innerEdge, curEdge, .125*curInf );
   
-  
-    
-  //avgNormal = mix( avgNormal, curNormal, max(edgeOut, step(0.005, depthOut)*.5 ) );
   avgNormal = (mix( avgNormal, curNormal, .5*curInf ));
   
 }
@@ -176,41 +175,41 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
 void findEdges( sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
                 vec2 uv, vec2 txRes,
                 float depthRef, vec3 normalRef, float thresh,
-                inout vec3 avgNormal, inout float edgeInsidePerc, inout float edgeOutsidePerc ){
+                inout vec3 avgNormal, inout float innerEdgePerc, inout float outerEdgePerc ){
   
-  float edgeOut = 0.0;
-  float depthOut = 0.0;
+  float innerEdge = 0.0;
+  float outerEdge = 0.0;
   
   vec2 uvOffsetReach = txRes;
   
   vec2 curUVOffset;
   curUVOffset = uvOffsetReach * vec2( -1.0, -1.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   curUVOffset = uvOffsetReach * vec2( -1.0, 0.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   curUVOffset = uvOffsetReach * vec2( -1.0, 1.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   
   curUVOffset = uvOffsetReach * vec2( 0.0, -1.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   curUVOffset = uvOffsetReach * vec2( 0.0, 1.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   
   curUVOffset = uvOffsetReach * vec2( 1.0, -1.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   curUVOffset = uvOffsetReach * vec2( 1.0, 0.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   curUVOffset = uvOffsetReach * vec2( 1.0, 1.0 );
-  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,  depthOut,avgNormal,edgeOut );
+  edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   
 
-  depthOut *= step(0.05, depthOut); 
+  outerEdge *= step(0.05, outerEdge); 
   
-  //edgeOut = max( edgeOut, depthOut );
+  //innerEdge = max( innerEdge, outerEdge );
   
   avgNormal = normalize(avgNormal);
-  edgeInsidePerc = edgeOut;
-  edgeOutsidePerc = depthOut;
+  innerEdgePerc = innerEdge;
+  outerEdgePerc = outerEdge;
 }
 
 
@@ -272,17 +271,17 @@ void main() {
     
     float depthBlurTime = worldTime*.07 + depth*3.0;
     float depthBlurWarpMag = .006;
-    float uvMult = 20.0 + 10.0*depth;
+    float uvMult = 20.0 + 10.0*depthCos;
     
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
     vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 * (1.0-nightVision));
-    vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
+    //vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .2 );
+    vec4 depthBlurCd = baseCd;
     
     float eyeWaterInf = (1.0-isEyeInWater*.2);
-    float fogBlendDepth = (depthCos*.7+.3);
-    depthBlurCd.rgb *= mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf);
-    //blurMidCd*=depthBase;
-    //blurLowCd*=depthBase;
+    float fogBlendDepth = ((depth+.5)*depth+.8);
+    depthBlurCd.rgb = min(vec3(1.0), depthBlurCd.rgb*mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf));
+
     
     baseCd = depthBlurCd;
     outCd = depthBlurCd;
@@ -306,14 +305,11 @@ void main() {
   float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
   float skyBrightnessInf = skyBrightnessMult*.5+.5;
   
-#ifdef NETHER
-  skyBrightnessInf = 1.0;
-#endif
 
   // -- -- -- -- -- -- -- 
   // -- Rain Influence  -- --
   // -- -- -- -- -- -- -- -- --
-  float rainInf = (1.0-rainStrength*2.0);
+  float rainInf = (1.0-rainStrength*.7);
   rainInf = mix( 1.0, rainInf, skyBrightnessMult);
   
   // -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -323,38 +319,39 @@ void main() {
   // -- -- -- -- -- -- -- --
   // -- Edge Detection -- -- --
   // -- -- -- -- -- -- -- -- -- --
-  float edgeDistanceThresh = .005;
-  float reachOffset = min(.4,isEyeInWater*.2) + rainStrength*.2;
-  float reachMult = depthCos*(.6+reachOffset)+.4-reachOffset;//1.0;//depthBase*.5+.5 ;
-  reachMult = reachMult * (1.0+rainStrength);
+  float edgeDistanceThresh = .003;
+  float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
+  float reachMult = mix(0.8, .5-skyBrightnessMult*.15+reachOffset, depthCos );//1.0;//depthBase*.5+.5 ;
 
 #ifdef NETHER
-  reachMult *= 1.75;
+  skyBrightnessInf = 1.0;
+  reachMult *= 0.9+(1.0-dataCd.r*1.5);
+	depthCos=1.0-(1.0-depthCos)*(1.0-depthCos);
+
 #endif
   
   vec3 avgNormal = normalCd.rgb;
-  float edgeInsidePerc;
-  float edgeOutsidePerc;
+  float innerEdgePerc;
+  float outerEdgePerc;
   findEdges( colortex0, colortex1, colortex2,
-             uv, res*(1.5+isEyeInWater*3.5)*reachMult*EdgeShading,
+             uv, res*(1.5)*reachMult*EdgeShading,
              depthBase, normalCd.rgb, edgeDistanceThresh, avgNormal,
-             edgeInsidePerc,edgeOutsidePerc );
+             innerEdgePerc,outerEdgePerc );
 
-
-  edgeInsidePerc *= 1.0-min(1.0,max(0,isEyeInWater)*.5);
-  edgeInsidePerc *= dotToCamClamp*1.5-reachOffset*4.5;
-  //edgeInsidePerc *= abs(dotToCam);
-  edgeInsidePerc *= min(1.0,depthCos*4.5);
-  edgeInsidePerc = clamp(edgeInsidePerc,0.0,1.0);
-  edgeOutsidePerc = min(edgeOutsidePerc,depthBase*.3+.1);
-  edgeOutsidePerc = clamp(edgeOutsidePerc,0.0,1.0);
+  innerEdgePerc *= 1.0-min(1.0,float(max(0,isEyeInWater))*.35);
+  innerEdgePerc *= dotToCamClamp*1.5-reachOffset*1.5;
+  //innerEdgePerc *= abs(dotToCam);
+  innerEdgePerc = clamp(innerEdgePerc*(depthCos-.01)*10.5, 0.0, rainInf )	;
+	
+  //outerEdgePerc = clamp(outerEdgePerc,0.0,1.0);
+  outerEdgePerc = clamp( outerEdgePerc*(depthCos-.01)*10.5, 0.0, rainInf );
   
   
 	//const vec3 moonlight = vec3(0.5, 0.9, 1.8) * Moonlight;
-  //edgeInsidePerc = smoothstep(.0,.8,min(1.0,edgeInsidePerc));
+  //innerEdgePerc = smoothstep(.0,.8,min(1.0,innerEdgePerc));
 
 
-  float edgeInsideOutsidePerc = max(edgeInsidePerc,edgeOutsidePerc);
+  float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc)*(depthCos-.01)*10.5, 0.0, rainInf-float(isEyeInWater)*.27 );
   
   
   // -- -- -- -- -- -- -- -- --
@@ -390,16 +387,15 @@ void main() {
   //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
   
-  edgeInsidePerc *= .8;
-  edgeOutsidePerc *= 2.5;
+  innerEdgePerc *= .8;
+  outerEdgePerc *= 2.5;
   
 #endif
 
 #ifdef OVERWORLD
+	// Edge boost around well lit areas
   float sunEdgeInf = dot( sunVecNorm, avgNormal );
-  //outCd.rgb += outCd.rgb * (edgeOutsidePerc*sunEdgeInf*.5);// * (shadow*.3+.7);
-  outCd.rgb+= outCd.rgb * sunEdgeInf*edgeOutsidePerc ;
-  outCd.rgb += mix( outCd.rgb, skyColor, sunEdgeInf*.5*dataCd.r*skyBrightnessMult)*edgeOutsidePerc*dataCd.r;
+  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.3*depthCos;
 #endif
   
   
@@ -415,16 +411,12 @@ void main() {
   
   
   float edgeCdInf = step(depthBase, .9999);
-  // TODO : Check skyBrightness for inner edges when in caves
-  //edgeCdInf *= (skyBrightnessInf*.5+.5) * rainInf;
   edgeCdInf *= lavaSnowFogInf;
-
-  outCd.rgb += outCd.rgb*edgeInsidePerc*abs(dotToCam)*2.0*edgeCdInf;
-  outCd.rgb += outCd.rgb*edgeOutsidePerc*edgeCdInf;
+	
+	// Apply Edge Coloring
+  outCd.rgb += outCd.rgb*.3*edgeInsideOutsidePerc*edgeCdInf;
   
-  float depthInfBase = spectralDataCd.g;
-  depthInfBase *= depthInfBase*depthInfBase;
-  
+  // Boost Glowing Entity's Color
   float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   
@@ -449,7 +441,8 @@ void main() {
 		float debugBlender = step( .5, uv.x);
 		outCd = mix( baseCd, outCd, debugBlender);
 	#endif
-  
+	//outCd.rgb=vec3(dataCd.r);
+	
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
 #endif

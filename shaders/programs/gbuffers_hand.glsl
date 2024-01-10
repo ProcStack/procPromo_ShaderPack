@@ -217,10 +217,6 @@ void main() {
   surfaceShading *= max(0.0,dot( normalize(sunPosition), vec3(0.0,0.0,-1.0)));
   outCd.rgb += vec3( surfaceShading*.2 );
   
-  //outCd.rgb = vec3( dot( normalize(sunPosition), normalize(reflect(normalize(-vPos.xyz),normalCd) )) );// * -highlights;
-  //outCd.rgb = vec3( dot( normalize(sunPosition), dot(normalize(-vPos.xyz),normal.xyz) ) );
-  //outCd.rgb = vec3( dot(normalize(vPos.xyz),normal.xyz) );
-  //outCd.rgb = vec3( dot(normalize(vPos.xyz-cameraPosition),normal.xyz) );
 
 
     // TODO : Update isEyeInWater to not be ifs
@@ -254,9 +250,9 @@ void main() {
 	#endif
 	
 	gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);
+  gl_FragData[1] = vec4(vec3( min(1.0,gl_FragCoord.w)-.0001 ), 1.0);
 	gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w),0.0,1.0);//glowVal);
+	gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w)+.5,0.0,1.0);//glowVal);
 	gl_FragData[4] = vec4(glowHSV,1.0);//glowVal);
 
 	/*
