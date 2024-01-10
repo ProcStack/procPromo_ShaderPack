@@ -1,12 +1,14 @@
-# ProcStack's procPromo v0.2
+# ProcStack's procPromo v0.3
 ### Optifine Shader Pack
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
 <br/> Softer details, edge highlights, sharp shadows, and glowiness.*
+---
 
-
-***Vanilla vs procPromo***
 <img src="show/LightBringer_2024-01-08.png" alt="The Light Bringer Compared" style="margin-left:auto;margin-right:auto;"/>
+
+<img src="show/NetherLavaLake_2024-01-10.png" alt="Nether Lakes" style="margin-left:auto;margin-right:auto;">
+
 
 *(More screenshots in [/show](/show/ReadMe.md))*
 
