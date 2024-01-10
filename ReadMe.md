@@ -4,11 +4,9 @@
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
 <br/> Softer details, edge highlights, sharp shadows, and glowiness.*
 
-*(Currently being refactored)*
-<br/>*(See refactor branch for newest dev, there will be bugs though)*
-<br/>*(For 1.18 specific procPromo v0.1, see the 1.18.# branch)*
 
-<img src="show/gal_netherPortal_v0.1_2022-04-11.jpg" alt="Fallen Portal" style="margin-left:auto;margin-right:auto;"/>
+***Vanilla vs procPromo***
+<img src="show/LightBringer_2024-01-08.png" alt="The Light Bringer Compared" style="margin-left:auto;margin-right:auto;"/>
 
 *(More screenshots in [/show](/show/ReadMe.md))*
 
