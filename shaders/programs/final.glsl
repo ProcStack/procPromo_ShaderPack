@@ -154,16 +154,16 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   float curDepth = texture2D(txDepth, uvDepthLimit).r;
   vec3 curNormal = texture2D(txNormal, uvNormalLimit).rgb*2.0-1.0;
   
-  float curEdge = 1.0-abs(dot(normalRef, curNormal));
-	curEdge *= curEdge;
-  curDepth = max(0.0, abs(curDepth - depthRef)*1.8-.001)*(1.0-curDepth);
+  float curNormalDot = 1.0-abs(dot(normalRef, curNormal));
+	curNormalDot *= curNormalDot;
+  //curDepth = max(0.0, abs(curDepth - depthRef)-.009)*50.5;
+  curDepth = clamp( (abs(curDepth - depthRef)-.01),0.0,1.0);
 
+  float curInf = step( curDepth, thresh );
+
+  innerEdge = mix( innerEdge, curNormalDot, .125*curInf );
   outerEdge = max( outerEdge, curDepth );
-  
-	
-  float curInf = step( abs(curDepth - depthRef), thresh );
-  innerEdge = mix( innerEdge, curEdge, .125*curInf );
-  avgNormal = (mix( avgNormal, curNormal, .5*curInf ));
+  avgNormal = (mix( avgNormal, curNormal, .125*curInf ));
   
 }
 
@@ -171,6 +171,7 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Sample Depth & Normals; 3x3 - -- -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// TODO : Implement Base Quality by using Cross instead of 3x3
 void findEdges( sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
                 vec2 uv, vec2 txRes,
                 float depthRef, vec3 normalRef, float thresh,
@@ -201,10 +202,7 @@ void findEdges( sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   curUVOffset = uvOffsetReach * vec2( 1.0, 1.0 );
   edgeLookUp( txColor,txDepth,txNormal, uv,curUVOffset,depthRef,normalRef,thresh,avgNormal, innerEdge,outerEdge );
   
-
   outerEdge *= step(0.05, outerEdge); 
-  
-  //innerEdge = max( innerEdge, outerEdge );
   
   avgNormal = normalize(avgNormal);
   innerEdgePerc = innerEdge;
@@ -216,12 +214,17 @@ void findEdges( sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
 // == == == == == == == == == == == == ==
 // == MAIN VOID = == == == == == == == == ==
 // == == == == == == == == == == == == == == ==
+
 void main() {
-  // -- -- -- -- -- -- -- -- -- -- --
-  // -- Color, Depth, Normal,   -- -- --
-  // --   Shadow, & Glow Reads  -- -- -- --
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+// -- -- -- -- -- -- -- -- -- -- --
+// -- Color, Depth, Normal,   -- -- --
+// --   Shadow, & Glow Reads  -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
   vec2 uv = texcoord;
+	vec2 uvShifted = abs(uv-.5);
+	uvShifted *= uvShifted;
+	
   vec4 baseCd = texture2D(colortex0, uv);
   vec4 outCd = baseCd;
   vec2 depthEffGlowBase = texture2D(colortex1, uv).rg;
@@ -232,39 +235,35 @@ void main() {
   vec3 dataCd = texture2D(gaux1, uv).xyz;
   vec4 spectralDataCd = texture2D(colortex9, uv);
 
-  
-  
-  // -- -- -- -- -- -- -- --
-  // -- Glow Passes -- -- -- --
-  // -- -- -- -- -- -- -- -- -- --
+
+// -- -- -- -- -- -- -- --
+// -- Glow Passes -- -- -- --
+// -- -- -- -- -- -- -- -- -- --
   vec3 blurMidCd = texture2D(gaux2, uv*.4).rgb;
   vec3 blurLowCd = texture2D(gaux3, uv*.3).rgb;
   
-  // -- -- -- -- -- -- -- --
-  // -- Depth Tweaks - -- -- --
-  // -- -- -- -- -- -- -- -- -- --
+	
+// -- -- -- -- -- -- -- --
+// -- Depth Tweaks - -- -- --
+// -- -- -- -- -- -- -- -- -- --
   float depth = 1.0-depthBase;//biasToOne(depthBase);
   //depth = min(1.0, depth*depth*min(1.0,1.5-depth));
   float depthCos = cos(depth*PI*.5);//*-.5+.5;
   
-  // -- -- -- -- -- -- -- --
-  // -- Screen Space - -- -- --
-  // -- -- -- -- -- -- -- -- -- --
   
-  
-  // -- -- -- -- -- 
-  // -- Shadows  -- --
-  // -- -- -- -- -- -- --
+// -- -- -- -- -- 
+// -- Shadows  -- --
+// -- -- -- -- -- -- --
   //float shadow = dataCd.x;
   //float shadowDepth = dataCd.y;
   //shadowDepth = 1.0-(1.0-shadowDepth)*(1.0-shadowDepth);
   //shadowDepth *= shadowDepth;
 
 
-  // -- -- -- -- -- -- -- --
-  // -- Depth Blur -- -- -- --
-  // -- -- -- -- -- -- -- -- -- --
-  // All threads are in or out, leaving for now
+// -- -- -- -- -- -- -- --
+// -- Depth Blur -- -- -- --
+// -- -- -- -- -- -- -- -- -- --
+// All threads are in or out, leaving for now
   if( UnderWaterBlur && isEyeInWater >= 1 ){
     float depthBlurInf = smoothstep( .5, 1.5, depth);//biasToOne(depthBase);
     
@@ -288,45 +287,54 @@ void main() {
   }
   
   
-  // -- -- -- -- --
-  // -- To Cam - -- --
-  // -- -- -- -- -- -- --
-  // Fit Normal
+// -- -- -- -- --
+// -- To Cam - -- --
+// -- -- -- -- -- -- --
+// Fit Normal
   normalCd.rgb = normalCd.rgb*2.0-1.0;
-  // Dot To Camera
+// Dot To Camera
   float dotToCam = dot(normalCd.rgb,normalize(vec3(.5-uv,1.0)));
   float dotToCamClamp = max(0.0, dotToCam);
   dotToCamClamp = smoothstep(.2,1.0, dotToCamClamp);
 
-  // -- -- -- -- -- -- -- 
-  // -- Sky Influence  -- --
-  // -- -- -- -- -- -- -- -- --
+
+// -- -- -- -- -- -- -- 
+// -- Sky Influence  -- --
+// -- -- -- -- -- -- -- -- --
   float skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
   float skyBrightnessInf = skyBrightnessMult*.5+.5;
   
 
-  // -- -- -- -- -- -- -- 
-  // -- Rain Influence  -- --
-  // -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- 
+// -- Rain Influence  -- --
+// -- -- -- -- -- -- -- -- --
   float rainInf = (1.0-rainStrength*.7);
   rainInf = mix( 1.0, rainInf, skyBrightnessMult);
   
-  // -- -- -- -- -- -- -- -- -- -- -- -- --
-  // -- == == == == == == == == == == == --
-  // -- -- -- -- -- -- -- -- -- -- -- -- --
   
-  // -- -- -- -- -- -- -- --
-  // -- Edge Detection -- -- --
-  // -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- --
+// -- Edge Detection -- -- --
+// -- -- -- -- -- -- -- -- -- --
   float edgeDistanceThresh = .003;
+// Edge detect width shift, based on rain or being in water/lava/snow
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
-  float reachMult = mix(0.8, .45-skyBrightnessMult*.15+reachOffset, depthCos );//1.0;//depthBase*.5+.5 ;
+// Edge detect width
+  float reachMult = mix(2.0, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
+
+// Final Edge Value Multipliers
+	float innerMult = 1.0;
+	float outerMult = 1.0;
 
 #ifdef NETHER
+// Tweak Nether settings 
   skyBrightnessInf = 1.0;
+// Make the edge lines fatter in the dark
   reachMult *= 0.9+(1.0-dataCd.r*1.5);
-	depthCos=1.0-(1.0-depthCos)*(1.0-depthCos);
-
+// Bias the Cosine Depth closer to the camera
+	depthCos=biasToOne(depthCos);
+	
+	innerMult = .8;
+	outerMult = 2.5;
 #endif
   
   vec3 avgNormal = normalCd.rgb;
@@ -339,70 +347,37 @@ void main() {
 
   innerEdgePerc *= 1.0-min(1.0,float(max(0,isEyeInWater))*.35);
   innerEdgePerc *= dotToCamClamp*1.5-reachOffset*1.5;
-  //innerEdgePerc *= abs(dotToCam);
-  innerEdgePerc = clamp(innerEdgePerc*(depthCos-.01)*10.5, 0.0, rainInf )	;
 	
-  //outerEdgePerc = clamp(outerEdgePerc,0.0,1.0);
-  outerEdgePerc = clamp( outerEdgePerc*(depthCos-.01)*10.5, 0.0, rainInf );
+// Screen edges influence
+	float screenEdgeMult = max(0.0, 1.0-maxComponent(uvShifted) * 2.5); // Higher the #, darker the edges
+// Edge depth boost
+	float edgeDepthInf = (depthCos*.8+.02)*2.5;
+	
+// Output Individual Edge Values
+  innerEdgePerc = clamp(innerEdgePerc * edgeDepthInf * screenEdgeMult * innerMult, 0.0, rainInf )	;
+  outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf );
   
-  
-	//const vec3 moonlight = vec3(0.5, 0.9, 1.8) * Moonlight;
-  //innerEdgePerc = smoothstep(.0,.8,min(1.0,innerEdgePerc));
+// Combine Inner & Outer Edge Values
+  //float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc)*(depthCos-.01)*10.5, 0.0, rainInf-float(isEyeInWater)*.27 );
+  float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc), 0.0, rainInf-float(isEyeInWater)*.27 );
 
 
-  float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc)*(depthCos-.01)*10.5, 0.0, rainInf-float(isEyeInWater)*.27 );
-  
-  
-  // -- -- -- -- -- -- -- -- --
-  // -- Sun & Moon Edge Influence -- --
-  // -- -- -- -- -- -- -- -- -- -- --
-/*
-//#ifdef OVERWORLD
-    float sunNightInf = abs(dayNight)*.3;
-    float sunInf = dot( avgNormal, sunVecNorm ) * max(0.0, dayNight);
-    float moonInf = dot( avgNormal, vec3(1.0-sunVecNorm.x, sunVecNorm.yz) ) * max(0.0, -dayNight);
-    //vec3 colorHSV = rgb2hsv(outCd.rgb);
-    
-    float sunMoonValue = max(0.0, sunInf+moonInf) * edgeInsideOutsidePerc * sunNightInf * shadow;
-    //float sunMoonValue = max(0.0, sunInf+moonInf) * sunNightInf;// * edgeInsideOutsidePerc;// * shadow;
-    
-    //colorHSV.b += sunMoonValue;
-  //colorHSV.b += sunMoonValue;//-(shadow*.2+depthBase*.2)*EdgeShading;
-    //colorHSV.b *= 1.0*(shadow+.2);//+depthBase*.2)*EdgeShading;
-  //outCd.rgb = hsv2rgb(colorHSV);
-    //outCd.rgb = mix( baseCd.rgb, mix(baseCd.rgb*1.5,outCd.rgb,shadow)*edgeInsideOutsidePerc, EdgeShading*.25+.5);
-  //outCd.rgb = mix( outCd.rgb, hsv2rgb(colorHSV), EdgeShading*.25+.75);
-    //outCd.rgb = mix( baseCd.rgb, outCd.rgb, EdgeShading*.25+.5);
-//#endif
-*/
-
-
-
-  // -- -- -- -- -- -- -- -- -- -- -- -- --
-  // -- World Specific Edge Colorization -- --
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  
-#ifdef NETHER
-  //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
-  outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
-  
-  innerEdgePerc *= .8;
-  outerEdgePerc *= 2.5;
-  
-#endif
-
+// -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- World Specific Edge Colorization -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
 	// Edge boost around well lit areas
   float sunEdgeInf = dot( sunVecNorm, avgNormal );
-  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.2*depthCos;
+  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.3*depthCos;
+#elif defined NETHER
+  //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
+  outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
 #endif
   
   
-  
-
-  // -- -- -- -- -- -- -- --
-  // -- Glow Mixing -- -- -- --
-  // -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- --
+// -- Glow Mixing -- -- -- --
+// -- -- -- -- -- -- -- -- -- --
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
   vec3 outGlowCd = max(blurMidCd, blurLowCd);
@@ -412,17 +387,17 @@ void main() {
   float edgeCdInf = step(depthBase, .9999);
   edgeCdInf *= lavaSnowFogInf;
 	
-	// Apply Edge Coloring
+// Apply Edge Coloring
   outCd.rgb += outCd.rgb*.3*edgeInsideOutsidePerc*edgeCdInf;
   
-  // Boost Glowing Entity's Color
+// Boost Glowing Entity's Color
   float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   
   
-  // Shadow Helper Mini Window
-  //   hmmmmm picture-in-picture
-  //     drooollllssss
+// Shadow Helper Mini Window
+//   hmmmmm picture-in-picture
+//     drooollllssss
   #if ( DebugView == 2 ||  DebugView == 3 )
     //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
     float fitWidth = 1.0 + aspectRatio*.45;
@@ -434,13 +409,15 @@ void main() {
     outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
   #endif
 	
-	
+// Vanilla -vs- procPromo Debugger
 	#if ( DebugView == 4 )
 		//vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 		float debugBlender = step( .5, uv.x);
 		outCd = mix( baseCd, outCd, debugBlender);
 	#endif
-	//outCd.rgb=vec3(dataCd.r);
+	//outCd.rgb=vec3(innerEdgePerc);
+	//outCd.rgb=vec3(outerEdgePerc);
+	//outCd.rgb=vec3(edgeInsideOutsidePerc);
 	
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }

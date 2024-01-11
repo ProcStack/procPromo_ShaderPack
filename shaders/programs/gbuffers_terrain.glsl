@@ -706,7 +706,7 @@ void main() {
   float diffuseSun = 1.0;
   float shadowAvg = 1.0;
   
-  float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.55,1.3)),vNormal)+.2;
+  float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal)+.2;
   float surfaceShading = 9.0-abs(toCamNormalDot);
 
 	float fogColorBlend = 1.0;
@@ -808,48 +808,50 @@ void main() {
     
 #endif
     
-		// Add Fake Fresnel To Blocks
+	// -- -- -- -- -- -- --
+	// -- Fake Fresnel - -- --
+	// -- -- -- -- -- -- -- -- --
 		float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias),1.0)));
-		outCd*=mix(1.0, dotToCam*.35+.65, vIsLava*.5);
+		outCd*=mix(1.0, dotToCam*.3+.7, vIsLava*.5);
 		
 		
-    // Apply Black Level Shift from User Settings
-    //   Since those set to 0 would be rather low,
-    //     Default is to run black shift with no check.
+	// Apply Black Level Shift from User Settings
+	//   Since those set to 0 would be rather low,
+	//     Default is to run black shift with no check.
     lightCd = shiftBlackLevels( lightCd );
     surfaceShading = max( surfaceShading, lightCd.r );
     surfaceShading = shiftBlackLevels( surfaceShading );
     
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    // -- 'Specular' Roll-Off; Radial Highlights -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	// -- 'Specular' Roll-Off; Radial Highlights -- --
+	// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     
     depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*1.0)))*distantVibrance) ); 
     //surfaceShading = 1.0-(1.0-surfaceShading)*.4;
     
     outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing  *fogColor; // -.2;
 
-    // -- -- -- -- -- -- 
+	// -- -- -- -- -- -- 
 
 
-    // -- -- -- -- -- -- -- -- --
-    // -- Lighting influence - -- --
-    // -- -- -- -- -- -- -- -- -- -- --
+	// -- -- -- -- -- -- -- -- --
+	// -- Lighting influence - -- --
+	// -- -- -- -- -- -- -- -- -- -- --
     //outCd.rgb *=  lightCd.rrr + glowInf;// + vCdGlow;
 
-    // Used for correcting blended colors post environment influences
-    // This shouldn't be needed, but blocks like Grass or Birch Log/Wood are persnickety
+	// Used for correcting blended colors post environment influences
+	// This shouldn't be needed, but blocks like Grass or Birch Log/Wood are persnickety
     //vec3 avgCdRef = vAvgColor.rgb * (lightCd.rrr + glowInf + vCdGlow);
 
-    // -- -- -- -- -- -- --
-    // -- Fog Coloring - -- --
-    // -- -- -- -- -- -- -- -- --
+	// -- -- -- -- -- -- --
+	// -- Fog Coloring - -- --
+	// -- -- -- -- -- -- -- -- --
     vec3 toFogColor = mix( skyColor*.5+outCd.rgb*.5, fogColor, depth);
 		toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
 
-    // -- -- -- -- -- -- --
-    // -- Night Vision - -- --
-    // -- -- -- -- -- -- -- -- --
+	// -- -- -- -- -- -- --
+	// -- Night Vision - -- --
+	// -- -- -- -- -- -- -- -- --
 	// TODO : Rework Night Vision & Darkness
     toFogColor = mix(toFogColor, vec3(1.0), nightVision);
     
@@ -887,6 +889,7 @@ void main() {
 			depthEnd = depthEnd*.4+.6;
       //depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
 			
+	// Fit lighting 0-1
 			float lightShift=.47441;
 			float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
       float lightInf = min(1.0, (max((lightCd.r-.35)*1.2,lightLumaBase)-lightShift)*lightShiftMult + depthEnd*.4);
@@ -896,8 +899,9 @@ void main() {
       vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
       worldPos = ( worldPos+texture2D( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
 
+	// RGB Depth Based Noise for final influence
       vec3 noiseX = texture2D( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
-      vec3 noiseZ = texture2D( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
+      //vec3 noiseZ = texture2D( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
       
       float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.4)+glowInf*.8))*depthEnd );
       
@@ -905,7 +909,6 @@ void main() {
 			//outCd.rgb=lightCd.rgb;//vAvgColor.rgb*lightInf;
 			//outCd.rgb=noiseX;//vAvgColor.rgb*lightInf;
 			
-
 #endif
     
     
@@ -926,48 +929,43 @@ void main() {
     outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, lightCd.r);
     outCd.rgb *= mix(1.0, toCamNormalDot, depth*.7+.3);
 #else
-    outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*.5+.5), min(1.0,depth*.7+.3+lightCd.r));
+		// Block Surface Rolloff
+    outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*.45+.55), min(1.0,depth*.5+.5+lightCd.r));
 #endif
 
 
     
     
 #ifdef OVERWORLD
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    // Biome & Snow Glow when in a Cold Biome - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// Biome & Snow Glow when in a Cold Biome - -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     float frozenSnowGlow = 1.0-smoothstep(.0,.2,BiomeTemp);
     glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.5*(1.0-sunPhaseMult)*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
-    //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
-    //cdBrightness *= cdBrightness;
-    //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight*.1)*(1.0-rainStrength);
+
     outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight*.1)*(1.0-rainStrength);//*skyBrightnessMult;
     
     
-    // -- -- -- -- -- -- -- -- -- -- -- 
-    // Outdoors vs Caving Lighting - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- --
-    // Brighten blocks when going spelunking
-    // TODO: Promote control to Shader Options
+// -- -- -- -- -- -- -- -- -- -- -- 
+// Outdoors vs Caving Lighting - -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- --
+// Brighten blocks when going spelunking
+// TODO: Promote control to Shader Options
     float skyBrightMultFit = min(1.0, 1.0-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
     outCd.rgb *= skyBrightMultFit;
-		
-// Check this for shadow infulences--    
+		  
     outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightnessMult));
     
 #endif
     
-    
     glowCd += outCd.rgb+(outCd.rgb+.1)*glowInf;
 
-
-
     vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness;// * .05;// * lightLuma;
+    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness;
 
 
 #ifdef NETHER
-    outCd.rgb = clamp( outCd.rgb*(1.0+0.2*lightCd), vec3(0.0), vec3(1.0));//*glowInf;
+    outCd.rgb = clamp( outCd.rgb*(1.0+0.2*lightCd), vec3(0.0), vec3(1.0));
 #else
     glowHSV.z *= .7+vIsLava*.5;
 #endif
@@ -994,6 +992,7 @@ void main() {
     
     float outEffectGlow = 0.0;
     
+		
     outCd.a*=vAlphaMult;
     
     
@@ -1001,7 +1000,7 @@ void main() {
     vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
     outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );
     
-    // Boost bright colors morso
+// Boost bright colors morso
     boostPeaks(outCd.rgb);
     
    
@@ -1041,8 +1040,6 @@ void main() {
 			debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
-		//outCd.rgb=vec3(float(eyeBrightness.x)*(1.0/15.0));
-		//outCd.rgb=vec3(step(15.00/16.0,lightLumaBase));
 
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
