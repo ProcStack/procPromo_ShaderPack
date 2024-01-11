@@ -234,8 +234,8 @@ void main() {
     
     // Moon Influence
     float moonPhaseMult = min(1.0,float(mod(moonPhase+4,8))*.125);
-    moonPhaseMult = moonPhaseMult;// - max(0.0, moonPhaseMult-0.50)*2.0;
-    //moonPhaseMult = moonPhaseMult*.18 + .018; // Moon's shadowing multiplier
+    //moonPhaseMult = moonPhaseMult;// - max(0.0, moonPhaseMult-0.50)*2.0;
+    moonPhaseMult = moonPhaseMult*.18 + .018; // Moon's shadowing multiplier
 
     dayNightMult = mix( 1.0, moonPhaseMult, sunPhaseMult);
   
