@@ -154,16 +154,15 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   float curDepth = texture2D(txDepth, uvDepthLimit).r;
   vec3 curNormal = texture2D(txNormal, uvNormalLimit).rgb*2.0-1.0;
   
-  float curInf = step( abs(curDepth - depthRef), thresh );
-
-  curDepth = max(0.0, abs(curDepth - depthRef)-.009)*50.5;
+  float curEdge = 1.0-abs(dot(normalRef, curNormal));
+	curEdge *= curEdge;
+  curDepth = max(0.0, abs(curDepth - depthRef)*1.8-.001)*(1.0-curDepth);
 
   outerEdge = max( outerEdge, curDepth );
   
-  float curEdge = 1.0-abs(dot(normalRef, curNormal));
-	curEdge *= curEdge;
+	
+  float curInf = step( abs(curDepth - depthRef), thresh );
   innerEdge = mix( innerEdge, curEdge, .125*curInf );
-  
   avgNormal = (mix( avgNormal, curNormal, .5*curInf ));
   
 }
@@ -276,7 +275,7 @@ void main() {
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
     vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 * (1.0-nightVision));
     vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .25 );
-    depthBlurCd.rgb = mix( fogColor*depthCos, depthBlurCd.rgb, min(1.0,(1.0-depth*.5)));
+    depthBlurCd.rgb = mix( fogColor*depthCos, (fogColor*.5+.5)*depthBlurCd.rgb, min(1.0,(1.0-depth*.5)));
     
     float eyeWaterInf = (1.0-isEyeInWater*.2);
     //float fogBlendDepth = ((depth+.5)*depth+.8);
