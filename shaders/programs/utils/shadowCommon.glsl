@@ -33,7 +33,7 @@ const float shadowAxisBiasOffset = .65;
 const float shadowAxisBiasPosOffset = 0.02;
 
 // Peter-Pan'ing / Shadow Surface Offset
-const float shadowThreshold = 0.000002*shadowDistance/(shadowMapFov*.5);// * 2048./shadowMapResolution;
+const float shadowThreshold = 0.000004*shadowDistance/(shadowMapFov*.5);// * 2048./shadowMapResolution;
 
 const float oneThird = 1.0 / 3.0;
 const float thirdHalf = .5 * oneThird;
