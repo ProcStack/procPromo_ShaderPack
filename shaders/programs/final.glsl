@@ -157,7 +157,7 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   float curNormalDot = 1.0-abs(dot(normalRef, curNormal));
 	curNormalDot *= curNormalDot;
   //curDepth = max(0.0, abs(curDepth - depthRef)-.009)*50.5;
-  curDepth = clamp( (abs(curDepth - depthRef)-.01),0.0,1.0);
+  curDepth = clamp( (abs(curDepth - depthRef)-.006)*8.0,0.0,1.0);
 
   float curInf = step( curDepth, thresh );
 
@@ -319,7 +319,7 @@ void main() {
 // Edge detect width shift, based on rain or being in water/lava/snow
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
 // Edge detect width
-  float reachMult = mix(3.0-dataCd.r*1.65, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
+  float reachMult = mix(2.75-dataCd.r*1.55, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
 
 // Final Edge Value Multipliers
 	float innerMult = 1.0;
@@ -368,7 +368,7 @@ void main() {
 #ifdef OVERWORLD
 	// Edge boost around well lit areas
   float sunEdgeInf = dot( sunVecNorm, avgNormal );
-  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.3*depthCos;
+  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.2*depthCos;
 #elif defined NETHER
   //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
   outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
