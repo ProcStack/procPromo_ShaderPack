@@ -319,7 +319,7 @@ void main() {
 // Edge detect width shift, based on rain or being in water/lava/snow
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
 // Edge detect width
-  float reachMult = mix(2.0, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
+  float reachMult = mix(3.0-dataCd.r*1.65, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
 
 // Final Edge Value Multipliers
 	float innerMult = 1.0;
