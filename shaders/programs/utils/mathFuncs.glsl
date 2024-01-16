@@ -20,32 +20,6 @@ vec3 hsv2rgb(vec3 c){
 
 // -- -- -- -- -- --
 
-// John Carmack Fast Square Root
-//   Modified for OpenGL Context
-//   https://en.wikipedia.org/wiki/Fast_inverse_square_root
-float Q_rsqrt( float number )
-{
-  int i;
-  float x2, y;
-  const float threehalfs = 1.5;
-
-  x2 = number * 0.5;
-  y  = number;
-  i  = int( y );                       // evil floating point bit level hacking
-  i  = 0x5f3759df - ( i >> 1 );               // what the fuck?
-  y  = float( i );
-  y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration
-  // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
-
-  return y;
-}
-
-float fastLength( vec3 inVec ){
-  return Q_rsqrt( inVec[0]*inVec[0] + inVec[1]*inVec[1] + inVec[2]*inVec[2] );
-}
-
-// -- -- -- -- -- --
-
 vec2 rotToUV(vec3 direction){
   vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y));
   uv *= vec2(0.1591, 0.3183);
@@ -169,18 +143,6 @@ float PowTo(float s1, float s2, float k){  // k => 0.0 - 9.0
 
 // -- -- -- -- -- --
 
-              
-              
-/*     
-vec3 srgbToLinear(vec3 sRGB) {
-  vec3 belowCutoff = sRGB * 0.07739938080495357 ;
-  vec3 aboveCutoff = pow((sRGB + 0.055) * 0.9478672985781991, vec3(2.4) );
-  
-  return mix( belowCutoff, aboveCutoff, step(vec3(0.04045), sRGB) );
-}    
-*/
-
-
 // Used in 'utils/texSamplers.glsl' diffuseSampleXYZ()
 mat3 linearToXYZMat = mat3( vec3( 0.4124,  0.3576,  0.1805 ),
                             vec3( 0.2126,  0.7152,  0.0722 ),
@@ -189,97 +151,3 @@ vec3 linearToXYZ( vec3 lin ){
   return linearToXYZMat * lin ;
 }
 
-
-// CIELAB; the values, L 116 , color a,b  500 and 200
-/*
-vec3 xyzToLab( vec3 xyz ){
-
-  // White Balancing
-  vec3 labRefWhite = vec3( .95047, 1.0, 1.08883 );
-  vec3 refXYZ = xyz / labRefWhite ;
-  vec3 lab = vec3( 0.0, 0.0, 0.0 );
-      //  1.16 * refXYZ.y - 0.016,
-      //  5.00 * (refXYZ.x - refXYZ.y),
-      //  2.00 * (refXYZ.y - refXYZ.z)
-      //);
-    
-  // hmmm...
-  if (refXYZ.y > 0.008856) {
-    lab.x = 1.16 * pow(refXYZ.y, 1.0 / 3.0) - 0.16;
-  } else {
-    lab.x = 9.033 * refXYZ.y;
-  }
-
-  if (refXYZ.x > 0.008856) {
-    refXYZ.x = pow(refXYZ.x, 1.0 / 3.0);
-  } else {
-    refXYZ.x = (7.787 * refXYZ.x) + (16.0 / 116.0);
-  }
-
-  if (refXYZ.y > 0.008856) {
-    refXYZ.y = pow(refXYZ.y, 1.0 / 3.0);
-  } else {
-    refXYZ.y = (7.787 * refXYZ.y) + (16.0 / 116.0);
-  }
-
-  if (refXYZ.z > 0.008856) {
-    refXYZ.z = pow(refXYZ.z, 1.0 / 3.0);
-  } else {
-    refXYZ.z = (7.787 * refXYZ.z) + (16.0 / 116.0);
-  }
-
-  lab.y = 5.0 * (refXYZ.x - refXYZ.y);
-  lab.z = 2.0 * (refXYZ.y - refXYZ.z);
-  
-  return lab;
-}
-
-
-vec3 rgbToXYZ( vec3 rgb ){
-  vec3 lin = srgbToLinear( rgb );
-  vec3 xyz = linearToXYZ( lin );
-  return xyz;
-}
-
-vec3 rgbToLab( vec3 rgb ){
-  vec3 lin = srgbToLinear( rgb );
-  vec3 xyz = linearToXYZ( lin );
-  vec3 lab = xyzToLab( xyz );
-  return lab;
-}
-*/
-
-
-
-// -- -- -- -- -- --
-
-
-/*
-// Rotation Matrix Creation
-
-    float wtMult = (worldTime*.1);//*.01+1.;
-    float rotVal = 0;
-    vec4 posVal = vec4( -.5, 0, 0, 1 );
-    
-    // rotVal = 90*3.14159265358979323/180;
-    rotVal = -1.5707963267948966;
-    //rotVal = wtMult;
-    mat4 xRotMat = mat4( 
-                vec4( 1, 0, 0, 0 ),
-                vec4( 0, cos(rotVal), -sin(rotVal), 0 ),
-                vec4( 0, sin(rotVal), cos(rotVal), 0 ),
-                posVal
-              );
-    mat4 yRotMat = mat4( 
-                vec4( cos(rotVal), 0, sin(rotVal), 0 ),
-                vec4( 0, 1, 0, 0 ),
-                vec4( -sin(rotVal), 0, cos(rotVal), 0 ),
-                posVal
-              );
-    mat4 zRotMat = mat4( 
-                vec4( cos(rotVal), -sin(rotVal), 0, 0 ),
-                vec4( sin(rotVal), cos(rotVal), 0, 0 ),
-                vec4( 0, 0, 1, 0 ),
-                posVal
-              );*/
-              

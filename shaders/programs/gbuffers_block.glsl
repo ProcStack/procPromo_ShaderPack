@@ -77,7 +77,8 @@ varying float vIsLava;
 varying float vLightingMult;
 
 
-
+// == Chocapic13's HighPerformance Toaster; Shadow-space helpers ==
+//      If it aint broke, don't fix it
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
@@ -397,13 +398,6 @@ varying float vIsLava;
 varying float vLightingMult;
 
 varying vec3 debug;
-
-
-// Sildurs
-//faster and actually more precise than pow 2.2
-vec3 toLinear(vec3 sRGB){
-	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
-}
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
