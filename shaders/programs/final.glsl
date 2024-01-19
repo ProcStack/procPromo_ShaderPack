@@ -157,7 +157,7 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
   float curNormalDot = 1.0-abs(dot(normalRef, curNormal));
 	curNormalDot *= curNormalDot;
   //curDepth = max(0.0, abs(curDepth - depthRef)-.009)*50.5;
-  curDepth = clamp( (abs(curDepth - depthRef)-.006)*8.0,0.0,1.0);
+  curDepth = clamp( (abs(curDepth - depthRef)-.0075)*8.0,0.0,1.0);
 
   float curInf = step( curDepth, thresh );
 
@@ -263,7 +263,7 @@ void main() {
 // -- -- -- -- -- -- -- --
 // -- Depth Blur -- -- -- --
 // -- -- -- -- -- -- -- -- -- --
-// All threads are in or out, leaving for now
+	// All threads are in or out, leaving for now
   if( UnderWaterBlur && isEyeInWater >= 1 ){
     float depthBlurInf = smoothstep( .5, 1.5, depth);//biasToOne(depthBase);
     
@@ -290,9 +290,10 @@ void main() {
 // -- -- -- -- --
 // -- To Cam - -- --
 // -- -- -- -- -- -- --
-// Fit Normal
+	// Fit Normal
   normalCd.rgb = normalCd.rgb*2.0-1.0;
-// Dot To Camera
+	
+	// Dot To Camera
   float dotToCam = dot(normalCd.rgb,normalize(vec3(.5-uv,1.0)));
   float dotToCamClamp = max(0.0, dotToCam);
   dotToCamClamp = smoothstep(.2,1.0, dotToCamClamp);
@@ -316,21 +317,21 @@ void main() {
 // -- Edge Detection -- -- --
 // -- -- -- -- -- -- -- -- -- --
   float edgeDistanceThresh = .003;
-// Edge detect width shift, based on rain or being in water/lava/snow
+	// Edge detect width shift, based on rain or being in water/lava/snow
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
-// Edge detect width
+	// Edge detect width
   float reachMult = mix(2.75-dataCd.r*1.55, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
 
-// Final Edge Value Multipliers
+	// Final Edge Value Multipliers
 	float innerMult = 1.0;
 	float outerMult = 1.0;
 
 #ifdef NETHER
-// Tweak Nether settings 
+	// Tweak Nether settings 
   skyBrightnessInf = 1.0;
-// Make the edge lines fatter in the dark
+	// Make the edge lines fatter in the dark
   reachMult *= 0.9+(1.0-dataCd.r*1.5);
-// Bias the Cosine Depth closer to the camera
+	// Bias the Cosine Depth closer to the camera
 	depthCos=biasToOne(depthCos);
 	
 	innerMult = .8;
@@ -348,16 +349,16 @@ void main() {
   innerEdgePerc *= 1.0-min(1.0,float(max(0,isEyeInWater))*.35);
   innerEdgePerc *= dotToCamClamp*1.5-reachOffset*1.5;
 	
-// Screen edges influence
+	// Screen edges influence
 	float screenEdgeMult = max(0.0, 1.0-maxComponent(uvShifted) * 2.5); // Higher the #, darker the edges
-// Edge depth boost
+	// Edge depth boost
 	float edgeDepthInf = (depthCos*.8+.02)*2.5;
 	
-// Output Individual Edge Values
+	// Output Individual Edge Values
   innerEdgePerc = clamp(innerEdgePerc * edgeDepthInf * screenEdgeMult * innerMult, 0.0, rainInf )	;
   outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf );
   
-// Combine Inner & Outer Edge Values
+	// Combine Inner & Outer Edge Values
   //float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc)*(depthCos-.01)*10.5, 0.0, rainInf-float(isEyeInWater)*.27 );
   float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc), 0.0, rainInf-float(isEyeInWater)*.27 );
 
@@ -387,17 +388,20 @@ void main() {
   float edgeCdInf = step(depthBase, .9999);
   edgeCdInf *= lavaSnowFogInf;
 	
-// Apply Edge Coloring
+	// Apply Edge Coloring
   outCd.rgb += outCd.rgb*.3*edgeInsideOutsidePerc*edgeCdInf;
   
-// Boost Glowing Entity's Color
+	// Boost Glowing Entity's Color
   float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   
+// -- -- -- -- -- -- -- -- -- --
+// -- Debugging Visualization -- --
+// -- -- -- -- -- -- -- -- -- -- -- --
   
-// Shadow Helper Mini Window
-//   hmmmmm picture-in-picture
-//     drooollllssss
+	// Shadow Helper Mini Window
+	//   hmmmmm picture-in-picture
+	//     drooollllssss
   #if ( DebugView == 2 ||  DebugView == 3 )
     //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
     float fitWidth = 1.0 + aspectRatio*.45;
@@ -407,17 +411,15 @@ void main() {
     float shadowHelperMix = max(debugShadowUV.x,debugShadowUV.y);
     shadowCd = mix( vec3(0.0), shadowCd.rgb, step(shadowHelperMix, 0.50));
     outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
-  #endif
-	
-// Vanilla -vs- procPromo Debugger
-	#if ( DebugView == 4 )
+
+	// Vanilla -vs- procPromo Debugger
+	#elif ( DebugView == 4 )
 		//vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 		float debugBlender = step( .5, uv.x);
 		outCd = mix( baseCd, outCd, debugBlender);
 	#endif
-	//outCd.rgb=vec3(innerEdgePerc);
-	//outCd.rgb=vec3(outerEdgePerc);
-	//outCd.rgb=vec3(edgeInsideOutsidePerc);
+	
+	// -- -- -- -- -- -- -- -- -- -- -- -- -- --
 	
 	gl_FragColor = vec4(outCd.rgb,1.0);
 }
