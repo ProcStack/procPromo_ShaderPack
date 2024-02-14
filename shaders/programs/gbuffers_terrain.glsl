@@ -780,6 +780,7 @@ void main() {
   // -- -- --
   //  Distance influence of surface shading --
   shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * (1-rainStrength) * dayNightMult;
+  //shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * dayNightMult;
   // -- -- --
   // TODO : Needed?  Depth based shadowings
   diffuseSun *= mix( 0.0, shadowAvg, sunMoonShadowInf * shadowDepthInf * shadowSurfaceInf );
@@ -861,7 +862,7 @@ void main() {
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
       //outCd.rgb *=  1.0+lightLuma+glowInf;
-      outCd.rgb *=  toFogColor;//*(.8+lightLuma*lightLuma*.3);//+.5;
+      outCd.rgb *=  toFogColor*(.8+lightLuma*lightLuma*.3);//+.5;
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
