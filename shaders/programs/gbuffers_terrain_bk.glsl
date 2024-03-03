@@ -39,14 +39,14 @@ uniform ivec2 eyeBrightnessSmooth;
 uniform float eyeBrightnessFit;
 uniform vec3 shadowLightPosition;
 
-in vec3 mc_Entity;
+in vec4 mc_Entity;
 in vec2 mc_midTexCoord;
 in vec3 vaPosition;
 in vec3 vaNormal;
 in vec4 vaColor;
 in vec4 at_tangent; 
 in vec2 vaUV0; // texture
-in ivec2 vaUV2; // lightmap
+in vec2 vaUV2; // lightmap
 
 //in vec3 at_velocity; // vertex offset to previous frame                
 
@@ -74,6 +74,7 @@ out vec4 shadowPos;
 out vec4 vPos;
 out vec3 vLocalPos;
 out vec4 vWorldPos;
+out vec3 vModelPos;
 out vec3 vNormal;
 out float vNormalSunDot;
 
@@ -112,6 +113,10 @@ void main() {
   vNormal = normalize(normal);
   vNormalSunDot = dot(normalize(shadowLightPosition), vNormal);
   vAnimFogNormal = normalMatrix*vec3(1.0,0.0,0.0);
+  
+  vModelPos = basePos.xyz;//(gbufferProjection * gbufferModelView * vec4(0.0,0.0,0.0,1.0)).xyz;
+  vModelPos = gbufferModelView[3].xyz;//(gbufferProjection * gbufferModelView * vec4(0.0,0.0,0.0,1.0)).xyz;
+  vModelPos = (gbufferModelView * vec4(0.0,0.0,0.0,1.0)).xyz;
   
   vCamViewVec =  normalize((mat3(gbufferModelView) * normalize(vec3(-1.0,0.0,.0)))*vec3(1.0,0.0,1.0));
   
@@ -165,9 +170,8 @@ void main() {
   vAvgColor = vec4( mixColor, vColor.a); // 1.0);
 
 
-	lmcoord = vaUV0;//vec2(vaUV2);
+	lmcoord = vaUV2;
 
-	lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
 	
 	vec2 texcoordminusmid = texcoord.xy-midcoord;
@@ -447,17 +451,9 @@ void main() {
 #ifdef FSH
 
 
-#define gbuffers_terrain
-
 /* RENDERTARGETS: 0,1,2,7,6,9 */
-layout(Location = 0) out vec4 outCd;
-layout(Location = 1) out vec4 outDepthGlow;
-layout(Location = 2) out vec4 outNormal;
-layout(Location = 3) out vec4 outLighting;
-layout(Location = 4) out vec4 outGlow;
-layout(Location = 5) out vec4 outNull;
 
-
+#define gbuffers_terrain
 /* --
 const int gcolorFormat = RGBA8;
 const int gdepthFormat = RGBA16;
@@ -557,6 +553,7 @@ in vec3 vCamViewVec;
 in vec4 vPos;
 in vec3 vLocalPos;
 in vec4 vWorldPos;
+in vec3 vModelPos;
 in vec3 vNormal;
 in vec3 vWorldNormal;
 in float vNormalSunDot;
@@ -672,7 +669,7 @@ void main() {
 		
   // -- -- -- -- -- -- -- --
 
-    outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
+    vec4 outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
 
     vec3 outCdAvgRef = outCd.rgb;
     vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
@@ -721,7 +718,7 @@ void main() {
   shadowPosLocal = biasShadowShift( shadowPosLocal );
   vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
   
-  shadowAvg=shadow2D(shadow, projectedShadowPosition).x; 
+  shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
   
   
 #if ShadowSampleCount > 1
@@ -1034,13 +1031,13 @@ void main() {
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
 
-    outCd = outCd;
-    outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
-    outNormal = vec4(vNormal*.5+.5, 1.0);
+    gl_FragData[0] = outCd;
+    gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
+    gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
-    outLighting = vec4( lightLumaBase, lightLumaBase, 0.0, 1.0);
-    outGlow = vec4( glowHSV, 1.0);
-    outNull = vec4( 0.0);
+    gl_FragData[3] = vec4( lightLumaBase, lightLumaBase, 0.0, 1.0);
+    gl_FragData[4] = vec4( glowHSV, 1.0);
+    gl_FragData[5] = vec4( 0.0);
 
 	//}
 }

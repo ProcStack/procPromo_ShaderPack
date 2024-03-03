@@ -7,7 +7,6 @@ varying vec4 lmcoord;
 attribute vec4 mc_Entity;
 
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform vec2 texelSize;
@@ -34,7 +33,7 @@ void main() {
 
 #ifdef FSH
 /* RENDERTARGETS: 0,1,2,6 */
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 
 /* --
 const int gcolorFormat = RGBA8;
@@ -54,7 +53,7 @@ varying vec3 normal;
 
 void main() {
 
-  vec4 outCd = texture2D(texture, texcoord.st) * color;
+  vec4 outCd = texture2D(gcolor, texcoord.st) * color;
   
 	gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);

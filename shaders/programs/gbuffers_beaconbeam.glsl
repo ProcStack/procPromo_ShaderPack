@@ -37,7 +37,7 @@ void main() {
 
 #include "/shaders.settings"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 
 varying vec4 color;
@@ -53,7 +53,7 @@ uniform int fogMode;
 void main() {
   
   //vec2 tuv = texcoord.st;
-  vec4 txCd = texture2D(texture, texcoord.st);
+  vec4 txCd = texture2D(gcolor, texcoord.st);
     
   vec4 outCd = color;
   //vec2 luv = lmcoord.zw;

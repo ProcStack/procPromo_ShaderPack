@@ -6,7 +6,6 @@
 attribute vec4 mc_Entity;
 
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform vec2 texelSize;
@@ -50,7 +49,7 @@ const int gnormalFormat = RGB10_A2;
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform vec2 texelSize;
 
@@ -100,7 +99,7 @@ vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){
 
 void main() {
 
-  vec4 outCd = texture2D(texture, texcoord.st) * texture2D(lightmap, lmcoord.st) * color;
+  vec4 outCd = texture2D(gcolor, texcoord.st) * texture2D(lightmap, lmcoord.st) * color;
   //float glowInf = texture2D(colortex5, texcoord.st).x;
 
   

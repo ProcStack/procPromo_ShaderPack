@@ -1,7 +1,7 @@
 
 #ifdef VSH
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform mat4 gbufferModelView;
 uniform int renderStage;
 
@@ -46,7 +46,7 @@ void main() {
 
 
   if (renderStage == MC_RENDER_STAGE_SUN) {
-    vGlowEdgeCd = texture2D(texture, vec2(0.59375)).rgb; // .5+.0625+.03125
+    vGlowEdgeCd = texture2D(gcolor, vec2(0.59375)).rgb; // .5+.0625+.03125
     vFittedUV = vTexcoord.st;
     vDfLenMult = .45;
   }
@@ -67,7 +67,7 @@ void main() {
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 
@@ -88,7 +88,7 @@ void main() {
   vec2 uv = vTexcoord.st;
   vec2 fituv = fract(vFittedUV);
   
-  vec4 baseCd = texture2D(texture, uv) * vColor;
+  vec4 baseCd = texture2D(gcolor, uv) * vColor;
   vec4 outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
   

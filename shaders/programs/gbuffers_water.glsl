@@ -2,9 +2,8 @@
 #ifdef VSH
 #define gbuffers_water
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
@@ -29,7 +28,6 @@ varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
 
-varying float sunDot;
 varying float vTextureInf;
 varying float vTextureGlow;
 varying float vMinAlpha;
@@ -82,9 +80,6 @@ void main() {
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  sunDot = dot( normal.xyz, normalize(sunPosition) );
-  sunDot = dot( normal.xyz, normalize(localSunPos) );
-  sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
 
   
 	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
@@ -111,11 +106,11 @@ void main() {
   //}
   // Flowing Lava
   if (mc_Entity.x == 702){
-    avgCd = texture2D(texture, mc_midTexCoord.st);
-    avgCd += texture2D(texture, mc_midTexCoord.st+txlquart);
-    avgCd += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y));
-    avgCd += texture2D(texture, mc_midTexCoord.st-txlquart);
-    avgCd += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y));
+    avgCd = texture2D(gcolor, mc_midTexCoord.st);
+    avgCd += texture2D(gcolor, mc_midTexCoord.st+txlquart);
+    avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y));
+    avgCd += texture2D(gcolor, mc_midTexCoord.st-txlquart);
+    avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y));
     avgCd *= .5;
     //color.rgb *= vec3(.3,.3,.5)*avgCd;
   
@@ -125,8 +120,8 @@ void main() {
   
   // Water
   if (mc_Entity.x == 703){
-    avgCd = texture2D(texture, mc_midTexCoord.st);
-    avgCd += texture2D(texture, mc_midTexCoord.st+txlquart);
+    avgCd = texture2D(gcolor, mc_midTexCoord.st);
+    avgCd += texture2D(gcolor, mc_midTexCoord.st+txlquart);
     avgCd *= .5;
     //color.rgb=vec3(.35,.35,.85);
     color = color*avgCd;
@@ -134,11 +129,11 @@ void main() {
   }
   // Flowing Water
   if (mc_Entity.x == 704){
-    avgCd = texture2D(texture, mc_midTexCoord.st);
-    //avgCd += texture2D(texture, mc_midTexCoord.st+txlquart).x;
-    //avgCd += texture2D(texture, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y)).x;
-    //avgCd += texture2D(texture, mc_midTexCoord.st-txlquart).x;
-    //avgCd += texture2D(texture, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y)).x;
+    avgCd = texture2D(gcolor, mc_midTexCoord.st);
+    //avgCd += texture2D(gcolor, mc_midTexCoord.st+txlquart).x;
+    //avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y)).x;
+    //avgCd += texture2D(gcolor, mc_midTexCoord.st-txlquart).x;
+    //avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y)).x;
     //avgCd *= .2;
     //color.rgb *= vec3(.3,.3,.5)*avgCd;
     
@@ -149,7 +144,7 @@ void main() {
   // Nether Portal
   if (mc_Entity.x == 705){
     vTextureGlow = 0.5;
-    avgCd = texture2D(texture, mc_midTexCoord.st);
+    avgCd = texture2D(gcolor, mc_midTexCoord.st);
     color*=avgCd*.5+.5;
     vMinAlpha = .5;
   }
@@ -172,7 +167,7 @@ const int gnormalFormat = RGB10_A2;
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform sampler2D gaux1; // Dynamic Lighting
 uniform sampler2D normals;
@@ -194,7 +189,6 @@ varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
 
-varying float sunDot;
 varying float vTextureInf;
 varying float vTextureGlow;
 varying float vMinAlpha;
@@ -210,10 +204,10 @@ const int GL_EXP = 2048;
 void main() {
 
   vec2 tuv = texcoord.st;
-  //vec4 txCd = diffuseSample( texture, tuv, texelSize, 0.0 );
-  //vec4 txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize-.0005, 1.0 );
-  vec4 txCd = diffuseNoLimit( texture, tuv, texelSize*0.50 );
-  vec4 baseCd =  texture2D(texture, tuv);// 
+  //vec4 txCd = diffuseSample( gcolor, tuv, texelSize, 0.0 );
+  //vec4 txCd = diffuseSample( gcolor, tuv, vtexcoordam, texelSize-.0005, 1.0 );
+  vec4 txCd = diffuseNoLimit( gcolor, tuv, texelSize*0.50 );
+  vec4 baseCd =  texture2D(gcolor, tuv);// 
   
   vec2 luv = lmcoord.st;
   float lightVal = texture2D(lightmap, luv).r;

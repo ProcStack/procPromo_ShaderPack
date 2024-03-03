@@ -6,4 +6,4 @@
 
 #define VSH
 
-#include "/programs/gbuffers_shadow.glsl"
+#include "/programs/shadow.glsl"

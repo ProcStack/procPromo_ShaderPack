@@ -7,7 +7,6 @@ varying vec4 lmtexcoord;
 attribute vec4 mc_Entity;
 
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 
@@ -45,7 +44,7 @@ const int gnormalFormat = RGB10_A2;
  
 #include "/shaders.settings"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 
 uniform int fogMode;
@@ -62,7 +61,7 @@ const int GL_EXP = 2048;
 
 void main() {
   vec2 tuv = texcoord.st;
-  vec4 txCd = texture2D(texture, tuv);
+  vec4 txCd = texture2D(gcolor, tuv);
     
   vec4 outCd = color;
   vec2 luv = lmtexcoord.zw;

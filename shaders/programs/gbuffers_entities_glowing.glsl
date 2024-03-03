@@ -3,7 +3,6 @@
 #define gbuffers_entities
 
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
@@ -29,8 +28,6 @@ varying vec2 texmidcoord;
 
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
-
-varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 normal;
@@ -74,10 +71,6 @@ void main() {
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  sunDot = dot( normal.xyz, normalize(sunPosition) );
-  sunDot = dot( normal.xyz, normalize(localSunPos) );
-  sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
-
   
 	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
 	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
@@ -101,7 +94,7 @@ const int gnormalFormat = RGB10_A2;
 const int colortex9Format = RGBA16F;
  -- */
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
 uniform sampler2D colortex7;
@@ -113,7 +106,6 @@ uniform float far;
 uniform vec3 sunPosition;
 uniform vec4 spriteBounds; 
 uniform vec4 entityColor;
-uniform float isGlowing;
 
 //#include "utils/texSamplers.glsl"
 
@@ -126,7 +118,6 @@ varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
 
-varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 normal;
@@ -209,8 +200,8 @@ vec4 diffuseSampleLocal( sampler2D tx, vec2 uv, vec2 res, float thresh){
 void main() {
 
   vec2 tuv = texcoord.st;
-  //vec4 txCd = texture2D(texture, tuv);;
-  vec4 txCd = diffuseSampleLocal( texture, tuv, texelSize, 0.0 );
+  //vec4 txCd = texture2D(gcolor, tuv);;
+  vec4 txCd = diffuseSampleLocal( gcolor, tuv, texelSize, 0.0 );
   
   vec2 luv = vLightcoord.st;
   //vec4 lightCd = texture2D(lightmap, luv);

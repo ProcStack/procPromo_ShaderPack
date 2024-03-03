@@ -54,7 +54,7 @@ void main() {
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform float rainStrength;
 uniform float sunAngle;

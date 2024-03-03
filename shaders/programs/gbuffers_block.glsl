@@ -6,7 +6,7 @@
 
 #include "/shaders.settings"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform vec3 sunVec;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
@@ -16,7 +16,6 @@ uniform mat4 shadowProjection;
 uniform ivec2 eyeBrightnessSmooth;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
-uniform vec3 cameraPosition;
 uniform int blockEntityId;
 
 uniform vec2 texelSize;
@@ -45,12 +44,9 @@ varying vec4 color;
 varying vec4 avgColor;
 varying vec4 lmcoord;
 varying vec2 texmidcoord;
-varying vec3 debug;
 
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
-
-varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 vLocalPos;
@@ -62,7 +58,6 @@ varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
 varying vec4 shadowPos;
-varying vec3 shadowOffset;
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
 
@@ -73,8 +68,6 @@ varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vColorOnly;
-varying float vIsLava;
-varying float vLightingMult;
 
 
 // == Chocapic13's HighPerformance Toaster; Shadow-space helpers ==
@@ -128,29 +121,29 @@ texcoordmid=midcoord;
   
   
   vec2 txlquart = texelSize*8.0;
-  avgColor = texture2D(texture, mc_midTexCoord);
-  avgColor += texture2D(texture, mc_midTexCoord+txlquart);
-  avgColor += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
-  avgColor += texture2D(texture, mc_midTexCoord-txlquart);
-  avgColor += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
+  avgColor = texture2D(gcolor, mc_midTexCoord);
+  avgColor += texture2D(gcolor, mc_midTexCoord+txlquart);
+  avgColor += texture2D(gcolor, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
+  avgColor += texture2D(gcolor, mc_midTexCoord-txlquart);
+  avgColor += texture2D(gcolor, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
   avgColor *= .2;
 
 /*
   vec2 txlquart = texelSize*8.0;
   float avgDiv=0;
-  vec4 curAvgCd = texture2D(texture, mc_midTexCoord);
+  vec4 curAvgCd = texture2D(gcolor, mc_midTexCoord);
   avgDiv = curAvgCd.a;
   avgColor = curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord+txlquart);
+  curAvgCd += texture2D(gcolor, mc_midTexCoord+txlquart);
   avgDiv += curAvgCd.a;
   avgColor += curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
+  curAvgCd += texture2D(gcolor, mc_midTexCoord+vec2(txlquart.x, -txlquart.y));
   avgDiv += curAvgCd.a;
   avgColor += curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord-txlquart);
+  curAvgCd += texture2D(gcolor, mc_midTexCoord-txlquart);
   avgDiv += curAvgCd.a;
   avgColor += curAvgCd;
-  curAvgCd += texture2D(texture, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
+  curAvgCd += texture2D(gcolor, mc_midTexCoord+vec2(-txlquart.x, txlquart.y));
   avgDiv += curAvgCd.a;
   avgColor += curAvgCd;
   avgColor *= 1.0/avgDiv;
@@ -173,11 +166,6 @@ texcoordmid=midcoord;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  sunDot = dot( vNormal, normalize(sunPosition) );
-  sunDot = dot( vNormal, normalize(localSunPos) );
-  sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
-
-  
 
            
            
@@ -314,14 +302,13 @@ const int gnormalFormat = RGB10_A2;
 
 
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int fogMode;
 uniform vec3 fogColor;
 uniform vec3 sunPosition;
-uniform vec3 cameraPosition;
 uniform int blockEntityId;
 uniform int isEyeInWater;
 uniform float BiomeTemp;
@@ -375,8 +362,6 @@ varying vec2 texmidcoord;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
 
-varying float sunDot;
-
 varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
@@ -388,23 +373,18 @@ varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
 varying vec4 shadowPos;
-varying vec3 shadowOffset;
 varying float vAlphaMult;
 varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vColorOnly;
-varying float vIsLava;
-varying float vLightingMult;
-
-varying vec3 debug;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
 
 
 void main() {
-	gl_FragData[0] = texture2D(texture, lmtexcoord.xy);
+	gl_FragData[0] = texture2D(gcolor, lmtexcoord.xy);
   float shadowDist = 0.0;
   vec4 shadowFull=vec4(0.0);
 	//if (gl_FragData[0].a > 0.0 ) {
@@ -462,10 +442,10 @@ void main() {
     
     vec4 txCd;
     if( DetailBluring > 0 ){
-        txCd = diffuseSample( texture, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
-        //txCd = diffuseNoLimit( texture, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
+        txCd = diffuseSample( gcolor, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
+        //txCd = diffuseNoLimit( gcolor, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
     }else{
-      txCd = texture2D(texture, tuv);
+      txCd = texture2D(gcolor, tuv);
     }
 
 	#if ( DebugView == 4 )
@@ -480,7 +460,7 @@ void main() {
     
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
-    vec3 lightCd = lightBaseCd.rgb; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5)*vLightingMult;
+    vec3 lightCd = lightBaseCd.rgb; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5);
     lightCd.rgb *= LightWhiteLevel;
     //vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
     
@@ -500,7 +480,6 @@ void main() {
     vec4 outCd = vec4(txCd.rgb,1.0) * color;
     outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
     outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
-    //outCd = mix( vec4(outCd.rgb,1.0),  vec4(outCd.rgb,1.0), vIsLava);
     
     // Sun/Moon Lighting
     //float toCamNormalDot = dot(normalize(-vLocalPos.xyz*vec3(1.0,.91,1.0)),vNormal);
@@ -554,7 +533,7 @@ void main() {
       uvProj = fract(uvProj);
       
       
-      outCd = texture2D(texture, uvProj);
+      outCd = texture2D(gcolor, uvProj);
       glowValueMult = outCd.r*.4;
       outCd = outCd * color ;
       glowCd += outCd.rgb*glowValueMult;
@@ -570,7 +549,7 @@ void main() {
 		float debugBlender = step( vPos.x, .0 );
 		float debugCdMult=color.r*color.g*color.b;
 		debugCdMult = step(.998, debugCdMult);
-		outCd = mix( outCd, (texture2D(texture, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
+		outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
 	#endif
 	
     gl_FragData[0] = outCd;

@@ -49,8 +49,8 @@ const vec3 shadowPosMult = vec3(0.5,0.5,thirdHalf);
 //      If it aint broke, don't fix it
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
-vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
+vec4 toClipSpace3(mat4 matrixSpace, vec3 viewSpacePosition) {
+    return vec4(projMAD(matrixSpace, viewSpacePosition),-viewSpacePosition.z);
 }
 // == -- -- -- -- ==
 
@@ -63,9 +63,10 @@ vec3 toShadowPosition(){
   
   float shadowPushAmmount = 1.0-abs(dot(sunVecNorm, gl_Normal))*.9;//normal));
   vec3 shadowPush = gl_Normal*shadowPushAmmount*.2 ;
-  shadowPos.xyz = mat3(shadowModelView) * (position.xyz+shadowPush) + shadowModelView[3].xyz;
+  vec3 ret = mat3(shadowModelView) * (position.xyz+shadowPush) + shadowModelView[3].xyz;
   vec3 shadowProjDiag = diagonal3(shadowProjection);
-  shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+  ret = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+	return ret;
 }
 */
 // -- -- --

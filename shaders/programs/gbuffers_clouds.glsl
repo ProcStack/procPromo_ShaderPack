@@ -5,7 +5,6 @@
 #include "utils/shadowCommon.glsl"
 
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 
@@ -28,7 +27,6 @@ varying vec3 upVecNorm;
 varying float dayNight;
 
 varying vec4 shadowPos;
-varying vec3 shadowOffset;
 
 
 
@@ -48,7 +46,7 @@ void main() {
 
 	color = gl_Color;
 
-
+	shadowPos = position;
 
   // -- -- -- -- -- -- -- --
   
@@ -85,8 +83,9 @@ const int gnormalFormat = RGB10_A2;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
+uniform vec3 cameraPosition;
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform float rainStrength;
 uniform int moonPhase;
@@ -104,10 +103,8 @@ varying vec4 lmcoord;
 varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
-varying vec3 cameraPosition;
 
 varying vec4 shadowPos;
-varying vec3 shadowOffset;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
@@ -140,7 +137,7 @@ void main() {
   vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
-  vec4 baseCd = texture2D(texture, texcoord.st);
+  vec4 baseCd = texture2D(gcolor, texcoord.st);
 	vec4 outCd = baseCd;
   outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
   outCd.rgb *= vec3(toUpFitted);

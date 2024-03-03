@@ -12,8 +12,6 @@
   uniform mat4 gbufferProjection;
   uniform mat4 shadowProjection;
   uniform mat4 shadowModelView;
-  
-  uniform vec3 cameraPosition;
 
   attribute vec4 mc_Entity;
 

@@ -5,13 +5,12 @@
 #define gbuffers_entities
 
 uniform float frameTimeCounter;
-uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 sunPosition;
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 
 uniform float viewWidth;
 uniform float viewHeight;
@@ -28,8 +27,6 @@ varying vec4 texcoord;
 varying vec4 vtexcoordam;
 varying vec4 color;
 varying vec4 lmcoord;
-
-varying float sunDot;
 
 varying vec4 vPos;
 varying vec4 vNormal;
@@ -71,10 +68,6 @@ void main() {
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  sunDot = dot( vNormal.xyz, normalize(sunPosition) );
-  sunDot = dot( vNormal.xyz, normalize(localSunPos) );
-  sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
-
   
   
   float avgBlend = .3;
@@ -83,19 +76,19 @@ void main() {
   vec3 mixColor;
   vec4 tmpCd;
   float avgDiv = 0.0;
-  tmpCd = texture2D(texture, midcoord);
+  tmpCd = texture2D(gcolor, midcoord);
     mixColor = tmpCd.rgb;
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, txlOffset.y) );
+  tmpCd = textureOffset(gcolor, midcoord, ivec2(txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(texture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
+  tmpCd = textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+  tmpCd = textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(texture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+  tmpCd = textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   
@@ -128,7 +121,7 @@ const int gnormalFormat = RGB10_A2;
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform sampler2D normals;
 uniform int fogMode;
@@ -146,8 +139,6 @@ varying vec2 texelSize;
 varying vec2 texcoordmid;
 varying vec4 vtexcoordam;
 
-varying float sunDot;
-
 varying vec4 vPos;
 varying vec4 vNormal;
 varying vec3 vAvgColor;
@@ -161,15 +152,15 @@ const int GL_EXP = 2048;
 void main() {
 
   vec2 tuv = texcoord.st;
-  vec4 baseCd = texture2D(texture, tuv);
+  vec4 baseCd = texture2D(gcolor, tuv);
   vec4 txCd = baseCd;
   float avgDelta = 0.0;
   vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
   screenSpace = (screenSpace*texelSize)-.5;
 
-	//diffuseSampleXYZFetch( texture, tuv, texcoordmid, texelSize*1.0, DetailBluring, baseCd, txCd, avgDelta);
-	diffuseSampleXYZ( texture, tuv, vtexcoordam, texelSize*2.0, DetailBluring, baseCd, txCd, avgDelta);
-  //txCd = diffuseNoLimit( texture, tuv, vec2(0.10) );
+	//diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize*1.0, DetailBluring, baseCd, txCd, avgDelta);
+	diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize*2.0, DetailBluring, baseCd, txCd, avgDelta);
+  //txCd = diffuseNoLimit( gcolor, tuv, vec2(0.10) );
 	
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);

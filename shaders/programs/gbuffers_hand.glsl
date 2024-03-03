@@ -14,7 +14,6 @@ uniform int heldBlockLightValue;
 uniform int heldBlockLightValue2;
 
 uniform vec3 sunPosition;
-uniform vec3 cameraPosition;
 
 uniform float viewWidth;
 uniform float viewHeight;
@@ -35,7 +34,6 @@ varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec2 vtexcoord;
 varying float vTexColorOnly;
 
-varying float sunDot;
 
 varying float vWhichHandItem; // 0 = left; 1 = right
 varying float vLeftGlowPerc;
@@ -81,10 +79,6 @@ void main() {
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  sunDot = dot( normal.xyz, normalize(sunPosition) );
-  sunDot = dot( normal.xyz, normalize(localSunPos) );
-  sunDot = dot( (gbufferModelViewInverse*gl_Vertex).xyz, normalize(vec3(1.0,0.,0.) ));
-
   
 	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
 	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
@@ -155,13 +149,13 @@ const int gnormalFormat = RGB10_A2;
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 
-uniform sampler2D texture;
+uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform sampler2DShadow shadow;
 uniform sampler2D normals;
+uniform vec3 fogColor;
 uniform int fogMode;
 uniform vec3 sunPosition;
-uniform vec3 cameraPosition;
 uniform int isEyeInWater;
 
 
@@ -181,8 +175,6 @@ varying float vGlowPerc;
 
 varying float vTexColorOnly;
 
-varying float sunDot;
-
 varying vec4 vPos;
 varying vec4 normal;
 varying mat3 tbnMatrix;
@@ -199,9 +191,9 @@ void main() {
   
   
   
-  //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
-  //vec4 txCd = diffuseNoLimit( texture, tuv, texelSize );
-  vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
+  //vec4 txCd = diffuseSampleNoLimit( gcolor, tuv, texelSize );
+  //vec4 txCd = diffuseNoLimit( gcolor, tuv, texelSize );
+  vec4 txCd = diffuseNoLimit( gcolor, tuv, vec2(0.001) );
   float glowInf = 0.0;
   
   vec2 luv = lmcoord.st;
@@ -244,7 +236,7 @@ void main() {
   glowHSV.z *= glowInf*glowInf*.7;//glowVal;
 
 	#if ( DebugView == 4 )
-		vec4 baseCd = texture2D( texture, tuv );
+		vec4 baseCd = texture2D( gcolor, tuv );
 		float debugBlender = step( .0, vPos.x);
 		outCd = mix( outCd, baseCd, debugBlender);
 	#endif

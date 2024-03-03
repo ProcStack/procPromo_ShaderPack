@@ -57,7 +57,6 @@ uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex2; // Normal Pass
 
 uniform sampler2D shadowcolor0;
-uniform vec3 cameraPosition;
 
 uniform sampler2D gaux1;
 uniform sampler2D gaux2; // 40% Res Glow Pass
@@ -339,8 +338,8 @@ void main() {
 #endif
   
   vec3 avgNormal = normalCd.rgb;
-  float innerEdgePerc;
-  float outerEdgePerc;
+  float innerEdgePerc = 0.0;
+  float outerEdgePerc = 0.0;
   findEdges( colortex0, colortex1, colortex2,
              uv, res*(1.5)*reachMult*EdgeShading,
              depthBase, normalCd.rgb, edgeDistanceThresh, avgNormal,
@@ -421,6 +420,6 @@ void main() {
 	
 	// -- -- -- -- -- -- -- -- -- -- -- -- -- --
 	
-	gl_FragColor = vec4(outCd.rgb,1.0);
+	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif
