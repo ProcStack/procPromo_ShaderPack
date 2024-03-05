@@ -38,55 +38,55 @@ varying mat3 tbnMatrix;
 
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
   
   vPos = gl_ProjectionMatrix * position;
-	gl_Position = vPos;
+  gl_Position = vPos;
   
   vPos = gl_ModelViewMatrix * gl_Vertex;
 
-	color = gl_Color;
+  color = gl_Color;
 
 
   texelSize = vec2(1.0/viewWidth,1.0/viewHeight);
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	texcoord =  gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord =  gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
-	float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
+  float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
 #ifdef SEPARATE_AO
-	lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU*gl_Color.a)+0.5;
+  lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU*gl_Color.a)+0.5;
 #else
   lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
 #endif
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 
 
-	
-	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
-	vec2 texcoordminusmid = texcoord.xy-midcoord;
+  
+  vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+  vec2 texcoordminusmid = texcoord.xy-midcoord;
   texmidcoord = midcoord;
-	vtexcoordam.pq = abs(texcoordminusmid)*3.0;
-	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
-	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
+  vtexcoordam.pq = abs(texcoordminusmid)*3.0;
+  vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
+  vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
   
   
   normal.xyz = normalize(gl_NormalMatrix * gl_Normal);
-	normal.a = 0.02;
+  normal.a = 0.02;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
 
   
-	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-	tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-					 tangent.y, binormal.y, normal.y,
-					 tangent.z, binormal.z, normal.z);
+  vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
+  vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
+  tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+           tangent.y, binormal.y, normal.y,
+           tangent.z, binormal.z, normal.z);
   
   
   //vTextureInf = step(.1,texcoord.y)*.2+.05;
@@ -216,9 +216,9 @@ void main() {
   outCd*= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
   
 
-	float depth = min(1.0, max(0.0, gl_FragCoord.w));
-	//outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
-	outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 ) * lightVal;
+  float depth = min(1.0, max(0.0, gl_FragCoord.w));
+  //outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
+  outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 ) * lightVal;
 
 
 
@@ -251,11 +251,11 @@ void main() {
       outCd.rgb = vec3( luma(color.rgb) * lightVal );
     }
 
-	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x);
-		outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal, outCd, debugBlender);
-	#endif
-	
+  #if ( DebugView == 4 )
+    float debugBlender = step( .0, vPos.x);
+    outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal, outCd, debugBlender);
+  #endif
+  
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);

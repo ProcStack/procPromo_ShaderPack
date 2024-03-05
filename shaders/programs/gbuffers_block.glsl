@@ -63,7 +63,7 @@ varying vec3 vAnimFogNormal;
 
 varying float vAlphaMult;
 
-varying float vDetailBluringMult;
+varying float vDetailBlurringMult;
 varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
@@ -80,21 +80,21 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
 
 
 void main() {
-	vec3 normal = gl_NormalMatrix * gl_Normal;
-	vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
-	lmtexcoord.xy = gl_MultiTexCoord0.xy;
+  vec3 normal = gl_NormalMatrix * gl_Normal;
+  vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
+  lmtexcoord.xy = gl_MultiTexCoord0.xy;
   vWorldNormal = mat3(gbufferModelViewInverse) * gl_Normal;
   vAnimFogNormal = gl_NormalMatrix*vec3(1.0,0.0,0.0);
   // -- -- -- -- -- -- -- --
   
   
-	sunVecNorm = normalize(sunPosition);
-	upVecNorm = normalize(upPosition);
-	dayNight = dot(sunVecNorm,upVecNorm);
+  sunVecNorm = normalize(sunPosition);
+  upVecNorm = normalize(upPosition);
+  dayNight = dot(sunVecNorm,upVecNorm);
 
   vPos = gl_ProjectionMatrix * gl_Vertex;
   vPos = ftransform();
-	gl_Position = vPos;
+  gl_Position = vPos;
 
   vLocalPos = vec4(position,1.0);
   vPos = vec4(position.xyz,1.0);
@@ -103,7 +103,7 @@ void main() {
   
   vScreenUV = mat3(gbufferModelViewInverse) * gl_Normal;
   
-	color = gl_Color;
+  color = gl_Color;
 
 
   vec4 textureUV = gl_MultiTexCoord0;
@@ -111,10 +111,10 @@ void main() {
 
 
   vTexelSize = vec2(1.0/viewWidth,1.0/viewHeight);
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
 
-	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord,0.0,1.0)).st;
+  vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord,0.0,1.0)).st;
 texcoordmid=midcoord;
   vec2 texelhalfbound = texelSize*16.0;
   texcoordminmax = vec4( midcoord-texelhalfbound, midcoord+texelhalfbound );
@@ -149,17 +149,17 @@ texcoordmid=midcoord;
   avgColor *= 1.0/avgDiv;
 */  
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 
 
-	
-	vec2 texcoordminusmid = texcoord.xy-midcoord;
+  
+  vec2 texcoordminusmid = texcoord.xy-midcoord;
   texmidcoord = midcoord;
-	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
-	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
-	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
+  vtexcoordam.pq = abs(texcoordminusmid)*2.0;
+  vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
+  vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
   
   vNormal = normalize(normal);
@@ -173,35 +173,35 @@ texcoordmid=midcoord;
 
 
 
-	float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
+  float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
   #ifdef SEPARATE_AO
-	lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU*gl_Color.a)+0.5;
+  lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU*gl_Color.a)+0.5;
   #else
   lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
   #endif
 
-	gl_Position = toClipSpace3(position);
-	float diffuseSun = clamp(dot(normal,sunVec),0.0,1.0);
+  gl_Position = toClipSpace3(position);
+  float diffuseSun = clamp(dot(normal,sunVec),0.0,1.0);
 
 
-	shadowPos.x = 1e30;
-	//skip shadow position calculations if far away
-	//normal based rejection is useless in vertex shader
-	//if (gl_Position.z < shadowDistance + 28.0){
+  shadowPos.x = 1e30;
+  //skip shadow position calculations if far away
+  //normal based rejection is useless in vertex shader
+  //if (gl_Position.z < shadowDistance + 28.0){
   
-		position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+    position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
     
 
 
   
-		shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
+    shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
 
     
     vec3 shadowProjDiag = diagonal3(shadowProjection);
     float spdLength = length( shadowProjDiag );
-		shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
+    shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
     
-	//}
+  //}
 
 
   #ifdef SEPARATE_AO
@@ -384,18 +384,18 @@ const int GL_EXP = 2048;
 
 
 void main() {
-	gl_FragData[0] = texture2D(gcolor, lmtexcoord.xy);
+  gl_FragData[0] = texture2D(gcolor, lmtexcoord.xy);
   float shadowDist = 0.0;
   vec4 shadowFull=vec4(0.0);
-	//if (gl_FragData[0].a > 0.0 ) {
-		float diffuseSun = color.a/255.;
+  //if (gl_FragData[0].a > 0.0 ) {
+    float diffuseSun = color.a/255.;
 #ifdef OVERWORLD
-		if (color.a > 0.0001 && shadowPos.x < 1e10) {
-			float distort = radialBias(shadowPos.xy);
-			vec2 spCoord = shadowPos.xy / distort;
-			if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
-					float diffthresh = 0.0006*shadowDistance/45.;
-					if (shadowPos.w > -1.0) diffthresh = 0.0004*2048./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
+    if (color.a > 0.0001 && shadowPos.x < 1e10) {
+      float distort = radialBias(shadowPos.xy);
+      vec2 spCoord = shadowPos.xy / distort;
+      if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
+          float diffthresh = 0.0006*shadowDistance/45.;
+          if (shadowPos.w > -1.0) diffthresh = 0.0004*2048./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
 
           vec3 projectedShadowPosition = vec3(spCoord, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
           
@@ -413,8 +413,8 @@ void main() {
             shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
           }
           diffuseSun *= shadowAvg;
-			}
-		}
+      }
+    }
 #endif
     
     // Mute Shadows during Rain
@@ -424,8 +424,8 @@ void main() {
     float colorValue =  rgb2hsv(color.rgb).z;
     float blockShading = diffuseSun * (sin( colorValue*PI*.5 )*.5+.5);
     
-		vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*texelSize).xyz;
-		vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.7)*blockShading;// * lightmapcd;
+    vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*texelSize).xyz;
+    vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.7)*blockShading;// * lightmapcd;
     vec3 lightingHSV = rgb2hsv(diffuseLight);
     
     vec2 tuv = texcoord.st;
@@ -441,20 +441,20 @@ void main() {
     // -- -- -- -- -- -- --
     
     vec4 txCd;
-    if( DetailBluring > 0 ){
-        txCd = diffuseSample( gcolor, tuv, vtexcoordam, texelSize, DetailBluring*2.0 );
-        //txCd = diffuseNoLimit( gcolor, tuv, texelSize*vec2(3.75,2.1)*DetailBluring );
+    if( DetailBlurring > 0 ){
+        txCd = diffuseSample( gcolor, tuv, vtexcoordam, texelSize, DetailBlurring*2.0 );
+        //txCd = diffuseNoLimit( gcolor, tuv, texelSize*vec2(3.75,2.1)*DetailBlurring );
     }else{
       txCd = texture2D(gcolor, tuv);
     }
 
-	#if ( DebugView == 4 )
-		float debugDiscard = step( .0, vPos.x);
+  #if ( DebugView == 4 )
+    float debugDiscard = step( .0, vPos.x);
     if (txCd.a < .2 && debugDiscard==0.0){
       discard;
     }
-	#endif
-	
+  #endif
+  
     float depth = min(1.0, max(0.0, gl_FragCoord.w));
     float depthBias = biasToOne(depth, 4.5);
     
@@ -545,13 +545,13 @@ void main() {
     //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
     glowHSV.z *= vGlowMultiplier * glowValueMult;
 
-	#if ( DebugView == 4 )
-		float debugBlender = step( vPos.x, .0 );
-		float debugCdMult=color.r*color.g*color.b;
-		debugCdMult = step(.998, debugCdMult);
-		outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
-	#endif
-	
+  #if ( DebugView == 4 )
+    float debugBlender = step( vPos.x, .0 );
+    float debugCdMult=color.r*color.g*color.b;
+    debugCdMult = step(.998, debugCdMult);
+    outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
+  #endif
+  
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

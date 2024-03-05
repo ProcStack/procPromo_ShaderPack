@@ -15,19 +15,19 @@ varying vec3 normal;
   
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
-	gl_Position = gl_ProjectionMatrix * position;
+  gl_Position = gl_ProjectionMatrix * position;
 
-	color = gl_Color;
+  color = gl_Color;
 
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
   
   normal = normalize(gl_NormalMatrix * gl_Normal);
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 }
 #endif
 
@@ -55,10 +55,10 @@ void main() {
 
   vec4 outCd = texture2D(gcolor, texcoord.st) * color;
   
-	gl_FragData[0] = outCd;
+  gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-	gl_FragData[2] = vec4( normal*.5+.5, 0.0 );
-	gl_FragData[3] = vec4( vec3(0.0), 1.0 );
-		
+  gl_FragData[2] = vec4( normal*.5+.5, 0.0 );
+  gl_FragData[3] = vec4( vec3(0.0), 1.0 );
+    
 }
 #endif

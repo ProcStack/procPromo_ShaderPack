@@ -32,32 +32,32 @@ varying vec4 shadowPos;
 
 void main() {
 
-	sunVecNorm = normalize(sunPosition);
-	upVecNorm = normalize(upPosition);
-	dayNight = dot(sunVecNorm,upVecNorm);
+  sunVecNorm = normalize(sunPosition);
+  upVecNorm = normalize(upPosition);
+  dayNight = dot(sunVecNorm,upVecNorm);
 
-	vNormal = normalize(gl_NormalMatrix * gl_Normal);
+  vNormal = normalize(gl_NormalMatrix * gl_Normal);
 
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
   vLocalPos = position;
   gl_Position = gl_ProjectionMatrix * position;
-	vPos = gl_Vertex;
+  vPos = gl_Vertex;
 
-	color = gl_Color;
+  color = gl_Color;
 
-	shadowPos = position;
+  shadowPos = position;
 
   // -- -- -- -- -- -- -- --
   
 
 
 
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 }
 #endif
 
@@ -138,7 +138,7 @@ void main() {
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
   vec4 baseCd = texture2D(gcolor, texcoord.st);
-	vec4 outCd = baseCd;
+  vec4 outCd = baseCd;
   outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
   outCd.rgb *= vec3(toUpFitted);
   outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
@@ -196,7 +196,6 @@ void main() {
   float distort = radialBias(shadowPos.xy);
   vec2 spCoord = shadowProjPos.xy / distort;
 
-  float halfthreshrecip = 0.5-shadowThreshold;
   
   vec3 localShadowOffset = shadowPosOffset;
   //localShadowOffset.z *= min(1.0,outDepth*20.0+.7)*.1+.9;
@@ -251,12 +250,12 @@ void main() {
   // -- -- --
   
 
-	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vLocalPos.x);
-		outCd = mix( baseCd*color, outCd, debugBlender);
-	#endif
+  #if ( DebugView == 4 )
+    float debugBlender = step( .0, vLocalPos.x);
+    outCd = mix( baseCd*color, outCd, debugBlender);
+  #endif
 
-	gl_FragData[0] = outCd;
+  gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
   gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);
   gl_FragData[2] = vec4(toNorm, 1.0);

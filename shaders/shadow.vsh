@@ -1,4 +1,4 @@
-#version 120
+#version 450
 
 #define OVERWORLD
 #define SHADOW

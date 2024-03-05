@@ -10,6 +10,7 @@
 //   For a block game,
 //     Per-Axis Biasing reduces mid-distance scalping of a Radial shadow's edge
 
+const bool waterShadowEnabled = false;
 const bool generateShadowMipmap = true;
 const bool generateShadowColorMipmap = true;
 const bool shadowHardwareFiltering = true;
@@ -23,8 +24,10 @@ const float shadowMapTexelSize = 1.0/float(shadowMapResolution);
 const float shadowMapFov = 90.0; 
 const float shadowDistance = 256.0;//224.0;//128.0;
 const float sunPathRotation = 0.0;
-const float shadowDistanceRenderMul = 1.0; //[-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
+const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
 const float shadowIntervalSize = 1.00;
+
+const float shadowDistBiasMult = 30.0;
 
 const float shadowRadialBiasMult = 1.33;
 const float shadowRadialBiasOffset = .02;
@@ -33,14 +36,14 @@ const float shadowAxisBiasOffset = .65;
 const float shadowAxisBiasPosOffset = 0.02;
 
 // Peter-Pan'ing / Shadow Surface Offset
-const float shadowThreshold = 0.000006*shadowDistance/(shadowMapFov*.5);// * 2048./shadowMapResolution;
+const float shadowThreshold = shadowDistance/(shadowMapFov*.5);
+const float shadowThreshBase = 0.000006;
+const float shadowThreshDist = 0.000016;
 
 const float oneThird = 1.0 / 3.0;
-const float thirdHalf = .5 * oneThird;
-const float shadowThreshReciprical = 0.5 - shadowThreshold;
 
-const vec3 shadowPosOffset = vec3(0.5,0.5,shadowThreshReciprical);
-const vec3 shadowPosMult = vec3(0.5,0.5,thirdHalf);
+const vec3 shadowPosOffset = vec3(0.5,0.5,shadowThreshold);
+const vec3 shadowPosMult = vec3(0.5);
 
 // -- -- -- -- -- -- -- --
 
@@ -66,7 +69,7 @@ vec3 toShadowPosition(){
   vec3 ret = mat3(shadowModelView) * (position.xyz+shadowPush) + shadowModelView[3].xyz;
   vec3 shadowProjDiag = diagonal3(shadowProjection);
   ret = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
-	return ret;
+  return ret;
 }
 */
 // -- -- --
@@ -154,7 +157,7 @@ vec4 biasShadowShift(vec4 shadowSpacePos) {
   //
   
   #ifdef SHADOW
-    shadowSpacePos.z *= oneThird;
+    //shadowSpacePos.z *= oneThird;
   #endif
   return shadowSpacePos;
 }

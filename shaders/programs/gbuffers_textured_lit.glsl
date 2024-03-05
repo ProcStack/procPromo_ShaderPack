@@ -17,23 +17,23 @@ varying vec3 normal;
   
 void main() {
 
-	vec4 position =  gl_ModelViewMatrix * gl_Vertex;
+  vec4 position =  gl_ModelViewMatrix * gl_Vertex;
   position = gl_ProjectionMatrix * position;
   
-	gl_Position = position;
+  gl_Position = position;
 
-	color = gl_Color;
+  color = gl_Color;
 
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
-	
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  
   float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
   lmcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
   
   normal = normalize(gl_NormalMatrix * gl_Normal);
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 }
 #endif
 
@@ -88,7 +88,7 @@ vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){
   vec4 curCd;
   for( int x=0; x<boxSamplesCount; ++x){
     curUV =  uv + boxSamples[x]*texelRes ;
-		
+    
     curCd = texture2D(tx, curUV);
     sampleCd = mix( sampleCd, curCd, (sampleCd.a*curCd.a)*.5);
   }
@@ -114,12 +114,12 @@ void main() {
   vec3 glowHSV = rgb2hsv(glowCd);
   glowHSV.z *= (max(0.0,outCdMin-.4)*.20)*(depth);//*glowInf;//*.5+.5);
   
-	
-	
-	gl_FragData[0] = outCd;
+  
+  
+  gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-	gl_FragData[2] = vec4( normal*.5+.5, 1.0 );
-	gl_FragData[3] = vec4( glowHSV, 1.0 );
-		
+  gl_FragData[2] = vec4( normal*.5+.5, 1.0 );
+  gl_FragData[3] = vec4( glowHSV, 1.0 );
+    
 }
 #endif

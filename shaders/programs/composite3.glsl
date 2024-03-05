@@ -5,8 +5,8 @@
 varying vec2 texcoord;
 
 void main() {
-	gl_Position = ftransform();
-	texcoord = gl_MultiTexCoord0.xy;
+  gl_Position = ftransform();
+  texcoord = gl_MultiTexCoord0.xy;
 }
 
 #endif
@@ -82,12 +82,12 @@ void main() {
   //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0));
   
   int reachSteps = 7 + BaseQuality*6 ;
-	float texScalar = 17.0-reachDist*4.0;
+  float texScalar = 17.0-reachDist*4.0;
   vec2 texelRes = vec2(0.0,texelSize.x*texScalar*reachDist);
   
   
-	vec3 baseBloomCd = directionBlurSample(sampleCd, gaux3, uv, texelRes, reachSteps)*sampleCdAlpha;
-	gl_FragData[0] = vec4(baseBloomCd, 1.0);
+  vec3 baseBloomCd = directionBlurSample(sampleCd, gaux3, uv, texelRes, reachSteps)*sampleCdAlpha;
+  gl_FragData[0] = vec4(baseBloomCd, 1.0);
 }
 #endif
 

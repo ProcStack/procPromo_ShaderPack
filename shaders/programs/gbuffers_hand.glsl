@@ -46,45 +46,45 @@ varying mat3 tbnMatrix;
 
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
   
   vPos = gl_ProjectionMatrix * position;
-	gl_Position = vPos;
+  gl_Position = vPos;
 
   vPos = position;
   
-	color = gl_Color;
+  color = gl_Color;
 
 
   texelSize = vec2(1.0/viewWidth,1.0/viewHeight);
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 
 
-	
-	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
-	vec2 texcoordminusmid = texcoord.xy-midcoord;
+  
+  vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+  vec2 texcoordminusmid = texcoord.xy-midcoord;
   texmidcoord = midcoord;
-	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
-	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
-	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
+  vtexcoordam.pq = abs(texcoordminusmid)*2.0;
+  vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
+  vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
   
   normal.xyz = normalize(gl_NormalMatrix * gl_Normal);
-	normal.a = 0.02;
+  normal.a = 0.02;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   
-	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-	tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-					 tangent.y, binormal.y, normal.y,
-					 tangent.z, binormal.z, normal.z);
+  vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
+  vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
+  tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+           tangent.y, binormal.y, normal.y,
+           tangent.z, binormal.z, normal.z);
            
   float isWhichHand = step( 0.0, position.x ); // Right to init
   float isLeftHand = step( 0.0, position.x );
@@ -235,20 +235,20 @@ void main() {
   vec3 glowHSV = rgb2hsv(outCd.rgb);
   glowHSV.z *= glowInf*glowInf*.7;//glowVal;
 
-	#if ( DebugView == 4 )
-		vec4 baseCd = texture2D( gcolor, tuv );
-		float debugBlender = step( .0, vPos.x);
-		outCd = mix( outCd, baseCd, debugBlender);
-	#endif
-	
-	gl_FragData[0] = outCd;
+  #if ( DebugView == 4 )
+    vec4 baseCd = texture2D( gcolor, tuv );
+    float debugBlender = step( .0, vPos.x);
+    outCd = mix( outCd, baseCd, debugBlender);
+  #endif
+  
+  gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(1.0,gl_FragCoord.w)-.0001 ), 1.0);
-	gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w)+.5,0.0,1.0);//glowVal);
-	gl_FragData[4] = vec4(glowHSV,1.0);//glowVal);
+  gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);
+  gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w)+.5,0.0,1.0);//glowVal);
+  gl_FragData[4] = vec4(glowHSV,1.0);//glowVal);
 
-	/*
-		gl_FragData[0].rgb = mix(gl_FragData[0].rgb, gl_Fog.color.rgb, clamp((gl_FogFragCoord - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0));
+  /*
+    gl_FragData[0].rgb = mix(gl_FragData[0].rgb, gl_Fog.color.rgb, clamp((gl_FogFragCoord - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0));
   */
 }
 

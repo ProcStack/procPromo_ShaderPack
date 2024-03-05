@@ -4,8 +4,8 @@
 varying vec2 texcoord;
 
 void main() {
-	gl_Position = ftransform();
-	texcoord = gl_MultiTexCoord0.xy;
+  gl_Position = ftransform();
+  texcoord = gl_MultiTexCoord0.xy;
 }
 
 #endif
@@ -23,13 +23,13 @@ uniform sampler2D shadowtex1;
 
 void main() {
   // Shadow Buffer; Water if enabled, Shadow otherwise
-	vec4 waterShadowCd = texture2D(shadowtex0, texcoord);
+  vec4 waterShadowCd = texture2D(shadowtex0, texcoord);
   // Shadow Buffer; Shadow
-	vec4 shadowCd = texture2D(shadowtex1, texcoord);
+  vec4 shadowCd = texture2D(shadowtex1, texcoord);
   
   // GBuffer; Calculated Shadow
-	shadowCd = texture2D(colortex7, texcoord);
-	gl_FragData[0] = vec4(shadowCd.rgb, 1.0);
+  shadowCd = texture2D(colortex7, texcoord);
+  gl_FragData[0] = vec4(shadowCd.rgb, 1.0);
 }
 
 

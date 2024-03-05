@@ -7,8 +7,8 @@
 varying vec2 texcoord;
 
 void main() {
-	gl_Position = ftransform();
-	texcoord = gl_MultiTexCoord0.xy;
+  gl_Position = ftransform();
+  texcoord = gl_MultiTexCoord0.xy;
 }
 
 #endif
@@ -58,7 +58,7 @@ vec3 boxBlurSampleHSV( sampler2D tx, vec2 uv, vec2 texelRes){
   float delta=0.0;
   for( int x=0; x<diagSamplesCount; ++x){
     curUV =  uv + diagSamples[x]*texelRes*sampleCd.z ;
-		
+    
     curCd = texture2D(tx, curUV).rgb;
     sampleCd = mix(sampleCd, max( sampleCd, curCd), curCd.z*.5);
   }
@@ -73,12 +73,12 @@ void main() {
 
   float glowBrightness = sampleCd.b;// * sampleCd.b;
   
-	vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*20.0*glowBrightness*sampleDepth*depthInf);
-	//baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth*depthInf));
+  vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*20.0*glowBrightness*sampleDepth*depthInf);
+  //baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth*depthInf));
   baseBloomCd.b *= GLOW_PERC;
   baseBloomCd = hsv2rgb(baseBloomCd);
 
-	gl_FragData[0] = vec4(baseBloomCd, 1.0);//sampleDepth*.9+.1);
+  gl_FragData[0] = vec4(baseBloomCd, 1.0);//sampleDepth*.9+.1);
 }
 
 #endif

@@ -8,23 +8,23 @@
   #include "utils/shadowCommon.glsl"
 
   uniform mat4 gbufferModelView;
-  uniform mat4 gbufferPreviousModelView;
   uniform mat4 gbufferProjection;
-  uniform mat4 shadowProjection;
-  uniform mat4 shadowModelView;
+	uniform vec3 chunkOffset;
 
-  attribute vec4 mc_Entity;
+  in vec4 mc_Entity;
+	in vec3 vaPosition;
 
-  varying vec2 texcoord;
-  varying vec4 color;
-  varying float vBiasStretch;
-  varying vec3 vShadowPos;
-  varying float vIsLeaves;
+  out vec2 texcoord;
+  out vec4 color;
+  out float vBiasStretch;
+  out vec3 vShadowPos;
+  out float vShadowDist;
+  out float vIsLeaves;
 
 
   void main() {
   
-    vec4 position = ftransform();
+		vec4 position =  ftransform();
 
     color=gl_Color;
     
@@ -33,8 +33,10 @@
     
     position = biasShadowShift( position );
     gl_Position = position;
-    vShadowPos = gl_Position.xyz;
+    vShadowPos = position.xyz;
     
+		vShadowDist = length( position.xyz );
+		
     vBiasStretch=camDir.w;
     
     
@@ -53,27 +55,44 @@
 
 #ifdef FSH
 
+layout(Location = 0) out vec4 outCd;
+layout(Location = 1) out vec4 outData;
+
+/* --
+const int shadowcolor1Format = R16F;
+ -- */
+
   #include "/shaders.settings"
 
   uniform sampler2D tex;
+	uniform float far;
 
-  varying vec2 texcoord;
-  varying vec4 color;
-  varying float vBiasStretch;
-  varying vec3 vShadowPos;
-  varying float vIsLeaves;
+  in vec2 texcoord;
+  in vec4 color;
+  in float vBiasStretch;
+  in vec3 vShadowPos;
+  in float vShadowDist;
+  in float vIsLeaves;
+	
 
   void main() {
 
-    vec4 shadowCd = texture2D(tex,texcoord.xy) * color;
+    vec4 shadowCd = texture2D(tex,texcoord.xy);
+		shadowCd.rgb*=color.rgb;
 
     shadowCd.a= min(1.0, shadowCd.a+vIsLeaves);
-
+		
+		if( shadowCd.a<0.01 ){
+			discard;
+		}
+		
     #if ( DebugView >= 2 )
       shadowCd.rb -= vec2(vBiasStretch);
     #endif
     
-    gl_FragData[0] = shadowCd;
+    outCd = shadowCd;
+    outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
+    outData = vec4( length(vShadowPos) );
   }
 
 #endif

@@ -20,6 +20,13 @@ vec3 hsv2rgb(vec3 c){
 
 // -- -- -- -- -- --
 
+// Give a value of `1` with an input of `0`
+float safeSign( float val ){
+	return ( step( 0.0, val ) * 2.0 - 1.0 );
+}
+
+// -- -- -- -- -- --
+
 vec2 rotToUV(vec3 direction){
   vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y));
   uv *= vec2(0.1591, 0.3183);
@@ -28,29 +35,29 @@ vec2 rotToUV(vec3 direction){
 }
 
 vec3 addToGlowPass(vec3 baseCd, vec3 addCd){
-  return max(baseCd, addCd);
+  return max( baseCd, addCd );
 }
 // Human Eye Adjusted Luminance
 float luma(vec3 color) {
-	return dot(color,vec3(0.299, 0.587, 0.114));
+  return dot( color, vec3(0.299, 0.587, 0.114) );
 }
 
 float biasToOne( float value ){
-  return 1.0-(1.0-value)*(1.0-value);
+  return 1.0 - (1.0-value) * (1.0-value);
 }
 float biasToOne( float value, float bias ){
-  return 1.0-(1.0-min(1.0,value*bias))*(1.0-min(1.0,value*bias));
+  return 1.0 - (1.0-min(1.0,value*bias)) * (1.0-min(1.0,value*bias));
 }
 
 // Return max vector component
 float maxComponent(vec2 val){
-  return max(val.x,val.y);
+  return max( val.x, val.y );
 }
 float maxComponent(vec3 val){
-  return max(val.x,max(val.y,val.z));
+  return max( val.x, max(val.y, val.z ));
 }
 float maxComponent(vec4 val){
-  return max(val.x,max(val.y,max(val.z,val.w)));
+  return max( val.x, max(val.y, max(val.z, val.w )));
 }
 
 // Add all of a vectors component values together
@@ -83,7 +90,7 @@ vec3 shiftBlackLevels( vec3 inCd ){
 void boostPeaks( inout vec3 outCd ){
     float cdPeak = ( outCd.r * outCd.g * outCd.b );
     cdPeak = max(0.0, 1.0- cdPeak*5.0);
-    float peakMult = mix( (cdPeak *LightWhiteLevel + (1.0-LightWhiteLevel)), 1.0, LightWhiteLevel );
+    float peakMult = mix( (cdPeak * LightWhiteLevel + (1.0-LightWhiteLevel)), 1.0, LightWhiteLevel );
     outCd *= peakMult;
 }
 

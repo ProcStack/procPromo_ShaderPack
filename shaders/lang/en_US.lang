@@ -10,7 +10,7 @@ option.BaseQuality=Base Quality
 value.BaseQuality.0 = Low
 value.BaseQuality.1 = Mid
 value.BaseQuality.2 = High
-option.BaseQuality.comment=Reduce the ammount of texture bluring samples, heavier math functions, and performance slow downs.  Below options denote fidelity, this option is how that fidelity is utilized.
+option.BaseQuality.comment=Reduce the ammount of texture blurring samples, heavier math functions, and performance slow downs.  Below options denote fidelity, this option is how that fidelity is utilized.
 
 # -- -- --
 
@@ -34,8 +34,8 @@ option.WorldColor.comment=Toggle full color or greyscale. When greyscale, everyt
 option.GlowBrightness=Glow Ammount
 option.GlowBrightness.comment=Set how bright glow appears. Glow from light emitting blocks, along with brighter colored blocks in direct sunlight / near lighting (torches, lanterns, etc), and particles. 0.0, no glow. 1.0, default glow. 2.0, blown out glow colors.
 
-option.DetailBluring=Detail Bluring
-option.DetailBluring.comment=Set ammount of texture blending of blocks, entities, etc.  Detail Bluring works with custom resource packs. 0.0, no detail bluring. 1.0, default bluring. 2.0, blocks appear a solid color.
+option.DetailBlurring=Detail Blurring
+option.DetailBlurring.comment=Set ammount of texture blending of blocks, entities, etc.  Detail Blurring works with custom resource packs. 0.0, no detail blurring. 1.0, default blurring. 2.0, blocks appear a solid color.
 
 option.EdgeShading=Edge Outlines
 option.EdgeShading.comment=Visibility of Edges in game, appearing lighter Overworld, darker in the Nether.  0.0, no visible edges. 1.0, default edges (slightly transparent, ~2px wide). 2.0, overdrive edges (100% visible, ~4px wide)
@@ -45,7 +45,7 @@ option.EdgeShading.comment=Visibility of Edges in game, appearing lighter Overwo
 #Environment Effects
 
 option.UnderWaterBlur=Under Water Effects
-option.UnderWaterBlur.comment=Toggle Bluring & Warping while under water. If you get dizzy or sick under water, turn this False
+option.UnderWaterBlur.comment=Toggle Blurring & Warping while under water. If you get dizzy or sick under water, turn this False
 
 option.SolidLeaves=Solid Leaves
 option.SolidLeaves.comment=Toggle Solid Leaf Colors.  True, to match Mojang's promo/key art style. False, leaves will appear as default, see through leaves.
@@ -70,8 +70,8 @@ option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Lo
 #Debugging Effects
 option.DebugView=Debug Vision
 value.DebugView.0=Off
-value.DebugView.1=Detail Bluring
+value.DebugView.1=Detail Blurring
 value.DebugView.2=Shadow Cam
 value.DebugView.3=Shadow Debug
 value.DebugView.4=Vanilla vs procPromo
-option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Bluring, test bluring methods and side-by-side views.  Shadow Cam, see what the sun & moon see. Left in for funsies.
+option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Blurring, test blurring methods and side-by-side views.  Shadow Cam, see what the sun & moon see. Left in for funsies.

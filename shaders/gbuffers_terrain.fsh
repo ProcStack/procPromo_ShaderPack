@@ -1,7 +1,7 @@
 #version 400
 
 #extension GL_EXT_gpu_shader4 : enable
-const bool 	shadowHardwareFiltering0 = true;
+const bool   shadowHardwareFiltering0 = true;
 
 #define OVERWORLD
 

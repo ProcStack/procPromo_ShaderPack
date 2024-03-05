@@ -6,8 +6,8 @@
 varying vec2 texcoord;
 
 void main() {
-	gl_Position = ftransform();
-	texcoord = gl_MultiTexCoord0.xy;
+  gl_Position = ftransform();
+  texcoord = gl_MultiTexCoord0.xy;
 }
 
 #endif
@@ -96,7 +96,7 @@ void spectralSample( sampler2D tex, vec2 uv, vec2 reachMult, float blend, float 
 
 void main() {
 
-	vec4 dataCdBase = texture2D(colortex9, texcoord);
+  vec4 dataCdBase = texture2D(colortex9, texcoord);
 
   //float dataSpec = dataCdBase.b;
   float dataSpec = dataCdBase.a;
@@ -145,7 +145,7 @@ void main() {
   //vec2 depthEffGlowBase = texture2D(colortex1, texcoord).rg;
   
   
-	gl_FragData[0] = vec4( boxBlurCd, 1.0 );
+  gl_FragData[0] = vec4( boxBlurCd, 1.0 );
   
   
   

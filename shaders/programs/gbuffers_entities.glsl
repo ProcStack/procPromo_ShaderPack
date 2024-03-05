@@ -35,36 +35,36 @@ varying float vAvgColorBlend;
 
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
   
   vPos = gl_ProjectionMatrix * position;
-	gl_Position = vPos;
+  gl_Position = vPos;
   
   vPos = gl_ModelViewMatrix * gl_Vertex;
 
-	color = gl_Color;
+  color = gl_Color;
   color.a=1.0;
 
 
   texelSize = vec2(1.0/64.0, 1.0/32.0);//vec2(1.0/viewWidth,1.0/viewWidth);
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 
-	
-	//vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
-	vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord.st,0.0,1.0)).st;
+  
+  //vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+  vec2 midcoord = (gl_TextureMatrix[0] *  vec4(mc_midTexCoord.st,0.0,1.0)).st;
   texcoordmid=midcoord;
-	vec2 texcoordminusmid = texcoord.xy-midcoord;
-	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
-	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
+  vec2 texcoordminusmid = texcoord.xy-midcoord;
+  vtexcoordam.pq = abs(texcoordminusmid)*2.0;
+  vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
   
   
   vNormal.xyz = normalize(gl_NormalMatrix * gl_Normal);
-	vNormal.a = 0.02;
+  vNormal.a = 0.02;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
@@ -158,21 +158,21 @@ void main() {
   vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
   screenSpace = (screenSpace*texelSize)-.5;
 
-	//diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize*1.0, DetailBluring, baseCd, txCd, avgDelta);
-	diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize*2.0, DetailBluring, baseCd, txCd, avgDelta);
+  //diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize*1.0, DetailBlurring, baseCd, txCd, avgDelta);
+  diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize*2.0, DetailBlurring, baseCd, txCd, avgDelta);
   //txCd = diffuseNoLimit( gcolor, tuv, vec2(0.10) );
-	
+  
   vec2 luv = lmcoord.st;
   vec4 lightCd = texture2D(lightmap, luv);
   
   vec4 outCd = txCd * color;
   baseCd *= color;
-	
-	float avgColorBlender = max(0.0, dot(outCd.rgb,(txCd.rgb)));
-	float cdComp=1.0-abs(min(1.0,maxComponent(baseCd.rgb)*1.0)-.5)*2.0;
-	avgColorBlender = clamp( (avgColorBlender-.85)*1.75+.25, 0.0, 1.0 )*cdComp;
-	//avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
-	outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
+  
+  float avgColorBlender = max(0.0, dot(outCd.rgb,(txCd.rgb)));
+  float cdComp=1.0-abs(min(1.0,maxComponent(baseCd.rgb)*1.0)-.5)*2.0;
+  avgColorBlender = clamp( (avgColorBlender-.85)*1.75+.25, 0.0, 1.0 )*cdComp;
+  //avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
+  outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
   
   float highlights = dot(normalize(sunPosition),vNormal.xyz);
   highlights = (highlights-.5)*0.3;
@@ -180,19 +180,19 @@ void main() {
   float outDepth = min(.9999,gl_FragCoord.w);
   float outEffectGlow = 0.0;
   
-	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x );
-		outCd = mix( baseCd, outCd, debugBlender);
-	#endif
-	float entityCd = maxComponent(entityColor.rgb);
-	lightCd = vec4( lightCd.r );// * (1.0+rainStrength*.2));
-	outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
+  #if ( DebugView == 4 )
+    float debugBlender = step( .0, vPos.x );
+    outCd = mix( baseCd, outCd, debugBlender);
+  #endif
+  float entityCd = maxComponent(entityColor.rgb);
+  lightCd = vec4( lightCd.r );// * (1.0+rainStrength*.2));
+  outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
 //outCd.rgb=vec3(avgColorBlender);// * color.rgb);
-	gl_FragData[0] = outCd;
+  gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
-	gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
-	gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
-	gl_FragData[4] = vec4(vec3(0.0),1.0);
+  gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
+  gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
+  gl_FragData[4] = vec4(vec3(0.0),1.0);
 
 
 }

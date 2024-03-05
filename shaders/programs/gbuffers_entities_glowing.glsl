@@ -36,44 +36,44 @@ varying float vDepth;
 void main() {
 
   vec3 toCamPos = gl_Vertex.xyz*.005;
-	vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
+  vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
   position.xyz = position.xyz+normalize(position.xyz)*near*2.50;
 
   vPos = gl_ProjectionMatrix * position;
   //vPos = ftransform();
 
-	gl_Position = vPos;
+  gl_Position = vPos;
   
   vDepth = clamp(length((gl_ModelViewMatrix * gl_Vertex).xyz)/far, 0.0, 1.0);
 
-	color = gl_Color;// * vec4(entityColor.rgb,1.0);
+  color = gl_Color;// * vec4(entityColor.rgb,1.0);
 
 
   texelSize = vec2(1.0/viewWidth,1.0/viewHeight);
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
-	vLightcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+  vLightcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 
 
-	
-	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
-	vec2 texcoordminusmid = texcoord.xy-midcoord;
+  
+  vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+  vec2 texcoordminusmid = texcoord.xy-midcoord;
   texmidcoord = midcoord;
-	vtexcoordam.pq = abs(texcoordminusmid)*2.0;
-	vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
-	vtexcoord = sign(texcoordminusmid)*0.5+0.5;
+  vtexcoordam.pq = abs(texcoordminusmid)*2.0;
+  vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
+  vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
   
   normal.xyz = normalize(gl_NormalMatrix * gl_Normal);
-	normal.a = 0.02;
+  normal.a = 0.02;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   
-	vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-	vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
+  vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
+  vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
 
   
 }
@@ -174,8 +174,8 @@ vec4 diffuseSampleLocal( sampler2D tx, vec2 uv, vec2 res, float thresh){
   for( int x=0; x<boxSamplesCount; ++x){
     curUV =  uv + boxSamples[x]*res ;
     
-		//curUV = fract(curUV)*vtexcoordam.pq+vtexcoordam.st;
-		
+    //curUV = fract(curUV)*vtexcoordam.pq+vtexcoordam.st;
+    
     curCd = texture2D(tx, curUV);
     curHSV = rgb2hsv( curCd.rgb );
     curHSV = 1.0-abs( curHSV-sampleHSV );
@@ -230,17 +230,17 @@ void main() {
   
   //outCd.rgb=entityColor.rrr;
   
-	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x);
-		outCd = mix( outCd, txCd, debugBlender);
-	#endif
-	
-	gl_FragData[0] = outCd;
+  #if ( DebugView == 4 )
+    float debugBlender = step( .0, vPos.x);
+    outCd = mix( outCd, txCd, debugBlender);
+  #endif
+  
+  gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
-	gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
+  gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
   gl_FragData[3] = outData;
-	gl_FragData[4] = vec4(glowHSV,1.0);
+  gl_FragData[4] = vec4(glowHSV,1.0);
   gl_FragData[5] = outData;
 
 }

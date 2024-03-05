@@ -21,10 +21,10 @@ varying float vDfLenMult;
 
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
-	vPos=position;
-	
-	gl_Position = gl_ProjectionMatrix * position;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vPos=position;
+  
+  gl_Position = gl_ProjectionMatrix * position;
 
   float moonPhaseMult = (1.0-abs(((mod(moonPhase+3,8))-3))*.25)*.7+.3;
 
@@ -33,9 +33,9 @@ void main() {
   float isSun = step( .5, dot( normalize(sunPosition), normalize(position.xyz) ) );
 
   
-	vColor = gl_Color;
+  vColor = gl_Color;
   
-	vTexcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  vTexcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
   
   // Read color of the sun at the sun body's edge pixel
   //   Provides a tone to the smooth outer glow from the fragment pass below
@@ -57,7 +57,7 @@ void main() {
   }
   
   
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 }
 #endif
 
@@ -110,13 +110,13 @@ void main() {
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
 #endif
-	#if ( DebugView == 4 )
-		float debugBlender = step( .0, vPos.x);
-		outCd = mix( baseCd, outCd, debugBlender);
-	#endif
+  #if ( DebugView == 4 )
+    float debugBlender = step( .0, vPos.x);
+    outCd = mix( baseCd, outCd, debugBlender);
+  #endif
   
-	gl_FragData[0] = outCd;
-	gl_FragData[1] = vec4(vec3(0.0),1.0);
+  gl_FragData[0] = outCd;
+  gl_FragData[1] = vec4(vec3(0.0),1.0);
 
 }
 #endif

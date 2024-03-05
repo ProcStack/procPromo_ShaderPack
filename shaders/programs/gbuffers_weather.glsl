@@ -14,22 +14,22 @@ varying vec3 vNormal;
 
 void main() {
 
-	vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
-	gl_Position = gl_ProjectionMatrix * position;
+  gl_Position = gl_ProjectionMatrix * position;
 
-	color = gl_Color;
+  color = gl_Color;
 
-	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
   
-	lmtexcoord = gl_TextureMatrix[0] * gl_MultiTexCoord1;
+  lmtexcoord = gl_TextureMatrix[0] * gl_MultiTexCoord1;
   
-	//float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
+  //float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
   //lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
 
   vNormal = normalize(gl_NormalMatrix * gl_Normal);
   
-	gl_FogFragCoord = gl_Position.z;
+  gl_FogFragCoord = gl_Position.z;
 }
 #endif
 
@@ -74,10 +74,10 @@ void main() {
   outCd.rgb*=lightCd.rgb;
   
   
-	gl_FragData[0] = outCd;
+  gl_FragData[0] = outCd;
   //gl_FragData[1] = vec4(vec3( gl_FragCoord.w ), 1.0);
-	//gl_FragData[2] = vec4(vNormal.xyz*.5+.5, 1.0);
-	gl_FragData[2] = vec4(vec3(0.0), 1.0);
+  //gl_FragData[2] = vec4(vNormal.xyz*.5+.5, 1.0);
+  gl_FragData[2] = vec4(vec3(0.0), 1.0);
 }
 #endif
 
