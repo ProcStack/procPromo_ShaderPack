@@ -344,7 +344,7 @@ void main() {
   vDepthAvgColorInf = 1.0;
 
 
-  if( mc_Entity.x == 801 ||  mc_Entity.x == 811 || mc_Entity.x == 8013 ){
+  if( mc_Entity.x == 801 ||  mc_Entity.x == 811  || mc_Entity.x == 8014 ){
     vColorOnly = mc_Entity.x == 801 ? 0.85 : 0.0;
     //vColorOnly = mc_Entity.x == 811 ? vColor.b*.5 : vColorOnly;
     vAvgColor*=vColor;
@@ -364,6 +364,10 @@ void main() {
   vDeltaMult=3.0;
   if( mc_Entity.x == 8012 ){
     vDeltaPow=.80;
+  }
+  if( mc_Entity.x == 8013 ){
+    vDeltaPow=0.90;
+		vAvgColor+=vec4(0.99,0.99,1.0,1.0);
   }
   if( mc_Entity.x == 9011 ){
     vDeltaPow=4.0;
