@@ -1,3 +1,7 @@
+// GBuffer - Water GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2024
+//
+
 
 #ifdef VSH
 #define gbuffers_water
@@ -173,6 +177,7 @@ uniform sampler2D gaux1; // Dynamic Lighting
 uniform sampler2D normals;
 uniform int fogMode;
 uniform vec3 sunPosition;
+uniform float aspectRatio;
 
 uniform vec3 fogColor;
 uniform int isEyeInWater;
@@ -250,8 +255,12 @@ void main() {
     if( WorldColor ){ // Greyscale
       outCd.rgb = vec3( luma(color.rgb) * lightVal );
     }
-
-  #if ( DebugView == 4 )
+		
+		
+  #if ( DebugView == 2 )
+    vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
+		//outCd.a *= step(0.5, screenSpace.x)*.75+.25;
+  #elif ( DebugView == 4 )
     float debugBlender = step( .0, vPos.x);
     outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal, outCd, debugBlender);
   #endif

@@ -1,3 +1,7 @@
+// GBuffer - Final
+// Written by Kevin Edzenga, ProcStack; 2022-2024
+//
+
 /* -- -- -- -- -- --
   -Shadow Pass is not being used.
     Buffer currently has Sun Shadow written to it
@@ -50,6 +54,7 @@ uniform sampler2D colortex1; // Depth Pass
 uniform sampler2D colortex2; // Normal Pass
 
 uniform sampler2D shadowcolor0;
+uniform sampler2D shadowcolor1;
 
 uniform sampler2D gaux1;
 uniform sampler2D gaux2; // 40% Res Glow Pass
@@ -393,7 +398,40 @@ void main() {
   // Shadow Helper Mini Window
   //   hmmmmm picture-in-picture
   //     drooollllssss
-  #if ( DebugView == 2 ||  DebugView == 3 )
+	//
+	// Shadow Cam
+  #if ( DebugView == 2 )
+    //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
+    float fitWidth = 1.0 + aspectRatio*.45;
+    vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35;
+		
+		vec2 debugShadowCdUV = debugShadowUV + vec2(-0.1,-2.15);
+    vec3 shadowCd = texture2D(shadowcolor0, debugShadowCdUV ).rgb;
+    debugShadowCdUV = abs(debugShadowCdUV-.5);
+    float shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
+    shadowCd = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
+
+		// -- 
+    outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
+
+		// -- -- --
+
+		debugShadowCdUV = debugShadowUV + vec2(-1.2,-2.15);
+    vec4 shadowData = texture2D(shadowcolor1, debugShadowCdUV );
+    shadowCd = texture2D(shadowcolor0, debugShadowCdUV ).rgb;
+		shadowData.g = mix( 1.0, shadowData.g, step(0.0,shadowData.g));
+		shadowCd = mix( shadowData.ggg, shadowCd, step(0.5, shadowData.r));
+    debugShadowCdUV = abs(debugShadowCdUV-.5);
+    shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
+    shadowData.rgb = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
+		// -- 
+    outCd.rgb = mix( outCd.rgb, shadowData.rgb, step(shadowHelperMix, 0.502));
+
+		// -- -- --
+		
+  // Shadow Debug
+	//   Adding the mini cam cause its fun
+  #elif ( DebugView == 3 )
     //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
     float fitWidth = 1.0 + aspectRatio*.45;
     vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35 + vec2(-1.2,-2.15);

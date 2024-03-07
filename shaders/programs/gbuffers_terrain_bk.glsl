@@ -715,7 +715,7 @@ void main() {
   vec4 shadowPosLocal = shadowPos;
   //shadowPosLocal.xy += vCamViewVec.xz;
   
-  shadowPosLocal = biasShadowShift( shadowPosLocal );
+  shadowPosLocal = distortShadowShift( shadowPosLocal );
   vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
   
   shadowAvg=shadow2D(shadow, projectedShadowPosition).x;

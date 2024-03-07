@@ -1,4 +1,6 @@
-
+// GBuffer - Composite #4 GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
 // Spectral Glowing Entities Outline
 
 #ifdef VSH

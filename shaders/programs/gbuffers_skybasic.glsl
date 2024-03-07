@@ -1,3 +1,6 @@
+// GBuffer - Sky Basic GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
 
 #ifdef VSH
 #include "/shaders.settings"

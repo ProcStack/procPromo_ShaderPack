@@ -10,7 +10,7 @@
 //   For a block game,
 //     Per-Axis Biasing reduces mid-distance scalping of a Radial shadow's edge
 
-const bool waterShadowEnabled = false;
+const bool waterShadowEnabled = true;
 const bool generateShadowMipmap = true;
 const bool generateShadowColorMipmap = true;
 const bool shadowHardwareFiltering = true;
@@ -27,7 +27,9 @@ const float sunPathRotation = 0.0;
 const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
 const float shadowIntervalSize = 1.00;
 
-const float shadowDistBiasMult = 30.0;
+// Distance from base of shadow to blend in a blurry shadow
+//   Close to shadow is sharp, further is blurred
+const float shadowDistBiasMult = 5.0;
 
 const float shadowRadialBiasMult = 1.33;
 const float shadowRadialBiasOffset = .02;
@@ -37,8 +39,9 @@ const float shadowAxisBiasPosOffset = 0.02;
 
 // Peter-Pan'ing / Shadow Surface Offset
 const float shadowThreshold = shadowDistance/(shadowMapFov*.5);
-const float shadowThreshBase = 0.000006;
-const float shadowThreshDist = 0.000016;
+// Shadow Biases; Scalping Reduction
+const float shadowThreshBase = 0.000006; // Bias near to Camera
+const float shadowThreshDist = 0.000016; // Bias far from Camera
 
 const float oneThird = 1.0 / 3.0;
 
@@ -145,7 +148,7 @@ vec4 biasShadowAxis(vec4 shadowSpacePos) {
 
 // -- -- --
  
-vec4 biasShadowShift(vec4 shadowSpacePos) {
+vec4 distortShadowShift(vec4 shadowSpacePos) {
   vec2 outUV=shadowSpacePos.xy;
   outUV.xy = abs(outUV.xy);
   //
@@ -180,20 +183,13 @@ void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
   apm = mix( apm, vec3(.08, .65, .8), shiftInf ); // Not In View or In View
   apm = mix( vec3(.08, .65, 1.0), apm, upDownInf ); // Look Up/Down or Look Out
   
-  
   shiftInf = shiftInf*upDownInf;
   
   vec2 biased =  abs(posVal.xy*.5);//*(1.0-shiftInf*.5);
   biased = pow(biased+apm.xx,apm.yy-max(vec2(0.0),biased*apm.zz));
   biased = posVal.xy/biased;
-  //posVal.xy = biased;
-  //biased =  (posVal.xy);
   
-  //posVal.xy = mix( biased, biased, shiftInf );
-  //posVal.xy *= 1.0-biased;
   posVal.xy = biased - camDir.xz*(upDownInf)*.5;
-  
-  //posVal.xy *= shiftInf;
   
   #ifdef SHADOW
     posVal.z *= oneThird;

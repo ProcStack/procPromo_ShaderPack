@@ -1,4 +1,6 @@
-
+// GBuffer - Composite #2 GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
 // Glow Color down res pass; 30% res
 
 #ifdef VSH

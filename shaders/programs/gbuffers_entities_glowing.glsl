@@ -1,3 +1,6 @@
+// GBuffer - Glowing Entities GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
 
 #ifdef VSH
 #define gbuffers_entities

@@ -1,4 +1,6 @@
-
+// GBuffer - Composite #1 GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
 // Glow Color down res pass; 40% res
 //   Output - colortex8
 

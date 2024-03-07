@@ -1,3 +1,6 @@
+// GBuffer - Armor Glint GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
 
 #ifdef VSH
 varying vec4 texcoord;
