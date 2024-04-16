@@ -20,6 +20,7 @@ uniform sampler2D gnormal;
 uniform float aspectRatio;
 uniform float viewWidth;
 uniform float viewHeight;
+uniform float sunAngle;
 
 uniform vec3 sunPosition;
 uniform vec3 upVec;
@@ -27,6 +28,8 @@ uniform vec3 upVec;
 varying vec2 texcoord;
 varying vec2 res;
 
+varying vec3 sunWorldPos;
+varying float dayNight;
 
 void main() {
   
@@ -34,6 +37,8 @@ void main() {
   texcoord = (gl_MultiTexCoord0).xy;
   
   res = vec2( 1.0/viewWidth, 1.0/viewHeight);
+	
+  dayNight = step(.5,fract(sunAngle*2.0));
 }
 #endif
 
@@ -94,6 +99,7 @@ uniform float InTheEnd;
 varying vec2 texcoord;
 
 varying vec2 res;
+varying float dayNight;
 
   
 // -- -- -- -- -- -- -- --
@@ -406,7 +412,9 @@ void main() {
     vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35;
 		
 		vec2 debugShadowCdUV = debugShadowUV + vec2(-0.1,-2.15);
-    vec3 shadowCd = texture2D(shadowcolor0, debugShadowCdUV ).rgb;
+		vec2 debugShadowTexUV = 1.0-debugShadowCdUV;
+		debugShadowTexUV.x = mix( debugShadowCdUV.x, 1.0-debugShadowCdUV.x, dayNight );
+    vec3 shadowCd = texture2D(shadowcolor0, debugShadowTexUV ).rgb;
     debugShadowCdUV = abs(debugShadowCdUV-.5);
     float shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
     shadowCd = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
@@ -417,8 +425,10 @@ void main() {
 		// -- -- --
 
 		debugShadowCdUV = debugShadowUV + vec2(-1.2,-2.15);
-    vec4 shadowData = texture2D(shadowcolor1, debugShadowCdUV );
-    shadowCd = texture2D(shadowcolor0, debugShadowCdUV ).rgb;
+		debugShadowTexUV = 1.0-debugShadowCdUV;
+		debugShadowTexUV.x = mix( debugShadowCdUV.x, 1.0-debugShadowCdUV.x, dayNight );
+    vec4 shadowData = texture2D(shadowcolor1, debugShadowTexUV );
+    shadowCd = texture2D(shadowcolor0, debugShadowTexUV ).rgb;
 		shadowData.g = mix( 1.0, shadowData.g, step(0.0,shadowData.g));
 		shadowCd = mix( shadowData.ggg, shadowCd, step(0.5, shadowData.r));
     debugShadowCdUV = abs(debugShadowCdUV-.5);
@@ -449,7 +459,7 @@ void main() {
     float debugBlender = step( .5, uv.x);
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
-  
+	
   // -- -- -- -- -- -- -- -- -- -- -- -- -- --
   
   gl_FragData[0] = vec4(outCd.rgb,1.0);

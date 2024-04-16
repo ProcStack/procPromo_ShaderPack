@@ -165,6 +165,23 @@ vec4 distortShadowShift(vec4 shadowSpacePos) {
   return shadowSpacePos;
 }
 
+vec4 distortShadowShift(vec4 shadowSpacePos, float scalar) {
+  vec2 outUV=shadowSpacePos.xy;
+  outUV.xy = abs(outUV.xy);
+  //
+  float pLen = outUV.x*.5;
+  outUV.x = pow(pLen+shadowAxisBiasPosOffset*scalar, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  pLen = outUV.y*.5;
+  outUV.y = pow(pLen+shadowAxisBiasPosOffset*scalar, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  shadowSpacePos.xy /= outUV;
+  //
+  
+  #ifdef SHADOW
+    //shadowSpacePos.z *= oneThird;
+  #endif
+  return shadowSpacePos;
+}
+
 // -- -- --
  
 void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){

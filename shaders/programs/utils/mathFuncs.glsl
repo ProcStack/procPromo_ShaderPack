@@ -49,6 +49,10 @@ float biasToOne( float value, float bias ){
   return 1.0 - (1.0-min(1.0,value*bias)) * (1.0-min(1.0,value*bias));
 }
 
+float  sigmoid( float value ){
+	return 1.0 / ( 1.0 + exp( -value ) );
+}
+
 // Return max vector component
 float maxComponent(vec2 val){
   return max( val.x, val.y );
