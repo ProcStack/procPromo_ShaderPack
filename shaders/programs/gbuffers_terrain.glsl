@@ -854,8 +854,8 @@ void main() {
   lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), shadowAvg) ;
   
 
-
-  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+	// Add day/night & to sun normal; w/ Sky Brightness limits
+  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 )*skyBrightnessMult;
     
 #endif
     
@@ -957,20 +957,13 @@ void main() {
       float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.4)+glowInf*.8))*depthEnd );
       
       outCd.rgb *= mix(  mix((noiseX*endFogCd*lightCd),endFogCd,noiseInf+depthEnd*.3), vec3(lightInf), noiseInf );
-      //outCd.rgb=lightCd.rgb;//vAvgColor.rgb*lightInf;
-      //outCd.rgb=noiseX;//vAvgColor.rgb*lightInf;
       
 #endif
     
     
-    //if( glowMultVertColor > 0.0 ){
-      //float outCdMin = min(outCd.r, min( outCd.g, outCd.b ) );
+    // Add color to glow
       float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
-      //float outCdMin = max(txCd.r, max( txCd.g, txCd.b ) );
-      glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5)*step(txGlowThreshold,outCdMin)*(depth*.8+.2));
-    //}
-    
-    
+      glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5) * step(txGlowThreshold,outCdMin) * (depth*.8+.2));
     
     glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
 
@@ -981,6 +974,7 @@ void main() {
     outCd.rgb *= mix(1.0, toCamNormalDot, depth*.7+.3);
 #else
     // Block Surface Rolloff
+		//   Helps with block visibility in the dark
     outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*.45+.55), min(1.0,depth*.5+.5+lightCd.r));
 #endif
 
@@ -994,7 +988,7 @@ void main() {
     float frozenSnowGlow = 1.0-smoothstep(.0,.2,BiomeTemp);
     glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.5*(1.0-sunPhaseMult)*max(0.06,-sunMoonShadowInf)*max(0.0,(1.0-depth*3.0)));
 
-    outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-sunMoonShadowInf*.1)*(1.0-rainStrength);//*skyBrightnessMult;
+    outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-sunMoonShadowInf*.1)*(1.0-rainStrength);//;
     
     
 // -- -- -- -- -- -- -- -- -- -- -- 
@@ -1093,18 +1087,8 @@ void main() {
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
 		
-//	outCd.rgb=vec3(  clamp((shadowAvg*2.0)-0.5,0.0,1.0) );
-//	outCd.rgb=vec3(  clamp((shadowAvg*1.4)-0.1,0.0,1.0) );
-	//outCd.rgb=vec3(  shadowData.r * shadowAvg );
-	//outCd.rgb=vec3(  lightCd );
-	//outCd.rgb=vec3(  shadowDepth );
-	//outCd.rgb=vec3(  shadowData.r*(1.0-shadowBase) );
-	//outCd.rgb=vec3(  shadowData.ggg );
-	//outCd.rgb=vec3(  shadowAvg );
-	//outCd.rgb=vec3(  shadowData.b );
-	//outCd.rgb=vec3(  vWorldNormal );
 	
-    outCd = outCd;
+    //outCd.rgb = vec3(surfaceShading);
     outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     outNormal = vec4(vNormal*.5+.5, 1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
