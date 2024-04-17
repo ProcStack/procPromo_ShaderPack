@@ -647,7 +647,7 @@ void main() {
     
     // Default Minecraft Lighting
     vec4 lightLumaCd = texture2D(lightmap, luv);//*.9+.1;
-    float lightLumaBase = lightLumaCd.r;//*.9+.1;
+    float lightLumaBase = clamp(lightLumaCd.r*1.2-.13,0.0,1.0);
     
     txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
     
@@ -835,7 +835,7 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
     
   // Mute Shadows during Rain
-  diffuseSun = mix( diffuseSun, 0.50, rainStrength);          
+  diffuseSun = mix( diffuseSun, 0.50, rainStrength)*skyBrightnessMult;          
   
   lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
@@ -855,7 +855,7 @@ void main() {
   
 
 	// Add day/night & to sun normal; w/ Sky Brightness limits
-  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 )*skyBrightnessMult;
+  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
     
 #endif
     
@@ -1088,7 +1088,9 @@ void main() {
     #endif
 		
 	
-    //outCd.rgb = vec3(surfaceShading);
+    //outCd.rgb = vec3(diffuseSun);
+    //outCd.rgb = vec3(lightCd);
+    //outCd.rgb = vec3(lightLumaBase);
     outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     outNormal = vec4(vNormal*.5+.5, 1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
