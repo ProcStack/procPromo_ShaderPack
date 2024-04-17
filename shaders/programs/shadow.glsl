@@ -61,7 +61,7 @@
 		
     vIsTranslucent = 0.0;
 		// Colored Translucent Blocks; stained glass, water, etc.
-    if ( mc_Entity.x == 301 || mc_Entity.x == 703 || mc_Entity.x == 704 ){
+    if ( mc_Entity.x == 301 || mc_Entity.x == 703 ){
       vIsTranslucent = 1.0;
     }
     

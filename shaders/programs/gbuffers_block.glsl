@@ -531,8 +531,10 @@ void main() {
       
       float pxVal = uvProj.x*-100.0;
       float pyVal = uvProj.y*10.0;
-      uvProj.x += sin( pxVal + pyVal + worldTime*.1)*.007;
-      uvProj += vec2(worldTime*.002,worldTime*.0015);
+			float ftime = float(worldTime);
+      uvProj.x += sin( pxVal + pyVal + uvProj.y*ftime*.025  )*.007;
+      uvProj += vec2(ftime*.001,ftime*.001);
+			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*.00002+sin(uvProj.y*ftime*.007)*.02);
       uvProj = fract(uvProj);
       
       

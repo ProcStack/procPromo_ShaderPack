@@ -132,12 +132,16 @@ void main() {
 	
   // Shadow Prep --
 	// Invert vert  modelVert positions 
-  float depth = min(1.0, length(position.xyz)*.1 );
+  float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position.xyz + gbufferModelViewInverse[3].xyz;
 
   vec3 shadowNormal = gl_Normal;
-  float shadowPushAmmount =  (depth*.5 + .010 ) ;
-  shadowPushAmmount *=  min( 1.0, max(abs(shadowNormal.x), max(shadowNormal.y, abs(shadowNormal.z) )));
+  float shadowPushAmmount =  (depth*.5 + .0010 ) ;
+	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
+	
+	// `+ (0.75-depth*.55)` is scalping fixes
+	sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.55) );
+  shadowPushAmmount *= sNormRef;
   vec3 shadowPush = shadowNormal*shadowPushAmmount ;
   
   shadowPos.xyz = mat3(shadowModelView) * (shadowPosition.xyz+shadowPush) + shadowModelView[3].xyz;
@@ -161,7 +165,7 @@ void main() {
 	skyBrightnessMult=eyeBrightnessFit;
 	
 	// Sun Influence
-	sunPhaseMult = 1.0-max(0.0,dayNight);
+	sunPhaseMult = max(0.0,1.0-max(0.0,dayNight)*2.0);
 	
 	// Moon Influence
 	float moonPhaseMult = min(1.0,float(mod(moonPhase+4,8))*.125);
@@ -190,19 +194,6 @@ void main() {
   //if (mc_Entity.x == 701){
     //color.rgb=avgCd;
   //}
-  // Flowing Lava
-  if (mc_Entity.x == 702){
-    avgCd = texture2D(gcolor, mc_midTexCoord.st);
-    avgCd += texture2D(gcolor, mc_midTexCoord.st+txlquart);
-    avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y));
-    avgCd += texture2D(gcolor, mc_midTexCoord.st-txlquart);
-    avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y));
-    avgCd *= .5;
-    //color.rgb *= vec3(.3,.3,.5)*avgCd;
-  
-    color *= avgCd;//*.3+.7;
-    vTextureInf = 0.0;
-  }
   
   // Water
   if (mc_Entity.x == 703){
@@ -211,19 +202,6 @@ void main() {
     avgCd *= .5;
     //color.rgb=vec3(.35,.35,.85);
     color = color*avgCd;
-    vTextureInf = 0.0;
-  }
-  // Flowing Water
-  if (mc_Entity.x == 704){
-    avgCd = texture2D(gcolor, mc_midTexCoord.st);
-    //avgCd += texture2D(gcolor, mc_midTexCoord.st+txlquart).x;
-    //avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(txlquart.x, -txlquart.y)).x;
-    //avgCd += texture2D(gcolor, mc_midTexCoord.st-txlquart).x;
-    //avgCd += texture2D(gcolor, mc_midTexCoord.st+vec2(-txlquart.x, txlquart.y)).x;
-    //avgCd *= .2;
-    //color.rgb *= vec3(.3,.3,.5)*avgCd;
-    
-    color *= avgCd*.3+.7;
     vTextureInf = 0.0;
   }
   
@@ -333,7 +311,7 @@ void main() {
   outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 ) * lightVal.rgb;
 
 
-	float lightLumaBase = lightVal.r;//*.9+.1;
+	float lightLumaBase = biasToOne( lightVal.r );
 
 
 
@@ -345,7 +323,7 @@ void main() {
   float diffuseSun = 1.0;
   float shadowAvg = 1.0;
   vec4 shadowCd = vec4(0.0);
-  float shadowDepth = 0.0;
+  float reachMult = 0.0;
   
   float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal.xyz)+.2;
   float surfaceShading = 9.0-abs(toCamNormalDot);
@@ -385,40 +363,37 @@ void main() {
 	
 	shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
 	
-  shadowDepth = min(10.0,  shadowData.b + .50 )*4.0;
+  reachMult = min(10.0,  shadowData.b + .50 )*0.55;
 
 
 
 
 #if ShadowSampleCount == 2
   vec2 posOffset;
-  float reachMult = max(0.0, shadowDepth - (min(1.0,depth*20.0)*.5));
+  //float reachMult = reachMult;// - (min(1.0,depth*20.0)*.5);
+  reachMult = max(0.0, reachMult - (min(1.0,depth*20.0)*.5));
   
   for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*.00038828125*skyBrightnessMult;
+    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightnessMult;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, .25);
-		
-    posOffset = axisSamples[x]*reachMult*.00038828125*skyBrightnessMult;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-  
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, .25);
+    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, axisSamplesFit);
   }
-#elif ShadowSampleCount > 2
+#elif ShadowSampleCount == 3
   vec2 posOffset;
-  float reachMult = shadowDepth;
-	
-  for( int x=0; x<axisSamplesCount; ++x){
-		// Box Diagnals
-    posOffset = boxSamples[x]*reachMult*.00038828125;
+  
+  for( int x=0; x<boxSamplesCount; ++x){
+    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, .35);
-		
-		// Box Axes
-    posOffset = boxSamples[x+4]*reachMult*.00028828125;
+    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+  }
+#elif ShadowSampleCount > 3
+  vec2 posOffset;
+  
+  for( int x=0; x<boxSamplesCount; ++x){
+    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, .35);
+    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
   }
 #endif
 

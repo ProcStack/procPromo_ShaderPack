@@ -63,6 +63,7 @@ value.ShadowSampleCount.0=Off
 value.ShadowSampleCount.1=Low
 value.ShadowSampleCount.2=Mid
 value.ShadowSampleCount.3=High
+value.ShadowSampleCount.4=Best
 option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Low, simple shadows, 1 sample.  Mid, mellow shadows, 5 samples. High, goose down pillow soft shadows, 9 samples.
 
 # -- -- --
@@ -74,4 +75,4 @@ value.DebugView.1=Detail Blurring
 value.DebugView.2=Shadow Cam
 value.DebugView.3=Shadow Debug
 value.DebugView.4=Vanilla vs procPromo
-option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Blurring, test blurring methods and side-by-side views.  Shadow Cam, see what the sun & moon see. Left in for funsies.
+option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Blurring, test blurring methods and side-by-side views.  Shadow Cam, see what the sun & moon see.  Shadow Debug, shadow sample positions. Vanilla vs procPromo, side-by-side comparison

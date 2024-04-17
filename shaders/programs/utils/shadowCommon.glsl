@@ -27,6 +27,10 @@ const float sunPathRotation = 0.0;
 const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
 const float shadowIntervalSize = 1.00;
 
+
+const float shadowMaxSaturation = 0.7; // 0.0-1.0; Lower is darker
+const float shadowLightInf = 0.85; // 0.0-1.0; Lower is darker
+
 // Distance from base of shadow to blend in a blurry shadow
 //   Close to shadow is sharp, further is blurred
 const float shadowDistBiasMult = 5.0;

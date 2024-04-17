@@ -1,7 +1,7 @@
 
 #define PROC_PROMO true //[true false]
 
-#define BaseQuality 2 //[0 1 2]
+#define BaseQuality 2 // [0 1 2]
 
 // 'LightBlackLevel' - Found in 'utils/mathFuncs.glsl'
 // 'LightWhiteLevel' - Found in 'utils/mathFuncs.glsl'
