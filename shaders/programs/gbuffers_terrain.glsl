@@ -672,8 +672,8 @@ void main() {
   // -- -- -- -- -- -- -- --
   
     // Use Light Map Data
-    //float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
-    float lightLuma = shiftBlackLevels( biasToOne(lightLumaBase) ); // lightCd.r;
+    float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
+    lightLuma = shiftBlackLevels( biasToOne(lightLuma) ); // lightCd.r;
 
     vec3 lightCd = vec3(lightLuma);
     
@@ -831,12 +831,15 @@ void main() {
 
   fogColorBlend = skyBrightnessMult;
   
+	float lightSunMoonMult = max(lightLuma,dayNightMult);
+	
 	// Kill off shadows on sun far side; prevents artifacts
-  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), clamp(shadowAvg*vNormalSunInf,0.0,1.0)) ;
+  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), clamp(shadowAvg*vNormalSunInf-lightLuma,0.0,1.0))*lightSunMoonMult ;
+  //lightCd = vec3(shadowAvg) ;
 
 
 	// Add day/night & to sun normal; w/ Sky Brightness limits
-  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+  surfaceShading *= mix( 1.0, vNormalSunDot, sunMoonShadowInf*.5+.5 );
     
 #endif
     
@@ -1068,6 +1071,7 @@ void main() {
       debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
+		
 		
 		//outCd.rgb=vec3(shadowAvg);
 		//outCd.rgb=vec3(shadowData.b);
