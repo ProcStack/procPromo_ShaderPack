@@ -364,12 +364,13 @@ void main() {
   vDeltaMult=3.0;
   if( mc_Entity.x == 8012 ){
     vDeltaPow=.80;
+		vDeltaMult=1.75;
   }
   if( mc_Entity.x == 8013 ){
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
   }
-  if( mc_Entity.x == 9011 ){
+  if( mc_Entity.x == 8015 ){
     vDeltaPow=4.0;
     vDeltaMult=1.10;
   }
@@ -749,7 +750,7 @@ void main() {
 	
 	// Higher the value, the softer the shadow
 	//   ...well "softer", distance of multi-sample
-  reachMult = min(10.0,  shadowData.b + 0.50 )*.55;
+  reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
 
   reachMult = max(0.0, reachMult - (min(1.0,outDepth*20.0)*.5));
 
@@ -819,8 +820,8 @@ void main() {
   
   lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
-	lightCd = mix( lightCd, lightCd*(shadowCd.rgb*.5+.85), clamp(shadowData.r*(1.0-shadowBase)
-	                                      //* max(0.0,shadowDepthInf*2.0-1.0)
+	lightCd = mix( lightCd, lightCd*(shadowCd.rgb*.5+.75), clamp(shadowData.r*(1.0-shadowBase)
+	                                      * max(0.0,shadowDepthInf*2.0-1.0)
 																				- shadowData.b*2.0, 0.0, 1.0) );
 	lightLuma = min( maxComponent(lightCd), lightLuma );
 
@@ -924,7 +925,7 @@ void main() {
   // Fit lighting 0-1
       float lightShift=.47441;
       float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
-      float lightInf = min(1.0, (max((lightCd.r-.35)*1.2,lightLumaBase)-lightShift)*lightShiftMult + depthEnd*.4);
+      float lightInf = min(1.0, (max((lightCd.r-.2)*1.2,lightLumaBase)-lightShift)*lightShiftMult + depthEnd*.4);
       
       vec3 endFogCd = fogColor+vec3(.3,.25,.3);
       float timeOffset = (float(worldTime)*0.00004166666)*(30.0);
@@ -935,7 +936,7 @@ void main() {
       vec3 noiseX = texture2D( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
       //vec3 noiseZ = texture2D( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
       
-      float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.4)+glowInf*.8))*depthEnd );
+      float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.3)+glowInf*.8))*depthEnd );
       
       outCd.rgb *= mix(  mix((noiseX*endFogCd*lightCd),endFogCd,noiseInf+depthEnd*.3), vec3(lightInf), noiseInf );
       
@@ -1069,6 +1070,7 @@ void main() {
     #endif
 		
 		//outCd.rgb=vec3(shadowAvg);
+		//outCd.rgb=vec3(shadowData.b);
     outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     outNormal = vec4(vNormal*.5+.5, 1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
