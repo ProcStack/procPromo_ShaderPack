@@ -135,7 +135,8 @@ void main() {
   float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position.xyz + gbufferModelViewInverse[3].xyz;
 
-  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
+  //vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
+  vec3 shadowNormal = gl_Normal;
   float shadowPushAmmount =  (depth*.5 + .0010 ) ;
 	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
 	
@@ -301,7 +302,7 @@ void main() {
   vec4 lightVal = texture2D(lightmap, luv);
   
   vec4 outCd = color;// * vec4(vec3(lightVal),1.0);
-  outCd*= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
+  outCd *= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
   
 	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 
@@ -431,7 +432,7 @@ void main() {
   lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
 	lightCd = mix( lightCd, shadowCd.rgb, clamp(shadowData.r*(1.0-shadowBase)
-	                                      //* max(0.0,shadowDepthInf*2.0-1.0)
+	                                      * max(0.0,shadowDepthInf*2.0-1.0)
 																				- shadowData.b*2.0, 0.0, 1.0) );
 	lightLuma = min( maxComponent(lightCd), lightLuma );
 
@@ -461,7 +462,7 @@ void main() {
     
     
     //outCd.rgb += outCd.rgb * depthBias * surfaceShading *fogColor; // -.2;
-    outCd.rgb *= lightCd.xyz; // -.2;
+    //outCd.rgb *= lightCd.xyz; // -.2;
 #endif
 
 
@@ -503,7 +504,7 @@ void main() {
     float debugBlender = step( .0, vPos.x);
     outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal.xyz, outCd, debugBlender);
   #endif
-
+	
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
