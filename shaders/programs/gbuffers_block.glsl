@@ -8,15 +8,13 @@
 #define THREE_TILES 0.046875
 
 #include "/shaders.settings"
+#include "utils/shadowCommon.glsl"
 
 uniform sampler2D gcolor;
 uniform vec3 sunVec;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
-uniform ivec2 eyeBrightnessSmooth;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
 uniform int blockEntityId;
@@ -33,10 +31,6 @@ attribute vec4 mc_Entity;
 attribute vec2 mc_midTexCoord;
 in vec3 at_velocity; // vertex offset to previous frame
 
-// Glow Pass Varyings --
-varying float blockFogInfluence;
-varying float glowMultVertColor;
-varying float txGlowThreshold;
 // -- -- -- -- -- -- -- --
 
 varying vec4 lmtexcoord;
@@ -59,8 +53,6 @@ varying vec2 vTexelSize;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
-varying float dayNight;
-varying vec4 shadowPos;
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
 
@@ -71,6 +63,26 @@ varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vColorOnly;
+
+#ifdef OVERWORLD
+	// Sun Moon Influence
+	uniform mat4 shadowModelView;
+	uniform mat4 shadowProjection;
+
+	uniform float dayNight;
+	uniform int moonPhase;
+	uniform ivec2 eyeBrightnessSmooth;
+	uniform float eyeBrightnessFit;
+	uniform vec3 shadowLightPosition;
+
+	
+	varying float vNormalSunDot;
+	varying float skyBrightnessMult;
+	varying float dayNightMult;
+	varying float sunPhaseMult;
+	varying vec4 shadowPos;
+#endif
+
 
 
 // == Chocapic13's HighPerformance Toaster; Shadow-space helpers ==
@@ -93,7 +105,6 @@ void main() {
   
   sunVecNorm = normalize(sunPosition);
   upVecNorm = normalize(upPosition);
-  dayNight = dot(sunVecNorm,upVecNorm);
 
   vPos = gl_ProjectionMatrix * gl_Vertex;
   vPos = ftransform();
@@ -102,6 +113,66 @@ void main() {
   vLocalPos = vec4(position,1.0);
   vPos = vec4(position.xyz,1.0);
   //vPos = gbufferProjectionInverse * gbufferModelViewInverse * gl_Vertex;
+
+  vNormal = normalize(normal);
+
+#ifdef OVERWORLD
+  
+  vNormalSunDot = dot(normalize(shadowLightPosition), vNormal.xyz);
+	
+  // Shadow Prep --
+	// Invert vert  modelVert positions 
+  float depth = min(1.5, length(position.xyz)*.015 );
+  vec3 shadowPosition = mat3(gbufferModelViewInverse) * position.xyz + gbufferModelViewInverse[3].xyz;
+
+  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
+  float shadowPushAmmount =  (depth*.5 + .0010 ) ;
+	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
+	
+	// `+ (0.75-depth*.55)` is scalping fixes
+	sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.55) );
+  shadowPushAmmount *= sNormRef;
+  vec3 shadowPush = shadowNormal*shadowPushAmmount ;
+  
+  shadowPos.xyz = mat3(shadowModelView) * (shadowPosition.xyz+shadowPush) + shadowModelView[3].xyz;
+  vec3 shadowProjDiag = diagonal3(shadowProjection);
+  shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);
+  shadowPos.w = 1.0;
+
+  #if ( DebugView == 3 ) // Debug Vision : Shadow Debug
+		// Verts push out on the left side of the screen
+    //   Showing how far its sampling for the shadow base value
+    position.xyz = mat3(gbufferModelView) * (shadowPosition.xyz+shadowPush*clamp(1.0-position.x,0.0,1.0)) + gbufferModelView[3].xyz;
+  #endif
+
+
+	// Sun Moon Influence
+	skyBrightnessMult = 1.0;
+	dayNightMult = 0.0;
+	sunPhaseMult = 1.0;
+
+	// Sky Influence
+	skyBrightnessMult=eyeBrightnessFit;
+	
+	// Sun Influence
+	sunPhaseMult = max(0.0,1.0-max(0.0,dayNight)*2.0);
+	
+	// Moon Influence
+	float moonPhaseMult = min(1.0,float(mod(moonPhase+4,8))*.125);
+	moonPhaseMult = moonPhaseMult*.18 + .018; // Moon's shadowing multiplier
+
+	dayNightMult = mix( 1.0, moonPhaseMult, sunPhaseMult);
+  
+#endif
+
+
+
+
+
+
+
+
+
 
   
   vScreenUV = mat3(gbufferModelViewInverse) * gl_Normal;
@@ -156,7 +227,6 @@ texcoordmid=midcoord;
 
   gl_FogFragCoord = gl_Position.z;
 
-
   
   vec2 texcoordminusmid = texcoord.xy-midcoord;
   texmidcoord = midcoord;
@@ -165,92 +235,15 @@ texcoordmid=midcoord;
   vtexcoord = sign(texcoordminusmid)*0.5+0.5;
   
   
-  vNormal = normalize(normal);
-  
-  //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-
-           
-           
-  // -- -- -- -- -- -- -- --
-
-
-
-  float NdotU = gl_Normal.y*(0.17*15.5/255.)+(0.83*15.5/255.);
-  #ifdef SEPARATE_AO
-  lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU*gl_Color.a)+0.5;
-  #else
-  lmtexcoord.zw = gl_MultiTexCoord1.xy*vec2(15.5/255.0,NdotU)+0.5;
-  #endif
-
-  gl_Position = toClipSpace3(position);
-  float diffuseSun = clamp(dot(normal,sunVec),0.0,1.0);
-
-
-  shadowPos.x = 1e30;
-  //skip shadow position calculations if far away
-  //normal based rejection is useless in vertex shader
-  //if (gl_Position.z < shadowDistance + 28.0){
-  
-    position = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-    
-
-
-  
-    shadowPos.xyz = mat3(shadowModelView) * position.xyz + shadowModelView[3].xyz;
-
-    
-    vec3 shadowProjDiag = diagonal3(shadowProjection);
-    float spdLength = length( shadowProjDiag );
-    shadowPos.xyz = shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz;
-    
-  //}
-
 
   #ifdef SEPARATE_AO
     color.rgb = gl_Color.rgb;
   #else
     color.rgb = gl_Color.rgb*gl_Color.a;
   #endif
-
-  // Left from Sildurs
-  if (mc_Entity.x == 801){
-    shadowPos.w = -2.0;
-    diffuseSun = diffuseSun*0.35+0.4;
-    color.rgb *= 1.1;
-  }
   
   vAlphaMult=1.0;
   vColorOnly=0.0;
-
-  
-  blockFogInfluence = 1.0;
-  glowMultVertColor=0.0;
-  if (mc_Entity.x == 803){
-    blockFogInfluence = 0.2;
-    glowMultVertColor = 0.8;
-  }
-  
-  txGlowThreshold = 1.0; // Off
-  if (mc_Entity.x == 804){
-    txGlowThreshold = .7;
-    blockFogInfluence = 0.6;
-  }
-  
-  
-  // Leaves
-  if (mc_Entity.x == 810 && SolidLeaves){
-    shadowPos.w = -2.0;
-    diffuseSun = diffuseSun*0.35+0.4;
-    //color.rgb *= 1.1;
-    vAlphaMult=0.0;
-    vColorOnly=.001;
-    vAltTextureMap=1.0;
-    //vColorOnly=.0;
-  }
-
-
-
 
 
   // General Alt Texture Reads
@@ -267,13 +260,6 @@ texcoordmid=midcoord;
 
   }
   
-
-  color.a = diffuseSun*gl_MultiTexCoord1.y;
-color.a=1.0;//
-
-  //color = mix( gl_Color, color, eyeBrightnessSmooth.y/240.0);
-  //color = gl_Color;
-
 }
 
 #endif
@@ -300,8 +286,8 @@ const int gnormalFormat = RGB10_A2;
 
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
-#include "utils/texSamplers.glsl"
 #include "utils/shadowCommon.glsl"
+#include "utils/texSamplers.glsl"
 
 
 
@@ -342,15 +328,10 @@ uniform vec4 spriteBounds;
 //uniform float fogDensity;
 //uniform int heldBlockLightValue;
 //uniform int heldBlockLightValue2;
-uniform float rainStrength;
 
 
 uniform vec3 upPosition;
 
-// Glow Pass Varyings --
-varying float blockFogInfluence;
-varying float glowMultVertColor;
-varying float txGlowThreshold;
 // -- -- -- -- -- -- -- --
 
 varying vec4 lmtexcoord;
@@ -374,63 +355,41 @@ varying vec3 vAnimFogNormal;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
-varying float dayNight;
-varying vec4 shadowPos;
 varying float vAlphaMult;
 varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vColorOnly;
 
+#ifdef OVERWORLD
+	// Sun Moon Influence
+	uniform sampler2DShadow shadowtex0;
+	uniform sampler2D shadowcolor0;
+	uniform sampler2D shadowcolor1;
+	uniform float rainStrength;
+	uniform float sunMoonShadowInf;
+	uniform vec3 shadowLightPosition;
+	
+	varying float vNormalSunDot;
+	varying float skyBrightnessMult;
+	varying float dayNightMult;
+	varying float sunPhaseMult;
+	varying vec4 shadowPos;
+#endif
+
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
 
 
 void main() {
-  gl_FragData[0] = texture2D(gcolor, lmtexcoord.xy);
-  float shadowDist = 0.0;
-  vec4 shadowFull=vec4(0.0);
-  //if (gl_FragData[0].a > 0.0 ) {
-    float diffuseSun = color.a/255.;
-#ifdef OVERWORLD
-    if (color.a > 0.0001 && shadowPos.x < 1e10) {
-      float distort = radialBias(shadowPos.xy);
-      vec2 spCoord = shadowPos.xy / distort;
-      if (abs(spCoord.x) < 1.0-1.5/shadowMapResolution && abs(spCoord.y) < 1.0-1.5/shadowMapResolution) {
-          float diffthresh = 0.0006*shadowDistance/45.;
-          if (shadowPos.w > -1.0) diffthresh = 0.0004*2048./shadowMapResolution*shadowDistance/45.*distort/diffuseSun;
-
-          vec3 projectedShadowPosition = vec3(spCoord, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
-          
-          shadowFull = shadow2D(shadow, projectedShadowPosition);
-
-          float shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
-          for( int x=0; x<boxSamplesCount; ++x){
-            projectedShadowPosition = vec3(spCoord+boxSamples[x]*.001, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
-          
-            shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
-          }
-          for( int x=0; x<boxSamplesCount; ++x){
-            projectedShadowPosition = vec3(spCoord+boxSamples[x]*.0015, shadowPos.z) * vec3(0.5,0.5,0.5/3.0) + vec3(0.5,0.5,0.5-diffthresh);
-          
-            shadowAvg = mix( shadowAvg, shadow2D(shadow, projectedShadowPosition).x, .1);
-          }
-          diffuseSun *= shadowAvg;
-      }
-    }
-#endif
-    
-    // Mute Shadows during Rain
-    //diffuseSun = mix( diffuseSun*.8+.2, 1.0, rainStrength);
-    
     
     float colorValue =  rgb2hsv(color.rgb).z;
-    float blockShading = diffuseSun * (sin( colorValue*PI*.5 )*.5+.5);
+    float blockShading = color.a * (sin( colorValue*PI*.5 )*.5+.5);
     
-    vec3 lightmapcd = texture2D(gaux1,lmtexcoord.zw*texelSize).xyz;
-    vec3 diffuseLight = mix(lightmapcd, vec3(1,1,1),.7)*blockShading;// * lightmapcd;
-    vec3 lightingHSV = rgb2hsv(diffuseLight);
+    vec3 diffuseLight = vec3(0.0);
+
     
+	
     vec2 tuv = texcoord.st;
     if( vAltTextureMap > .5 ){
       tuv = texcoord.zw;
@@ -463,9 +422,10 @@ void main() {
     
     
     vec4 lightBaseCd = texture2D(lightmap, luv);
+		float lightLumaBase = biasToOne( lightBaseCd.r );
     vec3 lightCd = lightBaseCd.rgb; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5);
     lightCd.rgb *= LightWhiteLevel;
-    //vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
+    vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
     
 #ifdef OVERWORLD
     vec4 blockLumVal =  vec4(lightCd,1.0);
@@ -477,42 +437,170 @@ void main() {
     vec4 blockLumVal =  vec4(1,1,1,1);
 #endif
 
-    float lightLuma = luma(blockLumVal.rgb);
-    
-    // Set base color
-    vec4 outCd = vec4(txCd.rgb,1.0) * color;
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(color.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
-    outCd = mix( outCd,  vec4(avgColor.rgb,1.0), vColorOnly*(1.0-depthBias*.3));
-    
-    // Sun/Moon Lighting
-    //float toCamNormalDot = dot(normalize(-vLocalPos.xyz*vec3(1.0,.91,1.0)),vNormal);
-    //float surfaceShading = 1.0-abs(toCamNormalDot);
 
+
+
+
+
+
+  // -- -- -- -- -- -- -- --
+  // Based on shadow lookup from Chocapic13's HighPerformance Toaster
+  //
+  float shadowDist = 0.0;
+  float diffuseSun = 1.0;
+  float shadowAvg = 1.0;
+  vec4 shadowCd = vec4(0.0);
+  float reachMult = 0.0;
+  
+  float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal.xyz)+.2;
+  float surfaceShading = 9.0-abs(toCamNormalDot);
+
+  float fogColorBlend = 1.0;
+  
+    // -- -- -- -- -- -- -- -- -- -- -- --
+    // -- Shadow Sampling & Influence - -- --
+    // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
-    
-    float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
-    moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
-    moonPhaseMult = (moonPhaseMult*.4+.1);
-    
-    diffuseLight *= mix( moonPhaseMult, 1.0, clamp(dayNight*2.0+.5, 0.0, 1.0) );
+		float lightLuma = shiftBlackLevels( lightLumaBase ); // lightCd.r;
 
-    //surfaceShading *= mix( .55*moonPhaseMult, dot(sunVecNorm,vNormal)*.15+.05, dayNight*.5+.5 );
-    //surfaceShading *= max(0.0,dot( sunVecNorm, upVecNorm));
-    //surfaceShading *= (1.0-rainStrength)*.5+.5;
+    
+#if ShadowSampleCount > 0
+
+  vec3 localShadowOffset = shadowPosOffset;
+  localShadowOffset.z *= (skyBrightnessMult*.5+.5);
+  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(2.0-depthBias)) * shadowThreshold );
+  
+  vec4 shadowPosLocal = shadowPos;
+
+	// 
+  shadowPosLocal = distortShadowShift( shadowPosLocal );
+  vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+  
+	// Get base shadow value
+  float shadowBase=shadow2D(shadowtex0, projectedShadowPosition).x; 
+	shadowAvg = shadowBase ;
+	
+	// Get base shadow source block color
+  shadowCd=texture2D(shadowcolor0, projectedShadowPosition.xy); 
+	
+	// Get shadow source distance
+	// Delta of frag shadow distance * shadowDistBiasMult
+	vec3 shadowData = texture2D(shadowcolor1, projectedShadowPosition.xy).rgg;
+	shadowData.b = ( shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
+	
+	shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
+	
+  reachMult = min(10.0,  shadowData.b + .50 )*0.55;
+
+
+
+
+#if ShadowSampleCount == 2
+  vec2 posOffset;
+  //float reachMult = reachMult;// - (min(1.0,depth*20.0)*.5);
+  reachMult = max(0.0, reachMult - (min(1.0,depth*20.0)*.5));
+  
+  for( int x=0; x<axisSamplesCount; ++x){
+    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightnessMult;
+    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+  
+    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, axisSamplesFit);
+  }
+#elif ShadowSampleCount == 3
+  vec2 posOffset;
+  
+  for( int x=0; x<boxSamplesCount; ++x){
+    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
+    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+  }
+#elif ShadowSampleCount > 3
+  vec2 posOffset;
+  
+  for( int x=0; x<boxSamplesCount; ++x){
+    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
+    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+  }
 #endif
+
+  
+  float shadowDepthInf = clamp( (depth*distancDarkenMult), 0.0, 1.0 );
+  shadowDepthInf *= shadowDepthInf;
+	
+	// Verts not facing the sun should never have non-1.0 shadow values
+	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, min(1.0,step(-.01,vNormalSunDot)*shadowDepthInf));
+
+  // Distance Rolloff
+  shadowAvg = shadowAvg + min(1.0, (length(vLocalPos.xz)*.0025)*1.5);
+  
+  float shadowInfFit = 0.025;
+  float shadowInfFitInv = 40.0;// 1.0/shadowInfFit;
+  float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal.xyz)))*shadowInfFitInv )*1.5);
+  
+  
+  // -- -- --
+  //  Distance influence of surface shading --
+  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * (1-rainStrength) * dayNightMult;
+  // -- -- --
+  diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf * shadowSurfaceInf );
+
+#endif
+
+
+  // -- -- -- -- -- -- -- --
+  // -- Lighting & Diffuse - --
+  // -- -- -- -- -- -- -- -- -- --
     
-    //float envBrightness = eyeBrightnessSmooth.y/240.0;
-    //outCd.rgb += mix(fogColor,vec3(lightLuma),gl_FragCoord.w) * surfaceShading *.5 ;
+  // Mute Shadows during Rain
+  diffuseSun = mix( diffuseSun, 0.50, rainStrength);          
+  
+  lightCd = max( lightCd, diffuseSun);
+	// Mix translucent color
+	lightCd = mix( lightCd, shadowCd.rgb, clamp(shadowData.r*(1.0-shadowBase)
+	                                      //* max(0.0,shadowDepthInf*2.0-1.0)
+																				- shadowData.b*2.0, 0.0, 1.0) );
+	lightLuma = min( maxComponent(lightCd), lightLuma );
+
+  // Strength of final shadow
+  outCd.rgb *= mix(max(vec3(shadowAvg),lightCd*.7), vec3(1.0),shadowAvg);
+	//outCd.rgb = mix(lightCd*shadowAvg, outCd.rgb, shadowCd.a);
+	
+
+  fogColorBlend = skyBrightnessMult;
+  
+  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), shadowAvg) ;
+  
+
+
+  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+    
+  // Apply Black Level Shift from User Settings
+  //   Since those set to 0 would be rather low,
+  //     Default is to run black shift with no check.
+    lightCd = shiftBlackLevels( lightCd );
+    surfaceShading = max( surfaceShading, lightCd.r );
+    surfaceShading = shiftBlackLevels( surfaceShading );
+    
+  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+  // -- 'Specular' Roll-Off; Radial Highlights -- --
+  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
     
     
-    // Lighting influence
-    //outCd.rgb *=  lightLuma+glowInf;
+    //outCd.rgb += outCd.rgb * depthBias * surfaceShading *fogColor; // -.2;
+    outCd.rgb *= lightCd.xyz; // -.2;
+#endif
+
+
+
 
     
-    
-  outCd.rgb *= lightCd;
-
-    
+		
+		
+		
+		
+		
+		
     
     float glowValueMult = 1.0;
     

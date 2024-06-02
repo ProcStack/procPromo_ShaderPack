@@ -135,7 +135,7 @@ void main() {
   float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position.xyz + gbufferModelViewInverse[3].xyz;
 
-  vec3 shadowNormal = gl_Normal;
+  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
   float shadowPushAmmount =  (depth*.5 + .0010 ) ;
 	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
 	

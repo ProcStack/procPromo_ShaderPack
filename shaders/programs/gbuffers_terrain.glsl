@@ -195,12 +195,14 @@ void main() {
   float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
   float shadowPushAmmount =  (depth + .0010 ) ;
-	float sNormRef = max(abs(vWorldNormal.x), abs(vWorldNormal.z) );
+	
+  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
+	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
 	
 	// `+ (0.75-depth*.55)` is scalping fixes
-	sNormRef = max( -vWorldNormal.y*depth, sNormRef + (0.75+depth*.55) );
+	sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.55) );
   shadowPushAmmount *= sNormRef;
-  vec3 shadowPush = vWorldNormal*shadowPushAmmount ;
+  vec3 shadowPush = shadowNormal*shadowPushAmmount ;
   
   shadowPos.xyz = mat3(shadowModelView) * (shadowPosition.xyz+shadowPush) + shadowModelView[3].xyz;
   vec3 shadowProjDiag = diagonal3(shadowProjection);
@@ -233,8 +235,8 @@ void main() {
 	
 	// Moon Influence
 	float moonPhaseMult = min(1.0,float(mod(moonPhase+4,8))*.125);
-	//moonPhaseMult = moonPhaseMult;// - max(0.0, moonPhaseMult-0.50)*2.0;
-	moonPhaseMult = moonPhaseMult*.18 + .018; // Moon's shadowing multiplier
+	moonPhaseMult = moonPhaseMult - max(0.0, moonPhaseMult-0.50)*2.0;
+	moonPhaseMult = moonPhaseMult*.28 + .075; // Moon's shadowing multiplier
 
 	dayNightMult = mix( 1.0, moonPhaseMult, sunPhaseMult);
   
@@ -344,9 +346,8 @@ void main() {
   vDepthAvgColorInf = 1.0;
 
 
-  if( mc_Entity.x == 801 ||  mc_Entity.x == 811  || mc_Entity.x == 8014 ){
+  if( mc_Entity.x == 801 || mc_Entity.x == 811 || mc_Entity.x == 8014 ){
     vColorOnly = mc_Entity.x == 801 ? 0.85 : 0.0;
-    //vColorOnly = mc_Entity.x == 811 ? vColor.b*.5 : vColorOnly;
     vAvgColor*=vColor;
     vDepthAvgColorInf=vColor.r;
   }
@@ -362,6 +363,10 @@ void main() {
   // Ore Detail Blending Mitigation
   vDeltaPow=1.8;
   vDeltaMult=3.0;
+  if( mc_Entity.x == 811 ){
+		vDeltaPow=2.5;
+    vDeltaMult=2.0;
+	}
   if( mc_Entity.x == 8012 ){
     vDeltaPow=.80;
 		vDeltaMult=1.75;
@@ -672,10 +677,11 @@ void main() {
   // -- -- -- -- -- -- -- --
   
     // Use Light Map Data
-    float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
-    lightLuma = shiftBlackLevels( biasToOne(lightLuma) ); // lightCd.r;
+    //float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
+    //float lightLuma = ( clamp((lightLumaBase) * 1.560544217687075, 0.0, 1.0) ); // lightCd.r;
+    float lightLuma = shiftBlackLevels( biasToOne(lightLumaBase) ); // lightCd.r;
 
-    vec3 lightCd = vec3(lightLuma);
+    vec3 lightCd = vec3(lightLuma);//vec3(max(lightLumaBase,lightLuma));
     
   // -- -- -- -- -- -- -- --
 
@@ -800,7 +806,7 @@ void main() {
   
   // -- -- --
   //  Distance influence of surface shading --
-  shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightnessMult * (1-rainStrength);
+  shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightnessMult * (1-rainStrength) * dayNightMult;
   // -- -- --
   // TODO : Needed?  Depth based shadowings
   //diffuseSun *= mix( 0.0, shadowAvg, sunMoonShadowInf * shadowDepthInf * shadowSurfaceInf );
@@ -823,23 +829,22 @@ void main() {
 	lightCd = mix( lightCd, lightCd*(shadowCd.rgb*.5+.75), clamp(shadowData.r*(1.0-shadowBase)
 	                                      * max(0.0,shadowDepthInf*2.0-1.0)
 																				- shadowData.b*2.0, 0.0, 1.0) );
-	lightLuma = min( maxComponent(lightCd), lightLuma );
-
+	
   // Strength of final shadow
   outCd.rgb *= mix(max( vec3(min(1.0,shadowAvg+lightLuma*shadowLightInf)), lightCd*shadowMaxSaturation), vec3(1.0),shadowAvg);
 	
 
+	lightLuma = min( maxComponent(lightCd), lightLuma );
   fogColorBlend = skyBrightnessMult;
   
-	float lightSunMoonMult = max(lightLuma,dayNightMult);
 	
 	// Kill off shadows on sun far side; prevents artifacts
-  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), clamp(shadowAvg*vNormalSunInf-lightLuma,0.0,1.0))*lightSunMoonMult ;
-  //lightCd = vec3(shadowAvg) ;
+  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg))*lightLuma, clamp(shadowAvg*vNormalSunInf,0.0,1.0)) ;
+  //lightCd = vec3(lightLuma) ;
 
 
 	// Add day/night & to sun normal; w/ Sky Brightness limits
-  surfaceShading *= mix( 1.0, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
     
 #endif
     
@@ -1072,9 +1077,6 @@ void main() {
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
 		
-		
-		//outCd.rgb=vec3(shadowAvg);
-		//outCd.rgb=vec3(shadowData.b);
     outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     outNormal = vec4(vNormal*.5+.5, 1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
