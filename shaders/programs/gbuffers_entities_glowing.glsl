@@ -97,6 +97,8 @@ const int gnormalFormat = RGB10_A2;
 const int colortex9Format = RGBA16F;
  -- */
 
+#include "/shaders.settings"
+
 uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform sampler2D normals;

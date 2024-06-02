@@ -17,14 +17,6 @@ void main() {
 
 /* RENDERTARGETS: 6 */
 
-#ifndef GLOW_REACH
-  #define GLOW_REACH 1.0
-#endif
-
-#ifndef GLOW_PERC
-  #define GLOW_PERC 1.0
-#endif
-
 #include "/shaders.settings"
 //#include "utils/texSampler.glsl"
 
@@ -79,7 +71,7 @@ void main() {
   float sCdMax = (sampleCd.r+sampleCd.g+sampleCd.b)*0.5773502691896258;// .33333;
   float reachDist = sampleCd.a;
 
-  reachDist*=GLOW_PERC * GLOW_REACH * GlowBrightness;//*2.0;
+  reachDist *= GLOW_PERC2 * GLOW_REACH * GlowBrightness;//*2.0;
   //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0)*.1);
 
   int reachSteps = 7 + BaseQuality*6 ;

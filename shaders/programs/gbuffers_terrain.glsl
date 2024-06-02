@@ -116,7 +116,8 @@ const mat4 LIGHT_TEXTURE_MATRIX = mat4(vec4(0.00390625, 0.0, 0.0, 0.0), vec4(0.0
 void main() {
   vec3 normal = normalMatrix * vaNormal;
   vec3 basePos = vaPosition + chunkOffset ;
-  vec3 position = mat3(gbufferModelView) * basePos + gbufferModelView[3].xyz;
+  //vec3 position = mat3(gbufferModelView) * basePos + gbufferModelView[3].xyz;
+  vec3 position = (gbufferModelView * vec4(basePos,1.0)).xyz;
   vWorldNormal = vaNormal;
   vNormal = normalize(normal);
   vNormalSunDot = dot(normalize(shadowLightPosition), vNormal);
@@ -129,7 +130,7 @@ void main() {
 
   vLocalPos = basePos;
   vWorldPos = gbufferProjection * vec4(position,1.0);
-  gl_Position = ftransform();
+  gl_Position = ftransform();//gbufferProjection * gbufferModelView * vec4(basePos,1.0);//vWorldPos;//ftransform();
 
   vPos = vec4(position,1.0);
   
@@ -149,7 +150,7 @@ void main() {
   vec3 mixColor;
   vec4 tmpCd;
   float avgDiv = 0.0;
-  tmpCd = texture2D(gcolor, midcoord);
+  tmpCd = texture(gcolor, midcoord);
     mixColor = tmpCd.rgb;
     avgDiv += tmpCd.a;
   #if (BaseQuality > 1)
@@ -391,7 +392,7 @@ void main() {
     vCdGlow=.1;
     vIsLava=0.7;
 #endif
-    vColor.rgb = mix( vAvgColor.rgb, texture2D(gcolor, midcoord).rgb, .5 );
+    vColor.rgb = mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .5 );
   }
   
   // Fire / Soul Fire
@@ -430,12 +431,12 @@ void main() {
   if (mc_Entity.x == 909){
     vCdGlow = 0.1;
     vAvgColor.rgb = vec3(.35,.15,.7);
-    //vColor.rgb = mix( vAvgColor.rgb, texture2D(gcolor, midcoord).rgb, .7 );
+    //vColor.rgb = mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .7 );
   }
   // Amethyst Clusters
   if (mc_Entity.x == 910){
     vCdGlow = 0.1;
-    //vColor.rgb = vAvgColor.rgb;//mix( vAvgColor.rgb, texture2D(gcolor, midcoord).rgb, .5 );
+    //vColor.rgb = vAvgColor.rgb;//mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .5 );
   }
 
 }
@@ -587,7 +588,7 @@ in float vShadowValid;
 void main() {
   
     vec2 tuv = texcoord;
-		vec4 baseTxCd=texture2D(gcolor, tuv);
+		vec4 baseTxCd=texture(gcolor, tuv);
 		
 		// TODO : Remove need for 'txCd' variable
     vec4 txCd=vec4(1.0,1.0,0.0,1.0);
@@ -637,7 +638,7 @@ void main() {
         diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
       #endif
     }else{
-      txCd = texture2D(gcolor, tuv);
+      txCd = texture(gcolor, tuv);
     }
 
     
@@ -646,7 +647,7 @@ void main() {
     
     
     // Default Minecraft Lighting
-    vec4 lightLumaCd = texture2D(lightmap, luv);//*.9+.1;
+    vec4 lightLumaCd = texture(lightmap, luv);//*.9+.1;
     float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.2-.13,0.0,1.0);
     
     txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
@@ -671,7 +672,7 @@ void main() {
     // Side by side of active blurring and no blurring
     //   Other shader effects still applied though
     #if ( DebugView == 1 )
-      txCd = mix( texture2D(gcolor, tuv), txCd, step(0.0, screenSpace.x+.75) );
+      txCd = mix( texture(gcolor, tuv), txCd, step(0.0, screenSpace.x+.75) );
     #endif
 
   // -- -- -- -- -- -- -- --
@@ -745,11 +746,11 @@ void main() {
 	
 	// Get base shadow source block color
 	projectedShadowPosition = projectedShadowPosition + localShadowOffset;
-  shadowCd=texture2D(shadowcolor0, projectedShadowPosition.xy); 
+  shadowCd=texture(shadowcolor0, projectedShadowPosition.xy); 
 	
 	// Get shadow source distance
 	// Delta of frag shadow distance * shadowDistBiasMult
-	vec3 shadowData = texture2D(shadowcolor1, projectedShadowPosition.xy).rgg;
+	vec3 shadowData = texture(shadowcolor1, projectedShadowPosition.xy).rgg;
 	shadowData.b = ( shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
 	
 	shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
@@ -938,11 +939,11 @@ void main() {
       vec3 endFogCd = fogColor+vec3(.3,.25,.3);
       float timeOffset = (float(worldTime)*0.00004166666)*(30.0);
       vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
-      worldPos = ( worldPos+texture2D( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
+      worldPos = ( worldPos+texture( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
 
   // RGB Depth Based Noise for final influence
-      vec3 noiseX = texture2D( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
-      //vec3 noiseZ = texture2D( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
+      vec3 noiseX = texture( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
+      //vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
       
       float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.3)+glowInf*.8))*depthEnd );
       
@@ -1063,8 +1064,8 @@ void main() {
     
     
     #if ( DebugView == 4 )
-      vec4 debugCd = texture2D(gcolor, tuv);
-      vec4 debugLightCd = texture2D(lightmap, luv);
+      vec4 debugCd = texture(gcolor, tuv);
+      vec4 debugLightCd = texture(lightmap, luv);
       
       float debugBlender = step( .0, screenSpace.x);
       float debugFogInf = min(1.0,depth*2.0);

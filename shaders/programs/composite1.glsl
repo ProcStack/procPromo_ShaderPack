@@ -4,6 +4,7 @@
 // Glow Color down res pass; 40% res
 //   Output - colortex8
 
+
 #ifdef VSH
 
 varying vec2 texcoord;
@@ -18,13 +19,6 @@ void main() {
 #ifdef FSH
 /* RENDERTARGETS: 5 */
 
-#ifndef GLOW_REACH
-  #define GLOW_REACH 1.0
-#endif
-
-#ifndef GLOW_PERC
-  #define GLOW_PERC 1.0
-#endif
 
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
@@ -71,13 +65,13 @@ void main() {
   vec3 sampleCd = texture2D(colortex6, texcoord).rgb;
   float sampleDepth = texture2D(colortex1, texcoord).x;
 
-  float depthInf = GLOW_PERC * GLOW_REACH * GlowBrightness*2.0;
+  float depthInf = GLOW_PERC1 * GLOW_REACH * GlowBrightness*2.0;
 
   float glowBrightness = sampleCd.b;// * sampleCd.b;
   
   vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize*20.0*glowBrightness*sampleDepth*depthInf);
   //baseBloomCd = max(baseBloomCd, boxBlurSampleHSV(colortex6, texcoord, texelSize*15.0*sampleDepth*depthInf));
-  baseBloomCd.b *= GLOW_PERC;
+  baseBloomCd.b *= GLOW_PERC1;
   baseBloomCd = hsv2rgb(baseBloomCd);
 
   gl_FragData[0] = vec4(baseBloomCd, 1.0);//sampleDepth*.9+.1);

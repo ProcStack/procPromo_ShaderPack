@@ -6,6 +6,4 @@
 
 #define FSH
 
-#define GLOW_REACH 0.50
-
 #include "/programs/composite2.glsl"

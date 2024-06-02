@@ -555,7 +555,7 @@ void main() {
   // Mute Shadows during Rain
   diffuseSun = mix( diffuseSun, 0.50, rainStrength);          
   
-  lightCd = max( lightCd, diffuseSun);
+  //lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
 	lightCd = mix( lightCd, shadowCd.rgb, clamp(shadowData.r*(1.0-shadowBase)
 	                                      //* max(0.0,shadowDepthInf*2.0-1.0)
@@ -563,17 +563,18 @@ void main() {
 	lightLuma = min( maxComponent(lightCd), lightLuma );
 
   // Strength of final shadow
-  outCd.rgb *= mix(max(vec3(shadowAvg),lightCd*.7), vec3(1.0),shadowAvg);
+  //outCd.rgb *= mix(max(vec3(shadowAvg),lightCd), vec3(1.0),shadowAvg);
+  //outCd.rgb *= mix(max(vec3(shadowAvg),lightCd), vec3(1.0),shadowAvg);
 	//outCd.rgb = mix(lightCd*shadowAvg, outCd.rgb, shadowCd.a);
 	
 
   fogColorBlend = skyBrightnessMult;
   
-  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), shadowAvg) ;
-  
+  lightCd = min(vec3(min(1.0,lightLumaBase*1.5)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
+  outCd.rgb*=lightCd;
 
 
-  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+  surfaceShading *= mix( dayNightMult, max(0.0,vNormalSunDot), sunMoonShadowInf*.5+.5 );
     
   // Apply Black Level Shift from User Settings
   //   Since those set to 0 would be rather low,
@@ -588,7 +589,7 @@ void main() {
     
     
     //outCd.rgb += outCd.rgb * depthBias * surfaceShading *fogColor; // -.2;
-    outCd.rgb *= lightCd.xyz; // -.2;
+    outCd.rgb *= lightCd.xyz*1.1; // -.2;
 #endif
 
 

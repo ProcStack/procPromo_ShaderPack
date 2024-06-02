@@ -36,7 +36,7 @@ varying vec4 color;
 varying vec4 lmcoord;
 
 varying vec4 vPos;
-varying vec4 vNormal;
+varying vec3 vNormal;
 varying float vNormalSunDot;
 varying vec3 vAvgColor;
 varying float vAvgColorBlend;
@@ -54,6 +54,7 @@ varying float vAvgColorBlend;
 	uniform vec3 shadowLightPosition;
 
 	
+	varying vec3 vLocalPos;
 	varying float skyBrightnessMult;
 	varying float dayNightMult;
 	varying float sunPhaseMult;
@@ -65,13 +66,14 @@ varying float vAvgColorBlend;
 void main() {
 
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
-
+	vLocalPos = position.xyz;
   
   vPos = gl_ProjectionMatrix * position;
   gl_Position = vPos;
   
   vPos = gl_ModelViewMatrix * gl_Vertex;
 
+  vNormal = normalize(gl_NormalMatrix * gl_Normal);
 
   color = gl_Color;
   color.a=1.0;
@@ -88,7 +90,7 @@ void main() {
 
 #ifdef OVERWORLD
   
-  vNormalSunDot = dot(normalize(shadowLightPosition), vNormal.xyz);
+  vNormalSunDot = dot(normalize(shadowLightPosition), vNormal);
 	
   // Shadow Prep --
 	// Invert vert  modelVert positions 
@@ -144,8 +146,7 @@ void main() {
   vtexcoordam.st = min(texcoord.xy ,midcoord-texcoordminusmid);
   
   
-  vNormal.xyz = normalize(gl_NormalMatrix * gl_Normal);
-  vNormal.a = 0.02;
+  vNormal = normalize(gl_NormalMatrix * gl_Normal);
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
@@ -221,7 +222,7 @@ varying vec2 texcoordmid;
 varying vec4 vtexcoordam;
 
 varying vec4 vPos;
-varying vec4 vNormal;
+varying vec3 vNormal;
 varying float vNormalSunDot;
 varying vec3 vAvgColor;
 varying float vAvgColorBlend;
@@ -274,7 +275,7 @@ void main() {
   //avgColorBlender = min(1.0, avgColorBlender-(baseCd.r*baseCd.g*baseCd.b)*2.0);
   outCd.rgb =  mix( baseCd.rgb, outCd.rgb, avgColorBlender );
   
-  float highlights = dot(normalize(sunPosition),vNormal.xyz);
+  float highlights = dot(normalize(sunPosition),vNormal);
   highlights = (highlights-.5)*0.3;
 
   float outEffectGlow = 0.0;
@@ -299,7 +300,7 @@ void main() {
   vec4 shadowCd = vec4(0.0);
   float reachMult = 0.0;
   
-  float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal.xyz)+.2;
+  float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal)+.2;
   float surfaceShading = 9.0-abs(toCamNormalDot);
 
   float fogColorBlend = 1.0;
@@ -383,7 +384,7 @@ void main() {
   
   float shadowInfFit = 0.025;
   float shadowInfFitInv = 40.0;// 1.0/shadowInfFit;
-  //float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal.xyz)))*shadowInfFitInv )*1.5);
+  //float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))*shadowInfFitInv )*1.5);
   float shadowSurfaceInf = min(1.0, max(0.0,shadowInfFit*shadowInfFitInv )*1.5);
   
   
@@ -403,7 +404,7 @@ void main() {
   // Mute Shadows during Rain
   diffuseSun = mix( diffuseSun, 0.50, rainStrength);          
   
-  lightCd = max( lightCd, diffuseSun);
+  //lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
 	lightCd = mix( lightCd, shadowCd.rgb, clamp(shadowData.r*(1.0-shadowBase)
 	                                      //* max(0.0,shadowDepthInf*2.0-1.0)
@@ -411,17 +412,18 @@ void main() {
 	lightLuma = min( maxComponent(lightCd), lightLuma );
 
   // Strength of final shadow
-  outCd.rgb *= mix(max(vec3(shadowAvg),lightCd*.7), vec3(1.0),shadowAvg);
+  //outCd.rgb *= mix(max(vec3(shadowAvg),lightCd), vec3(1.0),shadowAvg);
+  //outCd.rgb *= mix(max(vec3(shadowAvg),lightCd), vec3(1.0),shadowAvg);
 	//outCd.rgb = mix(lightCd*shadowAvg, outCd.rgb, shadowCd.a);
 	
 
   fogColorBlend = skyBrightnessMult;
   
-  lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), shadowAvg) ;
-  
+  lightCd = min(vec3(min(1.0,lightLumaBase*1.5)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
+  outCd.rgb*=lightCd;
 
 
-  surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+  surfaceShading *= mix( dayNightMult, max(0.0,vNormalSunDot), sunMoonShadowInf*.5+.5 );
     
   // Apply Black Level Shift from User Settings
   //   Since those set to 0 would be rather low,
@@ -436,7 +438,7 @@ void main() {
     
     
     //outCd.rgb += outCd.rgb * depthBias * surfaceShading *fogColor; // -.2;
-    outCd.rgb *= lightCd.xyz; // -.2;
+    outCd.rgb *= lightCd.xyz*1.1; // -.2;
 #endif
 
 
@@ -454,8 +456,7 @@ void main() {
   outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
 //outCd.rgb=vec3(avgColorBlender);// * color.rgb);
 
-
-	//outCd.rgb = vec3(vNormalSunDot);
+//outCd.rgb=vec3(shadowData.bbb);
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(depth, outEffectGlow, 0.0, 1.0);
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);

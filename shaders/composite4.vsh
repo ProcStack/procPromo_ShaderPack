@@ -2,7 +2,7 @@
 
 #define OVERWORLD
 
-#define composite3
+#define composite4
 
 #define VSH
 
