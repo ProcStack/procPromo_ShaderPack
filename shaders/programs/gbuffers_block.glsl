@@ -570,7 +570,8 @@ void main() {
 
   fogColorBlend = skyBrightnessMult;
   
-  lightCd = min(vec3(min(1.0,lightLumaBase*1.5)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
+  lightCd = min(vec3(min(1.0,lightLumaBase)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
+	lightCd = mix( vec3(lightLumaBase), lightCd.rgb, skyBrightnessMult);
   outCd.rgb*=lightCd;
 
 
@@ -645,7 +646,7 @@ void main() {
     debugCdMult = step(.998, debugCdMult);
     outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
   #endif
-  
+	
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);

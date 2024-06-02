@@ -36,6 +36,7 @@ varying vec4 color;
 varying vec4 lmcoord;
 
 varying vec4 vPos;
+varying vec3 vLocalPos;
 varying vec3 vNormal;
 varying float vNormalSunDot;
 varying vec3 vAvgColor;
@@ -54,7 +55,6 @@ varying float vAvgColorBlend;
 	uniform vec3 shadowLightPosition;
 
 	
-	varying vec3 vLocalPos;
 	varying float skyBrightnessMult;
 	varying float dayNightMult;
 	varying float sunPhaseMult;
@@ -316,7 +316,7 @@ void main() {
 
   vec3 localShadowOffset = shadowPosOffset;
   localShadowOffset.z *= (skyBrightnessMult*.5+.5);
-  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase*4.0 + shadowThreshDist*(2.0-depthBias)) * shadowThreshold );
+  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(2.0-depthBias)) * shadowThreshold );
   
   vec4 shadowPosLocal = shadowPos;
 
@@ -419,7 +419,8 @@ void main() {
 
   fogColorBlend = skyBrightnessMult;
   
-  lightCd = min(vec3(min(1.0,lightLumaBase*1.5)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
+  lightCd = min(vec3(min(1.0,lightLumaBase)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
+	lightCd = mix( vec3(lightLumaBase), lightCd.rgb, skyBrightnessMult);
   outCd.rgb*=lightCd;
 
 
@@ -454,9 +455,8 @@ void main() {
   float entityCd = maxComponent(entityColor.rgb);
   lightCd = vec3( lightCd.r );// * (1.0+rainStrength*.2));
   outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
-//outCd.rgb=vec3(avgColorBlender);// * color.rgb);
 
-//outCd.rgb=vec3(shadowData.bbb);
+
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(depth, outEffectGlow, 0.0, 1.0);
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);

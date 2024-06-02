@@ -44,8 +44,8 @@ const float shadowAxisBiasPosOffset = 0.02;
 // Peter-Pan'ing / Shadow Surface Offset
 const float shadowThreshold = shadowDistance/(shadowMapFov*.5);
 // Shadow Biases; Scalping Reduction
-const float shadowThreshBase = 0.000006; // Bias near to Camera
-const float shadowThreshDist = 0.000016; // Bias far from Camera
+const float shadowThreshBase = 0.00001; // Bias near to Camera
+const float shadowThreshDist = 0.000026; // Bias far from Camera
 
 const float oneThird = 1.0 / 3.0;
 

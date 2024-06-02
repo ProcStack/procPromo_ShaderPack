@@ -195,7 +195,7 @@ void main() {
 	// Invert vert  modelVert positions 
   float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-  float shadowPushAmmount =  (depth*.1 + .00010 ) ;
+  float shadowPushAmmount =  (depth*.2 + .00030 ) ;
 	
   vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
 	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
