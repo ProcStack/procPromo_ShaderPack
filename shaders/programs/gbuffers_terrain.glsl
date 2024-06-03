@@ -343,7 +343,7 @@ void main() {
   }
 
 
-  // General Alt Texture Reads
+  // Depth-based texture detail smoothing
   vDepthAvgColorInf = 1.0;
 
 
@@ -383,7 +383,6 @@ void main() {
 
   
   
-  
   // Lava
   if( mc_Entity.x == 701 ){
     vIsLava=0.85;
@@ -397,10 +396,10 @@ void main() {
   
   // Fire / Soul Fire
   if( mc_Entity.x == 707 ){
-    vCdGlow=0.02;
+    vCdGlow=0.12;
     vColor+=vColor*.15;
 #ifdef NETHER
-    vCdGlow=0.012;
+    vCdGlow=0.12;
 #endif
     //vAvgColor = vec4( .8, .6, .0, 1.0 );
     
@@ -408,34 +407,34 @@ void main() {
   }
   // End Rod, Soul Lantern, Glowstone, Redstone Lamp, Sea Lantern, Shroomlight, Magma Block
   if( mc_Entity.x == 805 ){
-    vCdGlow=0.025;
+    vCdGlow=0.05;
 #ifdef NETHER
-    vCdGlow=0.03;
+    vCdGlow=0.065;
 #endif
     //vDepthAvgColorInf = 0.20;
   }
   if( mc_Entity.x == 8051 ){
-    vCdGlow=0.015;
+    vCdGlow=0.07;
 #ifdef NETHER
-    vCdGlow=0.035;
+    vCdGlow=0.15;
 #endif
     //vDepthAvgColorInf = 0.20;
   }
   
   if( mc_Entity.x == 8052 ){
-    vCdGlow=0.01;
+    vCdGlow=0.1;
     vAvgColor = vColor;
   }
 
   // Amethyst Block
   if (mc_Entity.x == 909){
-    vCdGlow = 0.1;
+    vCdGlow = 0.15;
     vAvgColor.rgb = vec3(.35,.15,.7);
     //vColor.rgb = mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .7 );
   }
   // Amethyst Clusters
   if (mc_Entity.x == 910){
-    vCdGlow = 0.1;
+    vCdGlow = 0.15;
     //vColor.rgb = vAvgColor.rgb;//mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .5 );
   }
 
@@ -665,9 +664,13 @@ void main() {
     //          Vert interpolation is good enough
     float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
     screenDewarp*=screenDewarp*.7+.3;
-    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf));
+		
+		// Get scene depth, and make glowy things less depth influenced
+    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
     float depthBias = biasToOne(depth, 7.5);
-    float depthDetailing = clamp(1.035-depthBias, 0.0, 1.0);
+		
+		// A bias of .035 for retaining detail closer to camera
+    float depthDetailing = clamp(detailDistBias*1.5-depthBias, 0.0, 1.0);
 
     // Side by side of active blurring and no blurring
     //   Other shader effects still applied though
@@ -871,7 +874,7 @@ void main() {
     depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*1.0)))*distantVibrance) ); 
     //surfaceShading = 1.0-(1.0-surfaceShading)*.4;
     
-    outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing  *fogColor; // -.2;
+    outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing  * fogColor; // -.2;
 
   // -- -- -- -- -- -- 
 
@@ -888,7 +891,7 @@ void main() {
   // -- -- -- -- -- -- --
   // -- Fog Coloring - -- --
   // -- -- -- -- -- -- -- -- --
-    vec3 toFogColor = mix( skyColor*.5+outCd.rgb*.5, fogColor, depth);
+    vec3 toFogColor = mix( skyColor*.5+outCd.rgb*.1, fogColor, depth);
     toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
 
   // -- -- -- -- -- -- --
@@ -898,12 +901,16 @@ void main() {
     toFogColor = mix(toFogColor, vec3(1.0), nightVision);
     
 
+  // -- -- -- -- -- -- --
+  // -- Fog Vision - -- --
+  // -- -- -- -- -- -- -- -- --
     // TODO : Move whats possible to vert
     float waterLavaSnow = float(isEyeInWater);
     if( isEyeInWater == 1 ){ // Water
       float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
       //outCd.rgb *=  1.0+lightLuma+glowInf;
       outCd.rgb *=  toFogColor*(.8+lightLuma*lightLuma*.3);//+.5;
+			
     }else if( isEyeInWater > 1 ){ // Lava
       depthBias = depthBias*.1; // depth;
       depth *= .5;
@@ -912,43 +919,56 @@ void main() {
     //}else if( isEyeInWater == 3 ){ // Snow
       //outCd.rgb = mix( outCd.rgb, toFogColor, (1.0-outDepth*.1) );
     }else{
-      float fogFit = min(1.0,depth*100.0)*.8+.2;
+      float fogFit = min(1.0,depth*70.0)*.8+.2;
       outCd.rgb = mix( (outCd.rgb*.5+.5)*toFogColor, outCd.rgb, fogFit+glowInf );
     }
 
     
+  // -- -- -- -- -- -- -- -- -- -- --
+  // -- World Specific Fog Skewing -- --
+  // -- -- -- -- -- -- -- -- -- -- -- -- --
+#ifdef NETHER
+    //outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
+    //outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf*.5));
+		lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
+    outCd.rgb = mix( fogColor*lightCd, outCd.rgb*lightCd, lightCd.r);
+    outCd.rgb *= mix(1.0, toCamNormalDot, depth);
+#else
+    // Block Surface Rolloff
+		//   Helps with block visibility in the dark
+    outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*.45+.55), min(1.0,depth*.5+.5+lightCd.r));
+#endif
+
+
     
 // -- -- -- -- -- -- -- -- -- -- 
 // End Logic; Animated Fog  - -- --
 // -- -- -- -- -- -- -- -- -- -- -- --
 
 // TODO : MOVE TO POST PROCESSING ... ya dingus
-
-    
 #ifdef THE_END
     
-      float depthEnd = max(0.0, min(1.0, outDepth*6.0-screenDewarp*.025));
-      depthEnd = depthEnd*.4+.6;
-      //depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
+      float depthEnd = min(1.0, max(0.0, outDepth*2.5-screenDewarp*.005-.005)*2.8);
+      //depthEnd = depthEnd*.7+.3;
+      depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
       
   // Fit lighting 0-1
       float lightShift=.47441;
       float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
-      float lightInf = min(1.0, (max((lightCd.r-.2)*1.2,lightLumaBase)-lightShift)*lightShiftMult + depthEnd*.4);
+      float lightInf = clamp( ((max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift)*lightShiftMult*min(depthEnd+lightLumaBase*.1,1.0)), 0.0, 1.0);
       
-      vec3 endFogCd = fogColor+vec3(.3,.25,.3);
+      vec3 endFogCd = fogColor+vec3(.4,.35,.4);
       float timeOffset = (float(worldTime)*0.00004166666)*(30.0);
       vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
       worldPos = ( worldPos+texture( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
 
   // RGB Depth Based Noise for final influence
-      vec3 noiseX = texture( noisetex, worldPos.xy*depthEnd + (timeOffset*vec2(.1,.5))).rgb;
+      vec3 noiseX = texture( noisetex, fract(worldPos.xy*depthEnd*2.5 + (timeOffset*vec2(.25,.75)))).rgb;
       //vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
       
-      float noiseInf = min(1.0, (depthEnd+max(0.0,(lightInf*depthEnd-.3)+glowInf*.8))*depthEnd );
-      
-      outCd.rgb *= mix(  mix((noiseX*endFogCd*lightCd),endFogCd,noiseInf+depthEnd*.3), vec3(lightInf), noiseInf );
-      
+      outCd.rgb *= mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
+			//outCd.rgb = //endFogCd*noiseX*(vec3(1.0)-lightCd);
+
 #endif
     
     
@@ -958,21 +978,13 @@ void main() {
     
     glowInf += (luma(outCd.rgb)+vIsLava)*vCdGlow;
 
-#ifdef NETHER
-    //outCd.rgb *= mix( outCd.rgb+outCd.rgb*vec3(1.6,1.3,1.2), vec3(1.0), (depthBias)*.4+.4);
-    //outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, smoothstep(.015, .35, depthBias+glowInf*.5));
-    outCd.rgb = mix( fogColor*(lightCd+.5), outCd.rgb*lightCd, lightCd.r);
-    outCd.rgb *= mix(1.0, toCamNormalDot, depth*.7+.3);
-#else
-    // Block Surface Rolloff
-		//   Helps with block visibility in the dark
-    outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*.45+.55), min(1.0,depth*.5+.5+lightCd.r));
-#endif
 
-
-    
-    
+    // TODO : move this to a better location
+    float worldLavaInf = 0.0;
+		
 #ifdef OVERWORLD
+		worldLavaInf=1.0;
+		
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 // Biome & Snow Glow when in a Cold Biome - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -997,14 +1009,7 @@ void main() {
     glowCd += outCd.rgb+(outCd.rgb+.1)*glowInf;
 
     vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness;
-
-
-#ifdef NETHER
-    outCd.rgb = clamp( outCd.rgb*(1.0+0.2*lightCd), vec3(0.0), vec3(1.0));
-#else
-    glowHSV.z *= .7+vIsLava*.5;
-#endif
+    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness * worldLavaInf;
 
     outCd.rgb*=1.0+glowHSV.z;
 
@@ -1077,6 +1082,7 @@ void main() {
       debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
       outCd = mix( outCd, debugCd, debugBlender);
     #endif
+		
 		
     outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
     outNormal = vec4(vNormal*.5+.5, 1.0);
