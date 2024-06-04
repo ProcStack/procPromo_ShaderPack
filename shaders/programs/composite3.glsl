@@ -27,21 +27,6 @@ uniform vec2 texelSize;
 
 varying vec2 texcoord;
 
-const int boxSamplesCount = 8;
-const vec2 boxSamples[8] = vec2[8](
-                              vec2( -1.0, -1.0 ),
-                              vec2( -1.0, 0.0 ),
-                              vec2( -1.0, 1.0 ),
-
-                              vec2( 0.0, -1.0 ),
-                              vec2( 0.0, 1.0 ),
-
-                              vec2( 1.0, -1.0 ),
-                              vec2( 1.0, 0.0 ),
-                              vec2( 1.0, 1.0 )
-                            );
-
-
 
 vec3 directionBlurSample(vec3 sampleCd, sampler2D tx, vec2 uv, vec2 texelRes, int steps){
   vec2 curUV;

@@ -400,69 +400,72 @@ void main() {
 // -- -- -- -- -- -- -- -- -- --
 // -- Debugging Visualization -- --
 // -- -- -- -- -- -- -- -- -- -- -- --
-  
-  // Shadow Helper Mini Window
-  //   hmmmmm picture-in-picture
-  //     drooollllssss
-	//
-	// Shadow Cam
-  #if ( DebugView == 2 )
-    //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
-    float fitWidth = 1.0 + aspectRatio*.45;
-    vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35;
-		
-		vec2 debugShadowCdUV = debugShadowUV + vec2(-0.1,-2.15);
-		vec2 debugShadowTexUV = 1.0-debugShadowCdUV;
-		debugShadowTexUV.x = mix( debugShadowCdUV.x, 1.0-debugShadowCdUV.x, dayNight );
-    vec3 shadowCd = texture2D(shadowcolor0, debugShadowTexUV ).rgb;
-    debugShadowCdUV = abs(debugShadowCdUV-.5);
-    float shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
-    shadowCd = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
 
-		// -- 
-    outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
-
-		// -- -- --
-
-		debugShadowCdUV = debugShadowUV + vec2(-1.2,-2.15);
-		debugShadowTexUV = 1.0-debugShadowCdUV;
-		debugShadowTexUV.x = mix( debugShadowCdUV.x, 1.0-debugShadowCdUV.x, dayNight );
-    vec4 shadowData = texture2D(shadowcolor1, debugShadowTexUV );
-    shadowCd = texture2D(shadowcolor0, debugShadowTexUV ).rgb;
-		shadowData.g = mix( 1.0, shadowData.g, step(0.0,shadowData.g));
-		shadowCd = mix( shadowData.ggg, shadowCd, step(0.5, shadowData.r));
-    debugShadowCdUV = abs(debugShadowCdUV-.5);
-    shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
-    shadowData.rgb = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
-		// -- 
-    outCd.rgb = mix( outCd.rgb, shadowData.rgb, step(shadowHelperMix, 0.502));
-
-		// -- -- --
-		
-  // Shadow Debug
-	//   Adding the mini cam cause its fun
-  #elif ( DebugView == 3 )
-    //float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
-    float fitWidth = 1.0 + aspectRatio*.45;
-    vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35 + vec2(-1.2,-2.15);
-		//debugShadowUV.x = mix( debugShadowUV.x, 1.0-debugShadowUV.x, step( 0.0, sunVec.z));
-    vec3 shadowCd = texture2D(shadowcolor0, debugShadowUV ).xyz;
-    debugShadowUV = abs(debugShadowUV-.5);
-    float shadowHelperMix = max(debugShadowUV.y,debugShadowUV.x);
-    shadowCd = mix( vec3(0.0), shadowCd.rgb, step(shadowHelperMix, 0.50));
-		
-		//shadowCd=vec3(abs(sunVec.x));
-    outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
-
-
-  // Vanilla -vs- procPromo Debugger
-  #elif ( DebugView == 4 )
-    float debugBlender = step( .5, uv.x);
-    outCd = mix( baseCd, outCd, debugBlender);
-  #endif
+// Shadow Helper Mini Window
+//   hmmmmm picture-in-picture
+//     drooollllssss
+//
+// Shadow Cam
+#if ( DebugView == 2 )
+	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
+	float fitWidth = 1.0 + aspectRatio*.45;
+	vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35;
 	
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  
-  gl_FragData[0] = vec4(outCd.rgb,1.0);
+	vec2 debugShadowCdUV = debugShadowUV + vec2(-0.1,-2.15);
+	vec2 debugShadowTexUV = 1.0-debugShadowCdUV;
+	debugShadowTexUV.x = mix( debugShadowCdUV.x, 1.0-debugShadowCdUV.x, dayNight );
+	vec3 shadowCd = texture2D(shadowcolor0, debugShadowTexUV ).rgb;
+	debugShadowCdUV = abs(debugShadowCdUV-.5);
+	float shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
+	shadowCd = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
+
+	// -- 
+	outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
+
+	// -- -- --
+
+	debugShadowCdUV = debugShadowUV + vec2(-1.2,-2.15);
+	debugShadowTexUV = 1.0-debugShadowCdUV;
+	debugShadowTexUV.x = mix( debugShadowCdUV.x, 1.0-debugShadowCdUV.x, dayNight );
+	vec4 shadowData = texture2D(shadowcolor1, debugShadowTexUV );
+	shadowCd = texture2D(shadowcolor0, debugShadowTexUV ).rgb;
+	shadowData.g = mix( 1.0, shadowData.g, step(0.0,shadowData.g));
+	shadowCd = mix( shadowData.ggg, shadowCd, step(0.5, shadowData.r));
+	debugShadowCdUV = abs(debugShadowCdUV-.5);
+	shadowHelperMix = max(debugShadowCdUV.y,debugShadowCdUV.x);
+	shadowData.rgb = mix( vec3(0.0), shadowCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, shadowData.rgb, step(shadowHelperMix, 0.502));
+
+	// -- -- --
+	
+// Shadow Debug
+//   Adding the mini cam cause its fun
+#elif ( DebugView == 3 )
+	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
+	float fitWidth = 1.0 + aspectRatio*.45;
+	vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35 + vec2(-1.2,-2.15);
+	//debugShadowUV.x = mix( debugShadowUV.x, 1.0-debugShadowUV.x, step( 0.0, sunVec.z));
+	vec3 shadowCd = texture2D(shadowcolor0, debugShadowUV ).xyz;
+	debugShadowUV = abs(debugShadowUV-.5);
+	float shadowHelperMix = max(debugShadowUV.y,debugShadowUV.x);
+	shadowCd = mix( vec3(0.0), shadowCd.rgb, step(shadowHelperMix, 0.50));
+	
+	//shadowCd=vec3(abs(sunVec.x));
+	outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
+
+
+// Vanilla -vs- procPromo Debugger
+#elif ( DebugView == 4 )
+	float debugBlender = step( .5, uv.x);
+	outCd = mix( baseCd, outCd, debugBlender);
+	
+#endif
+
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+//vec3 outGlowCd = max(blurMidCd, blurLowCd);
+
+gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

@@ -386,11 +386,11 @@ void main() {
 	// This is in addition to all-block lighting + texture based glow
 	
   float worldGlowMult = 0.4;
-	float worldLavaMult = 2.0;
+	float worldIsLava = 2.0;
 	
 #ifdef NETHER
-    worldGlowMult=2.5;
-    vIsLava=0.75;
+		worldGlowMult = 0.5;
+		worldIsLava = 1.5;
 #endif
 
 	float idFitToGlow = float( mc_Entity.x - 200 )*.0015;
@@ -411,7 +411,7 @@ void main() {
 
   // Lava
   if( mc_Entity.x == 701 ){
-    vIsLava = 0.75 * worldLavaMult;
+    vIsLava = worldIsLava;
     vCdGlow = .15 * worldGlowMult;
 		
     vColor.rgb = mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .5 );
@@ -868,12 +868,6 @@ void main() {
 
 // -- -- -- -- -- -- 
 
-// -- -- -- -- -- -- -- -- -- -- 
-// -- Lighting Glow influence -- --
-// -- -- -- -- -- -- -- -- -- -- -- --
-
-	//outCd.rgb *=  lightCd.rgb + glowInf;// + vCdGlow;
-
 // -- -- -- -- -- -- --
 // -- Fog Coloring - -- --
 // -- -- -- -- -- -- -- -- --
@@ -950,7 +944,9 @@ void main() {
 // Fit lighting 0-1
 	float lightShift=.47441;
 	float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
-	float lightInf = clamp( ((max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift) *lightShiftMult *min(depthEnd+lightLumaBase*.1,1.0)), 0.0, 1.0 );
+	float lightInf = clamp( (max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift)
+													*lightShiftMult
+													*min(depthEnd+lightLumaBase*.1,1.0), 0.0, 1.0 );
 												
 	vec3 endFogCd = fogColor+vec3(.4,.35,.4);
 	float timeOffset = (float(worldTime)*0.00004166666)*30.0;
@@ -973,11 +969,7 @@ void main() {
 	glowInf += (max(0.0,luma(outCd.rgb)-.5)*1.5+vIsLava)*vCdGlow;
 
 
-// TODO : move this to a better location
-	float worldLavaInf = 0.0;
-
 #ifdef OVERWORLD
-		worldLavaInf=1.0;
 		
 // -- -- -- -- -- -- -- -- 
 // -- Cold Biome Glow - -- --
@@ -997,100 +989,97 @@ void main() {
 
 // Brighten blocks when going spelunking
 // TODO: Promote control to Shader Options
-    float skyBrightMultFit = min(1.0, 1.0-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
-    outCd.rgb *= skyBrightMultFit;
-      
-    outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightnessMult));
-    
+	float skyBrightMultFit = min(1.0, 1.0-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
+	outCd.rgb *= skyBrightMultFit;
+		
+	outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightnessMult));
+	
 #endif
-    
-    glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
+	
+	glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
 
-    vec3 glowHSV = rgb2hsv(glowCd);
-    glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness * worldLavaInf;
+	vec3 glowHSV = rgb2hsv(glowCd);
+	glowHSV.z *= glowInf * (depthBias*.6+.5) * GlowBrightness ;
 
-    //outCd.rgb*=1.0+glowHSV.z;
+	//outCd.rgb*=1.0+glowHSV.z;
 
 
-    // -- -- -- -- -- -- -- -- -- -- 
-    // -- Lava & Powda Snow Fog - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- --
-    float lavaSnowFogInf = 1.0-min(1.0, max(0.0,waterLavaSnow-1.0) );
-    glowHSV.z *= lavaSnowFogInf;
-    outCd.rgb = mix( fogColor.rgb, outCd.rgb, lavaSnowFogInf);
+	// -- -- -- -- -- -- -- -- -- -- 
+	// -- Lava & Powda Snow Fog - -- --
+	// -- -- -- -- -- -- -- -- -- -- -- --
+	float lavaSnowFogInf = 1.0-min(1.0, max(0.0,waterLavaSnow-1.0) );
+	glowHSV.z *= lavaSnowFogInf;
+	outCd.rgb = mix( fogColor.rgb, outCd.rgb, lavaSnowFogInf);
 
-    
-    // -- -- -- -- -- -- -- -- -- -- -- -- --
-    // -- Texture Overides from Settings - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    if( WorldColor ){ // Greyscale
-      outCd.rgb = luma(vAvgColor.rgb) * vec3(mix(lightCd.r*.9, 1.0, shadowAvg));
-      glowHSV.y = 0.0;
-      glowHSV.z *= 0.80;
-    }
-    
-    float outEffectGlow = 0.0;
-    
-    
-		// TODO : Dupelicate? Or actually doing something?
-    //outCd.a*=vAlphaMult;
-    
-    // Blend Average color with Smart Blur color through plasticity value
-    vec3 outCdHSV = rgb2hsv(outCd.rgb);
-    vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
-    outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );
-    
+	
+	// -- -- -- -- -- -- -- -- -- -- -- -- --
+	// -- Texture Overides from Settings - -- --
+	// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	if( WorldColor ){ // Const; Greyscale colors
+		outCd.rgb = luma(vAvgColor.rgb) * vec3(mix(lightCd.r*.9, 1.0, shadowAvg));
+		glowHSV.y = 0.0;
+		glowHSV.z *= 0.80;
+	}
+	
+	float outEffectGlow = 0.0;
+	
+	
+	// TODO : Dupelicate? Or actually doing something?
+	//outCd.a*=vAlphaMult;
+	
+	// Blend Average color with Smart Blur color through plasticity value
+	vec3 outCdHSV = rgb2hsv(outCd.rgb);
+	vec3 avgCdHSV = rgb2hsv(vAvgColor.rgb);
+	outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );
+	
 // Boost bright colors morso
-    boostPeaks(outCd.rgb);
-    
+	boostPeaks(outCd.rgb);
+	
    
-    if( GlowBrightness>0.0 ){
-      float ambientGlow = length(outCd.rgb) * (1.1 + GlowBrightness*.15) * .5;
-      ambientGlow = ambientGlow*ambientGlow;
-      glowHSV.z = min( glowHSV.z, ambientGlow );// * vCdGlow;
-    }
+	float ambientGlow = length(outCd.rgb) * (1.1 + GlowBrightness*.15) * .5;
+	ambientGlow = ambientGlow*ambientGlow;
+	glowHSV.z = min( glowHSV.z, ambientGlow );// * vCdGlow;
   
-	
-    #if ( DebugView == 1 )
-      outCd.rgb=mix( outCd.rgb, vec3((screenSpace.y/(aspectRatio*.8))*.5+.5), step(abs(screenSpace.x+.75), .05));
-      outCd.rgb = mix( outCd.rgb, vec3(1.0,0.0,0.0), step( 0.5, abs(outCd.r-.5)));
-      
-      //DetailBlurring 0.0-2.0
-      float shifter=1.0-(screenSpace.x*.68-.51);
-      outCd.rgb = mix( outCd.rgb, vec3(step(shifter, DetailBlurring*.5)), step(0.0,screenSpace.x-0.75)*step(1.15,screenSpace.y));
-      
-      outCd.rgb=mix( outCd.rgb, vec3(0.0), step(abs(screenSpace.x-0.75), .0012));
-    #elif ( DebugView == 3 )
-      outCd.rgb=mix(outCd.rgb, vec3(lightCd), step(0.0,screenSpace.x));
-    #endif
-    
-		
-    #if ( DebugView == 4 )
-      vec4 debugCd = texture(gcolor, tuv);
-      vec4 debugLightCd = texture(lightmap, luv);
-      
-      float debugBlender = step( .0, screenSpace.x);
-      float debugFogInf = min(1.0,depth*2.0);
-      
-      debugFogInf=clamp(((1.0-gl_FragCoord.w)-.997)*800.0+screenDewarp*.2,0.0,1.0);
-      debugCd.rgb = mix( debugCd.rgb, fogColor, debugFogInf);
-  
-      //debugCd = debugCd * debugLightCd * vec4(vColor.rgb*(1.0-debugBlender)+(debugBlender),1.0) * vColor.aaaa;
-      debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
-      outCd = mix( outCd, debugCd, debugBlender);
-    #endif
-	
-		// -- -- --
-		
 
-    outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
-    outNormal = vec4(vNormal*.5+.5, 1.0);
-    // [ Sun/Moon Strength, Light Map, Spectral Glow ]
-    outLighting = vec4( lightLumaBase, lightLumaBase, 0.0, 1.0);
-    outGlow = vec4( glowHSV, 1.0 );
-    outNull = vec4( 0.0 );
+#if ( DebugView == 1 )
+	outCd.rgb=mix( outCd.rgb, vec3((screenSpace.y/(aspectRatio*.8))*.5+.5), step(abs(screenSpace.x+.75), .05));
+	outCd.rgb = mix( outCd.rgb, vec3(1.0,0.0,0.0), step( 0.5, abs(outCd.r-.5)));
+	
+	//DetailBlurring 0.0-2.0
+	float shifter=1.0-(screenSpace.x*.68-.51);
+	outCd.rgb = mix( outCd.rgb, vec3(step(shifter, DetailBlurring*.5)), step(0.0,screenSpace.x-0.75)*step(1.15,screenSpace.y));
+	
+	outCd.rgb=mix( outCd.rgb, vec3(0.0), step(abs(screenSpace.x-0.75), .0012));
+#elif ( DebugView == 3 )
+	outCd.rgb=mix(outCd.rgb, vec3(lightCd), step(0.0,screenSpace.x));
+#endif
 
-  //}
+
+#if ( DebugView == 4 )
+	vec4 debugCd = texture(gcolor, tuv);
+	vec4 debugLightCd = texture(lightmap, luv);
+	
+	float debugBlender = step( .0, screenSpace.x);
+	float debugFogInf = min(1.0,depth*2.0);
+	
+	debugFogInf=clamp(((1.0-gl_FragCoord.w)-.997)*800.0+screenDewarp*.2,0.0,1.0);
+	debugCd.rgb = mix( debugCd.rgb, fogColor, debugFogInf);
+
+	//debugCd = debugCd * debugLightCd * vec4(vColor.rgb*(1.0-debugBlender)+(debugBlender),1.0) * vColor.aaaa;
+	debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
+	outCd = mix( outCd, debugCd, debugBlender);
+#endif
+
+// -- -- --
+
+	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
+	outNormal = vec4(vNormal*.5+.5, 1.0);
+	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
+	outLighting = vec4( lightLumaBase, lightLumaBase, 0.0, 1.0);
+	outGlow = vec4( glowHSV, 1.0 );
+	outNull = vec4( 0.0 );
+
+//}
 }
 
 
