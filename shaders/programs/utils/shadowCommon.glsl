@@ -22,7 +22,7 @@ const int shadowMapResolution = 2048; // [512 1024 2048 4096 8192 16384]
 const float shadowMapTexelSize = 1.0/float(shadowMapResolution);
 
 const float shadowMapFov = 90.0; 
-const float shadowDistance = 256.0;//224.0;//128.0;
+const float shadowDistance = 256.0; // 224.0; // 128.0;
 const float sunPathRotation = 0.0;
 const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
 const float shadowIntervalSize = 1.00;
@@ -188,7 +188,7 @@ vec4 distortShadowShift(vec4 shadowSpacePos, float scalar) {
 
 // -- -- --
  
-void biasToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
+void distortToNDC( mat4 targetSpace, inout vec4 posVal, inout vec4 camDir ){
   //camDir.xz = normalize( (mat3(targetSpace)*vec3(0.0,0.0,1.0)).xz );
   camDir.xz = normalize( vec2(targetSpace[2].x,targetSpace[2].z) );
   camDir.y = 1.0-targetSpace[1].y;

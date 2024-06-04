@@ -454,6 +454,7 @@ void main() {
 		//shadowCd=vec3(abs(sunVec.x));
     outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
 
+
   // Vanilla -vs- procPromo Debugger
   #elif ( DebugView == 4 )
     float debugBlender = step( .5, uv.x);

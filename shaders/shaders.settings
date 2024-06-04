@@ -25,7 +25,7 @@ const float distancDarkenMult = 80.0; // Lower is more & closer fog-ish
 const float distantVibrance = 0.072; // Higher gives distant block colors a boost
 const float detailDistBias = 1.035; // Retain detail near camera, distance offset bias
 
-const float GLOW_REACH = 0.50;
-const float GLOW_PERC1 = 0.80;
-const float GLOW_PERC2 = 0.50;
-const float GLOW_PERC3 = 0.50;
+const float GLOW_REACH = 1.50;
+const float GLOW_PERC1 = 0.85;
+const float GLOW_PERC2 = 0.75;
+const float GLOW_PERC3 = 0.75;

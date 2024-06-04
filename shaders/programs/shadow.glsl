@@ -39,7 +39,7 @@
     color=gl_Color;
     
     vec4 camDir = vec4(0.0);
-    //biasToNDC( gbufferModelView, position, camDir );
+    //distortToNDC( gbufferModelView, position, camDir );
     
     position = distortShadowShift( position );
     gl_Position = position;
