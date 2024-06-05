@@ -385,12 +385,10 @@ void main() {
 	//   Redstone Lamp, Sea Lantern, Shroomlight, etc.
 	// This is in addition to all-block lighting + texture based glow
 	
-  float worldGlowMult = 0.4;
-	float worldIsLava = 2.0;
+  float worldGlowMult = GlowMult_Overworld;
 	
 #ifdef NETHER
-		worldGlowMult = 0.5;
-		worldIsLava = 1.5;
+		worldGlowMult = GlowMult_Nether;
 #endif
 
 	float idFitToGlow = float( mc_Entity.x - 200 )*.0015;
@@ -411,7 +409,7 @@ void main() {
 
   // Lava
   if( mc_Entity.x == 701 ){
-    vIsLava = worldIsLava;
+    vIsLava = ColorBoost_IsLava;
     vCdGlow = .15 * worldGlowMult;
 		
     vColor.rgb = mix( vAvgColor.rgb, texture(gcolor, midcoord).rgb, .5 );
@@ -562,134 +560,134 @@ in float vDeltaMult;
 in float vShadowValid;
 
 void main() {
-  
-    vec2 tuv = texcoord;
-		vec4 baseTxCd=texture(gcolor, tuv);
-		
-		// TODO : Remove need for 'txCd' variable
-    vec4 txCd=vec4(1.0,1.0,0.0,1.0);
 
-    vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
-
-    vec2 luv = lmcoord;
-    float outDepth = min(.9999,gl_FragCoord.w);
-    float isLava = vIsLava;
-    vec4 avgShading = vAvgColor;
-    float avgDelta = 0.0;
-
-    // -- -- -- -- -- -- --
-    
-    vec4 baseCd=baseTxCd;
-		
-		
-		// Alpha Test
-		baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
-
-    #if( DebugView == 4 )
-      baseTxCd.a = mix(baseTxCd.a, 1.0, step(screenSpace.x,.0)*vAlphaRemove);
-    #else
-      baseTxCd.a = mix(baseTxCd.a, 1.0, vAlphaRemove) * vAlphaMult;
-    #endif
-		
-    if ( baseTxCd.a < .02 ){
-      discard;
-    }
-		
+	vec2 tuv = texcoord;
+	vec4 baseTxCd=texture(gcolor, tuv);
 	
-    // -- -- -- -- -- -- --
-    
-		// Texture Sampler
-    
-    // TODO : There's gotta be a better way to do this...
-    //          - There is, just gotta change it over
-    if ( DetailBlurring > 0.0 ){
-      // Split Screen "Blur Comparison" Debug View
-      #if ( DebugView == 1 )
-        float debugDetailBlurring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
-        //debugDetailBlurring *= debugDetailBlurring;
-        debugDetailBlurring = mix( DetailBlurring, debugDetailBlurring, step(screenSpace.x,0.75));
-        diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, debugDetailBlurring, baseCd, txCd, avgDelta );
-      #else
-        //diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
-        diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
-      #endif
-    }else{
-      txCd = texture(gcolor, tuv);
-    }
+	// TODO : Remove need for 'txCd' variable
+	vec4 txCd=vec4(1.0,1.0,0.0,1.0);
 
-    
+	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 
-    
-    
-    
-    // Default Minecraft Lighting
-    vec4 lightLumaCd = texture(lightmap, luv);//*.9+.1;
-    float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.2-.13,0.0,1.0);
-    
-    txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
-    txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
-    
-    
-		// Glow Baseline Variables
-    float glowInf = 0.0;
-    vec3 glowCd = vec3(0,0,0);
-    glowCd = txCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
-    glowInf = max(0.0, maxComponent(txCd.rgb)*1.5-.9)*vCdGlow;
-    
-    
-    // Screen Space UVing and Depth
-    // TODO : Its a block game.... move the screen space stuff to vert stage
-    //          Vert interpolation is good enough
-    float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
-    screenDewarp*=screenDewarp*.7+.3;
-		
-		// Get scene depth, and make glowy things less depth influenced
-    float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
-    float depthBias = biasToOne(depth, 7.5);
-		
-		// A bias of .035 for retaining detail closer to camera
-    float depthDetailing = clamp(detailDistBias*1.5-depthBias, 0.0, 1.0);
+	vec2 luv = lmcoord;
+	float outDepth = min(.9999,gl_FragCoord.w);
+	float isLava = vIsLava;
+	vec4 avgShading = vAvgColor;
+	float avgDelta = 0.0;
 
-    // Side by side of active blurring and no blurring
-    //   Other shader effects still applied though
-    #if ( DebugView == 1 )
-      txCd = mix( texture(gcolor, tuv), txCd, step(0.0, screenSpace.x+.75) );
-    #endif
+	// -- -- -- -- -- -- --
+	
+	vec4 baseCd=baseTxCd;
+	
+	
+	// Alpha Test
+	baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
 
-  // -- -- -- -- -- -- -- --
-  
-    // Use Light Map Data
-    //float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
-    //float lightLuma = ( clamp((lightLumaBase) * 1.560544217687075, 0.0, 1.0) ); // lightCd.r;
-    float lightLuma = shiftBlackLevels( biasToOne(lightLumaBase) ); // lightCd.r;
+	#if( DebugView == 4 )
+		baseTxCd.a = mix(baseTxCd.a, 1.0, step(screenSpace.x,.0)*vAlphaRemove);
+	#else
+		baseTxCd.a = mix(baseTxCd.a, 1.0, vAlphaRemove) * vAlphaMult;
+	#endif
+	
+	if ( baseTxCd.a < .02 ){
+		discard;
+	}
+	
 
-    vec3 lightCd = vec3(lightLuma);//vec3(max(lightLumaBase,lightLuma));
-    
-  // -- -- -- -- -- -- -- --
+	// -- -- -- -- -- -- --
+	
+	// Texture Sampler
+	
+	// TODO : There's gotta be a better way to do this...
+	//          - There is, just gotta change it over
+	if ( DetailBlurring > 0.0 ){
+		// Split Screen "Blur Comparison" Debug View
+		#if ( DebugView == 1 )
+			float debugDetailBlurring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
+			//debugDetailBlurring *= debugDetailBlurring;
+			debugDetailBlurring = mix( DetailBlurring, debugDetailBlurring, step(screenSpace.x,0.75));
+			diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, debugDetailBlurring, baseCd, txCd, avgDelta );
+		#else
+			//diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
+			diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
+		#endif
+	}else{
+		txCd = texture(gcolor, tuv);
+	}
 
-    outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
+	
 
-    vec3 outCdAvgRef = outCd.rgb;
-    vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
-    float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
-    //outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
-    
-    float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
-    outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
+	
+	
+	
+// Default Minecraft Lighting
+	vec4 lightLumaCd = texture(lightmap, luv);//*.9+.1;
+	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.2-.13,0.0,1.0);
+	
+	txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
+	txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
+	
+	
+// Glow Baseline Variables
+	float glowInf = 0.0;
+	vec3 glowCd = vec3(0,0,0);
+	glowCd = txCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
+	glowInf = max(0.0, maxComponent(txCd.rgb)*1.5-.9)*vCdGlow;
+	
+	
+// Screen Space UVing and Depth
+// TODO : Its a block game.... move the screen space stuff to vert stage
+//          Vert interpolation is good enough
+	float screenDewarp = length(screenSpace)*0.7071067811865475; //  1 / length(vec2(1.0,1.0))
+	screenDewarp*=screenDewarp*.7+.3;
+	
+// Get scene depth, and make glowy things less depth influenced
+	float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
+	float depthBias = biasToOne(depth, 7.5);
+	
+// A bias of .035 for retaining detail closer to camera
+	float depthDetailing = clamp(detailDistBias*1.5-depthBias, 0.0, 1.0);
+
+// Side by side of active blurring and no blurring
+//   Other shader effects still applied though
+	#if ( DebugView == 1 )
+		txCd = mix( texture(gcolor, tuv), txCd, step(0.0, screenSpace.x+.75) );
+	#endif
+
+// -- -- -- -- -- -- -- --
+
+// Use Light Map Data
+	//float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
+	//float lightLuma = ( clamp((lightLumaBase) * 1.560544217687075, 0.0, 1.0) ); // lightCd.r;
+	float lightLuma = shiftBlackLevels( biasToOne(lightLumaBase) ); // lightCd.r;
+
+	vec3 lightCd = vec3(lightLuma);//vec3(max(lightLumaBase,lightLuma));
+	
+// -- -- -- -- -- -- -- --
+
+	outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
+
+	vec3 outCdAvgRef = outCd.rgb;
+	vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
+	float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
+	//outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
+	
+	float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
+	outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
 
 
-    // -- -- -- -- -- -- -- -- -- -- -- --
-    // -- Apply Shading To Base Color - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    float avgColorMix = depthDetailing*vDepthAvgColorInf;
-    avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava*3.0);
-    outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
-		// TODO : Optimize
-		vec3 glowBaseCd = outCd.rgb;
+// -- -- -- -- -- -- -- -- -- -- -- --
+// -- Apply Shading To Base Color - -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	float avgColorMix = depthDetailing*vDepthAvgColorInf;
+	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + vIsLava*3.0);
+	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
+	// TODO : Optimize
+	vec3 glowBaseCd = outCd.rgb;
 
-  // -- -- -- -- -- -- -- --
-  // Based on shadow lookup from Chocapic13's HighPerformance Toaster
-  //
+// -- -- -- -- -- -- -- --
+// Based on shadow lookup from Chocapic13's HighPerformance Toaster
+//
   float shadowDist = 0.0;
   float diffuseSun = 1.0;
   float shadowAvg = 1.0;
@@ -702,9 +700,9 @@ void main() {
   float fogColorBlend = 1.0;
   
   
-    // -- -- -- -- -- -- -- -- -- -- -- --
-    // -- Shadow Sampling & Influence - -- --
-    // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- -- --
+// -- Shadow Sampling & Influence - -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
 #if ShadowSampleCount > 0
 
@@ -722,23 +720,23 @@ void main() {
   shadowPosLocal = distortShadowShift( shadowPosLocal );
   vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult;
   
-	// Get base shadow value
+// Get base shadow value
   float shadowBase=shadow2D(shadowtex0, projectedShadowPosition + localShadowOffset).x; 
 	shadowAvg = shadowBase ;
 	
-	// Get base shadow source block color
+// Get base shadow source block color
 	projectedShadowPosition = projectedShadowPosition + localShadowOffset;
   shadowCd=texture(shadowcolor0, projectedShadowPosition.xy); 
 	
-	// Get shadow source distance
-	// Delta of frag shadow distance * shadowDistBiasMult
+// Get shadow source distance
+// Delta of frag shadow distance * shadowDistBiasMult
 	vec3 shadowData = texture(shadowcolor1, projectedShadowPosition.xy).rgg;
 	shadowData.b = ( shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
 	
 	shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
-	
-	// Higher the value, the softer the shadow
-	//   ...well "softer", distance of multi-sample
+
+// Higher the value, the softer the shadow
+//   ...well "softer", distance of multi-sample
   reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
 
   reachMult = max(0.0, reachMult - (min(1.0,outDepth*20.0)*.5));
@@ -778,12 +776,12 @@ void main() {
   
   float shadowDepthInf = clamp( (depth*distancDarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
-	
-	// Verts not facing the sun should never have non-1.0 shadow values
+
+// Verts not facing the sun should never have non-1.0 shadow values
 	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, min(1.0,vNormalSunInf*shadowDepthInf));
 	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, vNormalSunInf);
 
-  // Distance Rolloff
+// Distance Rolloff
   shadowAvg = shadowAvg + min(1.0, (length(projectedShadowPosition.xy)*.0025)*1.5);//
   
   float shadowInfFit = 0.025;
@@ -791,8 +789,8 @@ void main() {
   float shadowSurfaceInf = clamp( (shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))
 														*shadowInfFitInv*1.5, 0.0, 1.0 );
   
-  // -- -- --
-	
+// -- -- --
+
 //  Distance influence of surface shading --
   shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightnessMult * (1-rainStrength) * dayNightMult;
 	
@@ -803,10 +801,10 @@ void main() {
 #endif
 
 
-  // -- -- -- -- -- -- -- --
-  // -- Lighting & Diffuse - --
-  // -- -- -- -- -- -- -- -- -- --
-    
+// -- -- -- -- -- -- -- --
+// -- Lighting & Diffuse - --
+// -- -- -- -- -- -- -- -- -- --
+	
 // Mute Shadows during Rain
 	diffuseSun = mix( diffuseSun, 0.50, rainStrength)*skyBrightnessMult;
 
