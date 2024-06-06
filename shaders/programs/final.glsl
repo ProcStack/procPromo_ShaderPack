@@ -61,11 +61,11 @@ uniform sampler2D colortex2; // Normal Pass
 uniform sampler2D shadowcolor0;
 uniform sampler2D shadowcolor1;
 
-uniform sampler2D gaux1;
-uniform sampler2D gaux2; // 40% Res Glow Pass
-uniform sampler2D gaux3; // 20% Res Glow Pass
-uniform sampler2D gaux4; // 20% Res Glow Pass
-uniform sampler2D colortex9; // Known working from terrain gbuffer
+uniform sampler2D gaux1; // Bind 7;
+uniform sampler2D gaux2; // Bind 8; 40% Res Glow Pass
+uniform sampler2D gaux3; // Bind 9; 30% Res Glow Pass
+uniform sampler2D gaux4; // Bind 10; 30% Res Glow Pass
+uniform sampler2D colortex9; // Bind 17; Known working from terrain gbuffer
 
 uniform sampler2D gcolor;
 uniform sampler2D gdepth;
@@ -241,8 +241,9 @@ void main() {
 // -- -- -- -- -- -- -- --
 // -- Glow Passes -- -- -- --
 // -- -- -- -- -- -- -- -- -- --
-  vec3 blurMidCd = texture2D(gaux2, uv*.4).rgb;
-  vec3 blurLowCd = texture2D(gaux3, uv*.3).rgb;
+  vec3 blurInitCd = texture2D(gaux2, uv*.4).rgb; // Bind 8
+  vec3 blurFirstCd = texture2D(gaux3, uv*.3).rgb; // Bind 9
+  vec3 blurSecondCd = texture2D(gaux4, uv*.3).rgb; // Bind 9
   
   
 // -- -- -- -- -- -- -- --
@@ -274,7 +275,7 @@ void main() {
     float uvMult = 20.0 + 10.0*depthCos;
     
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
-    vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurMidCd)) * texelSize * 6.0 * (1.0-nightVision));
+    vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurInitCd.rgb)) * texelSize * 6.0 * (1.0-nightVision));
     vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .25 );
     depthBlurCd.rgb = mix( fogColor*depthCos, (fogColor*.5+.5)*depthBlurCd.rgb, min(1.0,(1.0-depth*.5)));
     
@@ -383,8 +384,8 @@ void main() {
 // -- -- -- -- -- -- -- -- -- --
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
-  vec3 outGlowCd = max(blurMidCd, blurLowCd);
-  outCd.rgb += outCd.rgb*outGlowCd * GlowBrightness;// * lavaSnowFogInf;
+  vec3 outGlowCd = max( blurSecondCd, max(blurInitCd, blurFirstCd) );
+  outCd.rgb += outGlowCd * GlowBrightness;// * lavaSnowFogInf;
   
   
   float edgeCdInf = step(depthBase, .9999);
@@ -463,9 +464,7 @@ void main() {
 #endif
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-//vec3 outGlowCd = max(blurMidCd, blurLowCd);
-
-gl_FragData[0] = vec4(outCd.rgb,1.0);
+	//outCd.rgb = outGlowCd;
+	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

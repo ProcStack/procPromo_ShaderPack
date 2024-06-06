@@ -1,6 +1,7 @@
 
 // Learned from Chocapic13's HighPerformance Toaster shader pack
-//  I'm still picking up this shadow stuffs, but mostly wrote whats below
+//  I'm still picking up this shadow stuffs,
+//    So the logic may look pretty close to Chocapic13's shader
 //    Baring the player-space to shadow-space logic
 //      It just works; and I like how they defined a function that way
 // Functions for Radial & Per-Axis Shadow Biasing below
@@ -9,6 +10,13 @@
 //       A little wasteful, but quick & easy
 //   For a block game,
 //     Per-Axis Biasing reduces mid-distance scalping of a Radial shadow's edge
+
+// Radial -vs- Axial Distortion Note -
+//  'Radial' stuff isn't used.
+//    It's the classic shadow distortion
+//      I use axial distortion
+//        Since this is a 90-degree based block game
+//  I'll remove Radial's when I make a 'glsl-bootstrap' repo
 
 const bool waterShadowEnabled = true;
 const bool generateShadowMipmap = true;

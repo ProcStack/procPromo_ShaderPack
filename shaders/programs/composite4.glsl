@@ -1,7 +1,7 @@
 // GBuffer - Composite #4 GLSL
-// Written by Kevin Edzenga, ProcStack; 2022-2023
+//   Written by Kevin Edzenga, ProcStack; 2022-2023
 //
-// Spectral Glowing Entities Outline
+// 'Spectral Glow' for Entities Outline
 
 #ifdef VSH
 
@@ -16,6 +16,7 @@ void main() {
 
 #ifdef FSH
 /* RENDERTARGETS: 9 */
+// target - colortex9
 
 /* COLORTEX9FORMAT:RGBA16 */
 /*
@@ -26,8 +27,8 @@ const int colortex9Format = RGBA16F;
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
-uniform sampler2D colortex1;
-uniform sampler2D colortex9;
+uniform sampler2D colortex1; // Bind 1
+uniform sampler2D colortex9; // Bind 17
 uniform vec2 texelSize;
 uniform vec2 far;
 

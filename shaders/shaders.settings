@@ -27,9 +27,10 @@ const float detailDistBias = 1.035; // Retain detail near camera, distance offse
 
 const float GlowMult_Overworld = 0.35;
 const float GlowMult_Nether = 0.5;
-const float ColorBoost_IsLava = 1.5;
+const float ColorBoost_IsLava = .55;
+const float ColorBoost_IsLavaNether = .85;
 
-const float GLOW_REACH = 1.50;
+const float GLOW_REACH = 1.85;
 const float GLOW_PERC1 = 0.85;
 const float GLOW_PERC2 = 0.75;
 const float GLOW_PERC3 = 0.75;
