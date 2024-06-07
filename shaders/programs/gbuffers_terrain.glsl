@@ -754,8 +754,7 @@ void main() {
 	
 // Get base shadow source block color
 	projectedShadowPosition = projectedShadowPosition + localShadowOffset;
-  vec4 shadowCdBase=texture(shadowcolor0, projectedShadowPosition.xy); 
-  shadowCd=shadowCdBase; 
+  shadowCd=texture(shadowcolor0, projectedShadowPosition.xy); 
 	
 // Get shadow source distance
 // Delta of frag shadow distance * shadowDistBiasMult
@@ -808,7 +807,7 @@ void main() {
 
 // Verts not facing the sun should never have non-1.0 shadow values
 	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, min(1.0,vNormalSunInf*shadowDepthInf));
-	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, vNormalSunInf);
+	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb*vNormalSunInf, vNormalSunInf);
 
 // Distance Rolloff
   shadowAvg = shadowAvg + min(1.0, (length(projectedShadowPosition.xy)*.0025)*1.5);//
@@ -847,7 +846,7 @@ void main() {
 // Mix translucent color
 	float lColorMix = clamp( shadowData.r*(1.0-shadowBase)
 														* clamp( shadowDepthInf*2.0-1.0, 0.0, 1.0)
-														- shadowData.b*.7+.3, 0.0, 1.0 ) ;
+														- shadowData.b*.7+.3, 0.0, 1.0 ) * vNormalSunInf ;
 	//lightCd = mix( lightCd, lightCd*(fogColor*(1.0-worldPosYFit)+(shadowCd.rgb*.5+.15)*worldPosYFit), lColorMix );
 	lightCd = mix( lightCd, (shadowCd.rgb*2.0+.15), lColorMix );
 
@@ -1157,8 +1156,6 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
-	//outCd.rgb=vec3(shadowCdBase.rgb);
-	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]

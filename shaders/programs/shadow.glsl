@@ -18,13 +18,13 @@
 	uniform mat4 shadowProjectionInverse;
 	uniform mat4 shadowModelView;
 	uniform mat4 shadowModelViewInverse;
+  uniform int blockEntityId;
 	
 	uniform vec3 chunkOffset;
 
 	
 	in vec3 vaPosition;
   in vec4 mc_Entity;
-  in int blockEntityId;
 	in vec2 mc_midTexCoord;
 
   out vec2 texcoord;
@@ -103,7 +103,7 @@
     }
 		
 		// Beacon Beams!!
-    //if ( blockEntityId == 604  ){
+    //if ( blockEntityId == 605  ){
     //  color.a = 0.0;
     //}
     
