@@ -264,7 +264,7 @@ void main() {
   
   vec2 luv = lmcoord.st;
   vec4 lightBaseCd = texture2D(lightmap, luv);
-  vec3 lightCd = lightBaseCd.rgb;
+  vec3 lightCd = lightBaseCd.rgb*.65+.35;
   
   vec4 outCd = txCd * color;
   baseCd *= color;
@@ -390,7 +390,7 @@ void main() {
   
   // -- -- --
   //  Distance influence of surface shading --
-  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * (1-rainStrength) * dayNightMult;
+  shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * (1-rainStrength) * dayNightMult *.5+.5;
   // -- -- --
   diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf * shadowSurfaceInf );
 

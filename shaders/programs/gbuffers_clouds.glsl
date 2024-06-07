@@ -180,8 +180,8 @@ void main() {
   outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.9+.1;//*.5;
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
-  glowHSV.z *= outCd.a*.2*(glowHSV.z*.3+.2) *(depth*1.2+.2);
-  float glowReach = ((1.0-depth*.5)+.35)*.65;
+  glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*1.2+.2);
+  float glowReach = ((1.0-depth*.5)+.5)*.5;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
   toNorm=normalize(toNorm)*.5+.5;
@@ -260,7 +260,7 @@ void main() {
 
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-  gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);
+  //gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);
   gl_FragData[2] = vec4(toNorm, 1.0);
   gl_FragData[3] = vec4(glowHSV, glowReach);
     

@@ -56,6 +56,7 @@ void main() {
 
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
+#include "utils/stylization.glsl"
 
 uniform sampler2D gcolor;
 uniform sampler2D lightmap;
@@ -94,7 +95,7 @@ void main() {
   float upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
   upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
-  float skyGrey = min(luma(skyColor.rgb),.35)*1.4;
+  float skyGrey = getSkyGrey(skyColor.rgb);
   vec3 skyCd = mix( skyColor.rgb, vec3(skyGrey), rainStrength);
   vec3 fogCd = mix( fogColor, vec3(skyGrey*.65), rainStrength);
 

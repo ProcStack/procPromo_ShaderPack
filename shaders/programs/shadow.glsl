@@ -11,6 +11,7 @@
   #include "/shaders.settings"
   #include "utils/shadowCommon.glsl"
 
+	uniform sampler2D gcolor;
   uniform mat4 gbufferModelView;
   uniform mat4 gbufferProjection;
 	uniform mat4 shadowProjection;
@@ -20,10 +21,14 @@
 	
 	uniform vec3 chunkOffset;
 
-  in vec4 mc_Entity;
+	
 	in vec3 vaPosition;
+  in vec4 mc_Entity;
+  in int blockEntityId;
+	in vec2 mc_midTexCoord;
 
   out vec2 texcoord;
+	out vec2 texmidcoord;
   out vec4 color;
   out vec3 vShadowPos;
   out float vShadowDist;
@@ -35,8 +40,41 @@
   
 		vec4 position =  ftransform();
 		//vec4 position =  gbufferProjection * gbufferModelView * vec4( vaPosition, 1.0 ) ;
+		
+		
+    texcoord = gl_MultiTexCoord0.xy;
+		vec2 midcoord=mc_midTexCoord;
+		
+		vec4 outCd = gl_Color;
 
-    color=gl_Color;
+  float avgBlend = .5;
+  
+  ivec2 txlOffset = ivec2(2);
+  vec3 mixColor;
+  outCd = gl_Color*texture(gcolor, midcoord);
+  vec4 tmpCd = outCd;
+    mixColor = tmpCd.rgb;
+  #if (BaseQuality > 1)
+  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+  #if (BaseQuality == 2)
+  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+  #endif
+  #endif
+  //mixColor = mix( vec3(length(outCd.rgb)), mixColor, step(.1, length(mixColor)) );
+  mixColor = mix( vec3(outCd.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
+
+  outCd = vec4( mixColor, outCd.a); // 1.0);
+
+
+
+
+    color=outCd;
     
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
@@ -50,7 +88,6 @@
 		
     
     
-    texcoord = gl_MultiTexCoord0.xy;
     
     vIsLeaves=0.0;
     
@@ -64,6 +101,11 @@
     if ( mc_Entity.x == 301 || mc_Entity.x == 703 ){
       vIsTranslucent = 1.0;
     }
+		
+		// Beacon Beams!!
+    //if ( blockEntityId == 604  ){
+    //  color.a = 0.0;
+    //}
     
   }
 
@@ -80,10 +122,11 @@ const int shadowcolor1Format = RG16;
 
   #include "/shaders.settings"
 
-  uniform sampler2D tex;
+	uniform sampler2D gcolor;
 	uniform float far;
 
   in vec2 texcoord;
+	in vec2 texmidcoord;
   in vec4 color;
   in vec3 vShadowPos;
   in float vShadowDist;
@@ -93,10 +136,10 @@ const int shadowcolor1Format = RG16;
 
   void main() {
 
-    vec4 shadowCd = texture2D(tex,texcoord.xy);
-		shadowCd.rgb*=color.rgb;
+    float outAlpha = texture2D(gcolor,texcoord.xy).a;
+    vec4 shadowCd = color;
 
-    shadowCd.a= min(1.0, shadowCd.a+vIsLeaves);
+    shadowCd.a= min( 1.0, shadowCd.a * outAlpha + vIsLeaves );
 		
 		if( shadowCd.a<0.01 ){
 			discard;

@@ -445,7 +445,7 @@ void main() {
 #elif ( DebugView == 3 )
 	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
 	float fitWidth = 1.0 + aspectRatio*.45;
-	vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35 + vec2(-1.2,-2.15);
+	vec2 debugShadowUV = vec2( 1.0-uv.y, ((uv.x)-.5)*fitWidth+.5)*2.35 + vec2(-1.2,-2.15);
 	//debugShadowUV.x = mix( debugShadowUV.x, 1.0-debugShadowUV.x, step( 0.0, sunVec.z));
 	vec3 shadowCd = texture2D(shadowcolor0, debugShadowUV ).xyz;
 	debugShadowUV = abs(debugShadowUV-.5);
