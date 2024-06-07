@@ -602,6 +602,8 @@ void main() {
 
 	float rainStrengthInv = 1.0-rainStrength;
 
+	float skyBrightness = 1.0;
+	
 	// -- -- -- -- -- -- --
 	
 	vec4 baseCd=baseTxCd;
@@ -641,8 +643,6 @@ void main() {
 	}else{
 		txCd = texture(gcolor, tuv);
 	}
-
-	
 
 	
 	
@@ -731,10 +731,13 @@ void main() {
 // -- Shadow Sampling & Influence - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
+	
+	skyBrightness = skyBrightnessMult;
+
 #if ShadowSampleCount > 0
 
   vec3 localShadowOffset = shadowPosOffset;
-  localShadowOffset.z *= (skyBrightnessMult*.5+.5);
+  localShadowOffset.z *= (skyBrightness*.5+.5);
   //localShadowOffset.z *= min(1.0,outDepth*20.0+.7)*.1+.9;
   localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias)) * shadowThreshold );
   
@@ -775,7 +778,7 @@ void main() {
   vec2 posOffset;
   
   for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightnessMult;
+    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightness;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
   
@@ -821,7 +824,7 @@ void main() {
 
 //  Distance influence of surface shading --
 //  TODO : !! Cleans up shadow crawl with better values
-  shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightnessMult * rainStrengthInv * dayNightMult;
+  shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightness * rainStrengthInv * dayNightMult;
 	
   // -- -- --
 	
@@ -835,7 +838,7 @@ void main() {
 // -- -- -- -- -- -- -- -- -- --
 	
 // Mute Shadows during Rain
-	diffuseSun = mix( diffuseSun, 0.50, rainStrength)*skyBrightnessMult;
+	diffuseSun = mix( diffuseSun, 0.50, rainStrength)*skyBrightness;
 
 // The diffuse is the suns influence on the blocks
 //   Getting the max reduces hotspots,
@@ -893,7 +896,7 @@ void main() {
 
 // Fog-World Blending Influence
   float fogColorBlend = clamp( .9+depth+rainStrength, .1, 1.0 );
-	fogColorBlend *= min( 1.0-nightVision, skyBrightnessMult );
+	fogColorBlend *= min( 1.0-nightVision, skyBrightness );
 	
 	float invRainInf = rainStrengthInv*.2;
 	
@@ -1052,10 +1055,10 @@ float skyGreyInf = 0.0;
 
 // Brighten blocks when going spelunking
 // TODO: Promote control to Shader Options
-	float skyBrightMultFit = min(1.0, 1.0-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
+	float skyBrightMultFit = min(1.0, 1.0-skyBrightness*.1*(1.0-frozenSnowGlow) );
 	outCd.rgb *= skyBrightMultFit;
 		
-	outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightnessMult));
+	outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightness));
 	
 #endif
 	
