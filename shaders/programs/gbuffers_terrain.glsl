@@ -896,7 +896,7 @@ void main() {
 
 // Fog-World Blending Influence
   float fogColorBlend = clamp( .9+depth+rainStrength, .1, 1.0 );
-	fogColorBlend *= min( 1.0-nightVision, skyBrightness );
+	fogColorBlend *= (1.0-nightVision);// min( 1.0-nightVision, skyBrightness );
 	
 	float invRainInf = rainStrengthInv*.2;
 	
