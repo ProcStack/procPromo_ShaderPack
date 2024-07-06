@@ -103,7 +103,7 @@
     }
 		
 		// Beacon Beams!!
-    //if ( blockEntityId == 605  ){
+    //if ( blockEntityId == 603  ){
     //  color.a = 0.0;
     //}
     

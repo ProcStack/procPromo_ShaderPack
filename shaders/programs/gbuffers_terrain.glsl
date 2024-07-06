@@ -549,6 +549,7 @@ in vec4 vtexcoordam; // .st for add, .pq for mul
 uniform vec3 shadowLightPosition;
 uniform float dayNight;
 uniform float sunMoonShadowInf;
+uniform int worldTime;
 
 in float vAlphaMult;
 in float vAlphaRemove;
@@ -894,16 +895,18 @@ void main() {
 // -- Fog Coloring - -- --
 // -- -- -- -- -- -- -- -- --
 
+	vec3 toSkyColor = skyColor;
+
 // Fog-World Blending Influence
   float fogColorBlend = clamp( .9+depth+rainStrength, .1, 1.0 );
 	fogColorBlend *= (1.0-nightVision);// min( 1.0-nightVision, skyBrightness );
 	
 	float invRainInf = rainStrengthInv*.2;
 	
-	fogColorBlend = min( 1.0, (fogColorBlend+invRainInf) * min(1.0,depth*(150.0-rainStrength*145.0)) * (1.0-invRainInf) + invRainInf + glowInf);
+	fogColorBlend = min( 1.0, (fogColorBlend+invRainInf) * min(1.0,depth*(150.0-rainStrength*145.0*min(1.0,skyBrightness*4.0))) * (1.0-invRainInf) + invRainInf + glowInf);
 
 
-	vec3 toFogColor = mix( skyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.5+.5);
+	vec3 toFogColor = mix( toSkyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.5+.5);
 	
 	toFogColor = mix( outCd.rgb*(toFogColor*.8)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
 	
@@ -923,6 +926,43 @@ void main() {
 	
 // -- -- -- -- -- -- 
 	
+    
+// -- -- -- -- -- -- -- -- -- -- 
+// End Logic; Animated Fog  - -- --
+// -- -- -- -- -- -- -- -- -- -- -- --
+
+// TODO : MOVE TO POST PROCESSING ... ya dingus
+#ifdef THE_END
+
+	float depthEnd = min(1.0, max(0.0, outDepth*2.5+lightLumaBase*.5-screenDewarp*.005-.005));
+	depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
+	depthEnd = depthEnd*.7+.3;
+	
+// Fit lighting 0-1
+	float lightShift=.47441;
+	float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
+	float lightInf = clamp( (max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift)
+													*lightShiftMult
+													*min(depthEnd,1.0), 0.0, 1.0 );
+												
+	vec3 endFogCd = skyColor;
+	
+	float timeOffset = (float(worldTime)*0.00004166666)*30.0;
+	
+	vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
+	worldPos = ( worldPos+texture( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
+
+	
+// RGB Depth Based Noise for final influence
+	vec3 noiseX = texture( noisetex, fract(worldPos.xy*depthEnd*2.5 + (timeOffset*vec2(.25,.75)))).rgb;
+	//vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
+	
+	endFogCd = mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
+	outCd.rgb *= endFogCd;
+	toSkyColor = skyColor;//outCd.rgb ;
+	fogColorBlend=depthEnd;//+lightLumaBase*.1;
+
+#endif
 
 // -- -- -- -- -- -- --
 // -- Fog Vision - -- --
@@ -936,7 +976,8 @@ float skyGreyInf = 0.0;
 // Fog when Player in Water 
 	if( isEyeInWater == 1 ){ 
 		float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
-		//outCd.rgb *=  1.0+lightLuma+glowInf;
+		// General brightness under water
+		outCd.rgb *=  1.0+lightLuma*.5+glowInf;
 		outCd.rgb *=  toFogColor*(.8+lightLuma*lightLuma*.3);//+.5;
 		
 // Fog when Player in Lava 
@@ -956,10 +997,10 @@ float skyGreyInf = 0.0;
 		// Clear sky Blue = 0xFF = 255/255 = 1.0
 		// Rain sky Blue = 0x88 = 136/255 = 0.53333333333
 		// Thunder sky Blue = 0x33 = 51/255 = 0.2 = 1.0/(1.0-.2) = 1.25
-		skyGreyInf =  (skyColor.b-.2)*1.25;
+		skyGreyInf =  (toSkyColor.b-.2)*1.25;
 	
-		skyGreyCd = vec3(getSkyFogGrey(skyColor.rgb));
-		//skyGreyCd = mix( skyGreyCd, ((skyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
+		skyGreyCd = vec3(getSkyFogGrey(toSkyColor.rgb));
+		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
 		
 		vec3 blockBasinCd = outCd.rgb*min(1.0,worldPosYFit*.5+depth+.55);
 		
@@ -993,39 +1034,6 @@ float skyGreyInf = 0.0;
 #endif
 
 
-    
-// -- -- -- -- -- -- -- -- -- -- 
-// End Logic; Animated Fog  - -- --
-// -- -- -- -- -- -- -- -- -- -- -- --
-
-// TODO : MOVE TO POST PROCESSING ... ya dingus
-#ifdef THE_END
-
-	float depthEnd = min(1.0, max(0.0, outDepth*2.5-screenDewarp*.005-.005)*2.8);
-	//depthEnd = depthEnd*.7+.3;
-	depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
-	
-// Fit lighting 0-1
-	float lightShift=.47441;
-	float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
-	float lightInf = clamp( (max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift)
-													*lightShiftMult
-													*min(depthEnd+lightLumaBase*.1,1.0), 0.0, 1.0 );
-												
-	vec3 endFogCd = fogColor+vec3(.4,.35,.4);
-
-	float timeOffset = (float(worldTime)*0.00004166666)*30.0;
-	
-	vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
-	worldPos = ( worldPos+texture( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );
-
-// RGB Depth Based Noise for final influence
-	vec3 noiseX = texture( noisetex, fract(worldPos.xy*depthEnd*2.5 + (timeOffset*vec2(.25,.75)))).rgb;
-	//vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
-	
-	outCd.rgb *= mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
-
-#endif
 
 // Add color to glow
 	float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );

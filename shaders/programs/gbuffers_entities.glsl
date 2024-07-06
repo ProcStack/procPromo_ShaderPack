@@ -17,6 +17,10 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 sunPosition;
 
+uniform int blockEntityId;
+uniform int entityId;
+
+
 uniform sampler2D gcolor;
 
 uniform float viewWidth;
@@ -76,7 +80,7 @@ void main() {
   vNormal = normalize(gl_NormalMatrix * gl_Normal);
 
   color = gl_Color;
-  color.a=1.0;
+  //color.a=1.0;
 
 
   texelSize = vec2(1.0/64.0, 1.0/32.0);//vec2(1.0/viewWidth,1.0/viewWidth);
@@ -98,7 +102,7 @@ void main() {
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position.xyz + gbufferModelViewInverse[3].xyz;
 
   vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
-  float shadowPushAmmount =  (depth*.5 + .0010 ) ;
+  float shadowPushAmmount =  (depth*.5 + .00010 ) ;
 	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
 	
 	// `+ (0.75-depth*.55)` is scalping fixes
@@ -152,25 +156,25 @@ void main() {
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   
   
-  float avgBlend = .3;
+  float avgBlend = .5;
   
   ivec2 txlOffset = ivec2(2);
   vec3 mixColor;
   vec4 tmpCd;
   float avgDiv = 0.0;
-  tmpCd = texture2D(gcolor, midcoord);
+  tmpCd = color*texture2D(gcolor, midcoord);
     mixColor = tmpCd.rgb;
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(gcolor, midcoord, ivec2(txlOffset.x, txlOffset.y) );
+  tmpCd = color*textureOffset(gcolor, midcoord, ivec2(txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
+  tmpCd = color*textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+  tmpCd = color*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
-  tmpCd = textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+  tmpCd = color*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
     mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
     avgDiv += tmpCd.a;
   
@@ -178,11 +182,9 @@ void main() {
   
   // 
   vAvgColorBlend = 0.0;
-  if (mc_Entity.x == 603){
+  if(mc_Entity.x == 603){
     vAvgColorBlend = 0.5;
   }
-  
-  
   
 }
 #endif
@@ -211,7 +213,10 @@ uniform int fogMode;
 uniform vec3 sunPosition;
 uniform vec4 spriteBounds; 
 uniform vec4 entityColor;
+uniform vec3 fogColor;
 
+uniform int blockEntityId;
+uniform int entityId;
 
 varying vec4 color;
 varying vec4 texcoord;
@@ -264,7 +269,7 @@ void main() {
   
   vec2 luv = lmcoord.st;
   vec4 lightBaseCd = texture2D(lightmap, luv);
-  vec3 lightCd = lightBaseCd.rgb*.65+.35;
+  vec3 lightCd = lightBaseCd.rgb*.85+.15;
   
   vec4 outCd = txCd * color;
   baseCd *= color;
@@ -282,8 +287,9 @@ void main() {
   
   
 
-  float depth = min(1.0, max(0.0, gl_FragCoord.w));
+  float depth = min(0.999999, gl_FragCoord.w);
 	float depthBias = biasToOne(depth, 10.5);
+	float depthFog = min(1.0, depth*2.5 );
 
 
 	float lightLumaBase = biasToOne( lightCd.r );
@@ -304,19 +310,26 @@ void main() {
   float surfaceShading = 9.0-abs(toCamNormalDot);
 
   float fogColorBlend = 1.0;
+	
+	float ambBrightness = 3.0;
   
     // -- -- -- -- -- -- -- -- -- -- -- --
     // -- Shadow Sampling & Influence - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
-		float lightLuma = shiftBlackLevels( lightLumaBase ); // lightCd.r;
 
-    
+		float lightLuma = shiftBlackLevels( lightLumaBase ); // lightCd.r;
+		
+		ambBrightness = 1.0;
+
 #if ShadowSampleCount > 0
 
-  vec3 localShadowOffset = shadowPosOffset;
+// localShadowOffset is distance offset from surface to sample shadow
+  vec3 localShadowOffset = shadowPosOffset_Entity;
   localShadowOffset.z *= (skyBrightnessMult*.5+.5);
-  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(2.0-depthBias)) * shadowThreshold );
+  //localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase_Entity + shadowThreshDist*(2.0-depthBias)) * shadowThreshold_Entity );
+  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase_Entity) * shadowThreshold_Entity );
+
   
   vec4 shadowPosLocal = shadowPos;
 
@@ -352,7 +365,8 @@ void main() {
     posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightnessMult;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, axisSamplesFit);
+    //shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    shadowAvg = max( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x);
   }
 #elif ShadowSampleCount == 3
   vec2 posOffset;
@@ -360,7 +374,8 @@ void main() {
   for( int x=0; x<boxSamplesCount; ++x){
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    //shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    shadowAvg = max( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x);
   }
 #elif ShadowSampleCount > 3
   vec2 posOffset;
@@ -368,9 +383,13 @@ void main() {
   for( int x=0; x<boxSamplesCount; ++x){
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    //shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    shadowAvg = max( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x);
   }
 #endif
+
+
+
 
   
   float shadowDepthInf = clamp( (depth*distancDarkenMult), 0.0, 1.0 );
@@ -406,9 +425,10 @@ void main() {
   
   //lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
-	lightCd = mix( lightCd, shadowCd.rgb, clamp(shadowData.r*(1.0-shadowBase)
-	                                      //* max(0.0,shadowDepthInf*2.0-1.0)
-																				- shadowData.b*2.0, 0.0, 1.0) );
+	lightCd = mix( lightCd, shadowCd.rgb,
+									clamp(shadowData.r*(1.0-shadowBase)
+									//* max(0.0,shadowDepthInf*2.0-1.0)
+									- shadowData.b*2.0, 0.0, 1.0) );
 	lightLuma = min( maxComponent(lightCd), lightLuma );
 
   // Strength of final shadow
@@ -421,8 +441,9 @@ void main() {
   
   lightCd = min(vec3(min(1.0,lightLumaBase)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
 	lightCd = mix( vec3(lightLumaBase), lightCd.rgb, skyBrightnessMult);
-  outCd.rgb*=lightCd;
 
+	// Kill Shadow
+	//lightCd = vec3(1.0);
 
   surfaceShading *= mix( dayNightMult, max(0.0,vNormalSunDot), sunMoonShadowInf*.5+.5 );
     
@@ -433,19 +454,14 @@ void main() {
     surfaceShading = max( surfaceShading, lightCd.r );
     surfaceShading = shiftBlackLevels( surfaceShading );
     
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  // -- 'Specular' Roll-Off; Radial Highlights -- --
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    
-    
-    //outCd.rgb += outCd.rgb * depthBias * surfaceShading *fogColor; // -.2;
-    outCd.rgb *= lightCd.xyz*1.1; // -.2;
+    outCd.rgb *= lightCd.xyz*1.0; // -.2;
+		
 #endif
 
 
-	
-	
-	
+	float fogLuma = luma(fogColor);
+	outCd.rgb = mix( outCd.rgb*(max(vec3(fogColor*ambBrightness), fogColor.rgb)*.5+.5), outCd.rgb, depthFog );
+
 	
   #if ( DebugView == 4 )
     float debugBlender = step( .0, vPos.x );
@@ -455,8 +471,7 @@ void main() {
   float entityCd = maxComponent(entityColor.rgb);
   lightCd = vec3( lightCd.r );// * (1.0+rainStrength*.2));
   outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
-
-
+	
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(depth, outEffectGlow, 0.0, 1.0);
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
