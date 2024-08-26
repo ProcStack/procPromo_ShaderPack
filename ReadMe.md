@@ -59,7 +59,8 @@ Gotta love personal projects though,
 
 *To Companies: This repo is a personal project in constant flux;
 <br/>&nbsp; I make jokes in my comments and hide youtube videos in my code.
-<br/>&nbsp; This is a project for a game, so I'm treating it like a game.
+<br/>&nbsp;&nbsp;&nbsp; This is for fun and for a game;
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cleanliness is second to testing new ideas.
 
 ---
 
