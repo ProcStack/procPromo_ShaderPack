@@ -57,6 +57,10 @@ Since I had no footing for Optifine's environment,
 Gotta love personal projects though,
 <br/>&nbsp; Such a cathartic release from a long day.
 
+*To Companies: This repo is a personal project in constant flux;
+<br/>&nbsp; I make jokes in my comments and hide youtube videos in my code.
+<br/>&nbsp; This is a project for a game, so I'm treating it like a game.
+
 ---
 
 ### My Working Environment
