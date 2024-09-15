@@ -352,8 +352,8 @@ void main() {
   vDeltaPow=1.8;
   vDeltaMult=3.0;
   if( mc_Entity.x == 811 || mc_Entity.x == 247  ){
-		vDeltaPow=2.5;
-    vDeltaMult=2.0;
+		vDeltaPow=1.95;
+    vDeltaMult=2.5;
 	}
   if( mc_Entity.x == 103 ){
     vDeltaPow=.80;
@@ -1014,14 +1014,18 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
 
-	float lightInfNether = clamp( max((lightCd.r-.15),lightLumaBase)
-										       + (1.0-min(1.0,(1.0-depth*.8)*2.0)), 0.0, 1.0 );
+	float lightInfNether = clamp( max((lightCd.r-.15),lightLumaBase*1.4)
+										       - (min(1.0,(.8-depth*.8)+.2))*1., 0.0, 1.0 );
+	lightInfNether += lightLumaBase*(depth*.5 +.5);
 	
 	lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
-	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd*1.3) );
+	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd*1.) );
 	outCd.rgb = mix( fogColor, cdLitFog, lightInfNether );
 	outCd.rgb *= mix(vec3(1.0), (fogColor*.5+.5)*(toCamNormalDot*.65+.35), depth);
-		
+	float cdNetherBlend = shiftBlackLevels(1.0-depth*.5) - lightLumaBase*.4;
+	outCd.rgb = mix( outCd.rgb*outCd.rgb, outCd.rgb, cdNetherBlend);
+	//	outCd.rgb = vec3(lightInfNether);
+	//outCd.rgb = vec3(lightLumaBase-(1.0-depth));
 #else
 
 // Surface Normal Influence; 45%
@@ -1040,7 +1044,7 @@ float skyGreyInf = 0.0;
 	//glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5) * (depth*.8+.2));
 	glowCd = addToGlowPass(glowCd, outCd.rgb * (depth*.8+.2));
 
-	glowInf += (max(0.0,luma(outCd.rgb)-.5)*1.5+isLava)*vCdGlow;
+	glowInf += (max(0.0,luma(outCd.rgb)-.5)*1.85+isLava)*vCdGlow;
 
 
 #ifdef OVERWORLD
