@@ -709,7 +709,7 @@ void main() {
 // -- Apply Shading To Base Color - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 	float avgColorMix = depthDetailing*vDepthAvgColorInf;
-	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + isLava*3.0);
+	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + isLava*(3.0+(1.0-depth)));
 	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
 	// TODO : Optimize
 	vec3 glowBaseCd = outCd.rgb;
@@ -1021,8 +1021,8 @@ float skyGreyInf = 0.0;
 	lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
 	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd*1.) );
 	outCd.rgb = mix( fogColor, cdLitFog, lightInfNether );
-	outCd.rgb *= mix(vec3(1.0), (fogColor*.5+.5)*(toCamNormalDot*.65+.35), depth);
-	float cdNetherBlend = shiftBlackLevels(1.0-depth*.5) - lightLumaBase*.4;
+	outCd.rgb *= mix(vec3(1.0), (fogColor*.5+.5)*(toCamNormalDot*.75+.25), depth*.75);
+	float cdNetherBlend = shiftBlackLevels(1.0-depth*.4) - lightLumaBase*.3;
 	outCd.rgb = mix( outCd.rgb*outCd.rgb, outCd.rgb, cdNetherBlend);
 	//	outCd.rgb = vec3(lightInfNether);
 	//outCd.rgb = vec3(lightLumaBase-(1.0-depth));
