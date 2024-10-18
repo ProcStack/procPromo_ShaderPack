@@ -367,16 +367,17 @@ void main() {
   if( mc_Entity.x == 811 || mc_Entity.x == 247  ){
 		vDeltaPow=1.95;
     vDeltaMult=2.5;
-	}
-  if( mc_Entity.x == 103 ){
-    vDeltaPow=.80;
-		vDeltaMult=1.75;
-  }
-  if( mc_Entity.x == 105 ){
+	}else if( mc_Entity.x == 103 ){ // Most ores
+    vDeltaPow=0.80;
+		vDeltaMult=5.0;
+  }else if( mc_Entity.x == 104 ){ // Diamonds
+    vDeltaPow=0.80;
+		vDeltaMult=1.5;
+		vAvgColor=vec4(0.5,0.5,0.5,1.0);
+  }else if( mc_Entity.x == 105 ){ // Powerder Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
-  }
-  if( mc_Entity.x == 115 ){
+  }else if( mc_Entity.x == 115 ){
     vDeltaPow=4.0;
     vDeltaMult=1.10;
   }
@@ -684,7 +685,7 @@ void main() {
 	
 // Get scene depth, and make glowy things less depth influenced
 	float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
-	float depthBias = biasToOne(depth, 7.5);
+	float depthBias = biasToOne(depth, 9.5);
 	
 // A bias of .035 for retaining detail closer to camera
 	float depthDetailing = clamp(detailDistBias*1.5-depthBias, 0.0, 1.0);
