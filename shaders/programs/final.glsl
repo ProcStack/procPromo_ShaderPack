@@ -333,7 +333,7 @@ void main() {
   // Tweak Nether settings 
   skyBrightnessInf = 1.0;
   // Make the edge lines fatter in the dark
-  reachMult *= 0.9+(1.0-dataCd.r*1.5);
+  reachMult *= 1.0+(1.0-dataCd.r*.5);
   // Bias the Cosine Depth closer to the camera
   depthCos=biasToOne(depthCos);
   

@@ -23,8 +23,8 @@ statPath=[ basePath+"/utils/stats/ScriptingStats_", ".txt" ]
 
 # Recursive Directories
 dirs=[ basePath+'/shaders/' ]
-avoidList=['shadow.glsl', 'shadow.fsh', 'shadow.vsh']
-avoidExtensions=['.psd','.gif','.png','.jpg']
+avoidList=[]
+avoidExtensions=['.psd','.gif','.png','.jpg','.properties','.settings']
 
 def printList(list):
     for l in list:
@@ -312,6 +312,6 @@ date=datetime.datetime.now()
 yearmonthday=str(date.year)+"-"+str(date.month)+"-"+str(date.day)
 fileOut=yearmonthday.join( statPath )
 
-f = open(fileOut, "w")
+f = open(fileOut, "w+")
 f.write(fileData)
 f.close()

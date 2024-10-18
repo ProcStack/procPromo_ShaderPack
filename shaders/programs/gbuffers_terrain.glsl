@@ -259,6 +259,26 @@ void main() {
   vFinalCompare = mc_Entity.x == 811 ? 0.0 : 1.0;
   vFinalCompare = mc_Entity.x == 901 ? 0.0 : vFinalCompare;
 
+  // Leaves
+  vAlphaRemove = 0.0;
+  // Depth-based texture detail smoothing
+  vDepthAvgColorInf = 1.0;
+  // Ore Detail Blending Mitigation
+  vDeltaPow=1.8;
+  vDeltaMult=3.0;
+
+	// Color corrections
+	if( mc_Entity.x == 302 ){
+		vAvgColor = vec4( 0.224, 0.135, 0.114, 1.0 );
+		vColor = vec4( 0.224, 0.135, 0.114, 1.0 );
+		
+		vAvgColor = vec4( 0.324, 0.235, 0.214, 1.0 );
+		vColor = vec4( 0.324, 0.235, 0.214, 1.0 );
+		vDeltaPow = 0.050;
+		vDeltaMult = 5.0;
+	}
+
+
   // Single plane cross blocks;
   //   Grass, flowers, etc.
   //vCamViewVec=vec3(0.0);
@@ -317,7 +337,6 @@ void main() {
   */
   
   // Leaves
-  vAlphaRemove = 0.0;
   if((mc_Entity.x == 810 || mc_Entity.x == 8101) && SolidLeaves ){
     vAvgColor = mc_Entity.x == 810 ? vColor * (vAvgColor.g*.5+.5) : vAvgColor;
     vColor = mc_Entity.x == 8101 ? vAvgColor : vColor;
@@ -326,10 +345,6 @@ void main() {
     vAlphaRemove = 1.0;
     //shadowPos.w = -2.0;
   }
-
-
-  // Depth-based texture detail smoothing
-  vDepthAvgColorInf = 1.0;
 
 
   if( mc_Entity.x == 801 || mc_Entity.x == 811 || mc_Entity.x == 8014 ){
@@ -349,8 +364,6 @@ void main() {
   //}
   
   // Ore Detail Blending Mitigation
-  vDeltaPow=1.8;
-  vDeltaMult=3.0;
   if( mc_Entity.x == 811 || mc_Entity.x == 247  ){
 		vDeltaPow=1.95;
     vDeltaMult=2.5;
@@ -1019,11 +1032,12 @@ float skyGreyInf = 0.0;
 	lightInfNether += lightLumaBase*(depth*.5 +.5);
 	
 	lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
-	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd*1.) );
-	outCd.rgb = mix( fogColor, cdLitFog, lightInfNether );
-	outCd.rgb *= mix(vec3(1.0), (fogColor*.5+.5)*(toCamNormalDot*.75+.25), depth*.75);
-	float cdNetherBlend = shiftBlackLevels(1.0-depth*.4) - lightLumaBase*.3;
-	outCd.rgb = mix( outCd.rgb*outCd.rgb, outCd.rgb, cdNetherBlend);
+	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd*.75) );
+	outCd.rgb = mix( fogColor*.5+skyColor*.5, cdLitFog, lightInfNether );
+	outCd.rgb *= mix(vec3(1.0), (fogColor*.5)*(toCamNormalDot*.75+.25), depth*.5);
+	float cdNetherBlend = shiftBlackLevels(1.0-depth*.65) - lightLumaBase*.3;
+	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
+	lightLumaBase = shiftBlackLevels( lightLumaBase )*0.5;
 	//	outCd.rgb = vec3(lightInfNether);
 	//outCd.rgb = vec3(lightLumaBase-(1.0-depth));
 #else
