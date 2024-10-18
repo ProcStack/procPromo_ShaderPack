@@ -455,7 +455,10 @@ void main() {
     surfaceShading = shiftBlackLevels( surfaceShading );
     
     outCd.rgb *= lightCd.xyz*1.0; // -.2;
-		
+
+#else
+  // Nether and End
+  outCd.rgb *= lightBaseCd.rgb;
 #endif
 
 
