@@ -333,12 +333,14 @@ void main() {
   // Tweak Nether settings 
   skyBrightnessInf = 1.0;
   // Make the edge lines fatter in the dark
-  reachMult *= 1.0+(1.0-dataCd.r*.5);
+	float invLighting = 1.0-(dataCd.r*.4+.35);
+  reachMult *= 1.0+invLighting;
   // Bias the Cosine Depth closer to the camera
-  depthCos=biasToOne(depthCos);
+  //depthCos=biasToOne(depthCos);
+  depthCos=biasToOne(depthCos*(2.2*invLighting));
   
-  innerMult = .8;
-  outerMult = 2.5;
+  innerMult = .95;
+  outerMult = 1.25;
 #endif
   
   vec3 avgNormal = normalCd.rgb;
@@ -350,16 +352,17 @@ void main() {
              innerEdgePerc,outerEdgePerc );
 
   innerEdgePerc *= 1.0-min(1.0,float(max(0,isEyeInWater))*.35);
-  innerEdgePerc *= dotToCamClamp*1.5-reachOffset*1.5;
+  innerEdgePerc *= dotToCamClamp*2.5-reachOffset*1.5;
   
   // Screen edges influence
   float screenEdgeMult = max(0.0, 1.0-maxComponent(uvShifted) * 2.5); // Higher the #, darker the edges
   // Edge depth boost
-  float edgeDepthInf = (depthCos*.8+.02)*2.5;
+  float edgeDepthInf = (depthCos*.8+.02)*(2.5-dataCd.r*.5);
   
   // Output Individual Edge Values
   innerEdgePerc = clamp(innerEdgePerc * edgeDepthInf * screenEdgeMult * innerMult, 0.0, rainInf )  ;
   outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf );
+	
   
   // Combine Inner & Outer Edge Values
   //float edgeInsideOutsidePerc = clamp(max(innerEdgePerc,outerEdgePerc)*(depthCos-.01)*10.5, 0.0, rainInf-float(isEyeInWater)*.27 );
@@ -375,7 +378,9 @@ void main() {
   outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.2*depthCos;
 #elif defined NETHER
   //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
-  outCd.rgb =  mix(outCd.rgb, outCd.rgb * vec3(.75,.5,.2), edgeInsideOutsidePerc);// * (shadow*.3+.7);
+	vec3 netherEdgeCd = mix( outCd.rgb*vec3(.75,.5,.2), mix(fogColor,outCd.rgb,depth), dataCd.r*.85);
+	
+  outCd.rgb =  mix(outCd.rgb, netherEdgeCd, edgeInsideOutsidePerc);
 #endif
   
   
@@ -464,7 +469,7 @@ void main() {
 #endif
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-	//outCd.rgb = outGlowCd;
+	//outCd.rgb = dataCd.rrr;
 	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

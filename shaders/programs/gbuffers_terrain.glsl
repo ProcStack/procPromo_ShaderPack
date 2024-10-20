@@ -391,7 +391,8 @@ void main() {
 	}else if( mc_Entity.x == 247  ){ // Glowstone
     vDeltaMult=2.5;
 		vDeltaPow=1.5;
-		vAvgColor=vec4(0.58, 0.447, 0.137,0.0);
+		vAvgColor=vec4(0.729, 0.557, 0.318,0.0);
+		
 		vDepthAvgColorInf=1.0;
 		vColorOnly=1.0;
 		
@@ -412,12 +413,13 @@ void main() {
     vDeltaMult=1.10;
     vDeltaPow=4.0;
   }else if( mc_Entity.x == 303 ){
-		vAvgColor = vec4( 0.29, 0.106, 0.106, 1.0 );
+		vAvgColor = vec4( 0.29, 0.107, 0.107, 1.0 );
 	
   vDeltaMult=4.0;
   vDeltaPow=2.8;
 
   }
+	
 
 	// Color corrections
 	if( mc_Entity.x == 302 ){ // soul sand
