@@ -34,7 +34,7 @@ void main() {
 
   gl_Position = gl_ProjectionMatrix * position;
 
-  vColor = gl_Vertex;// * step(1.0,(gl_Vertex.y+60.0)*.015);//*step(0.0, gl_Vertex.y);
+  vColor = gl_Vertex;
 
   texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
   

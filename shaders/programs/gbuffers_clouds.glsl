@@ -24,6 +24,7 @@ varying vec4 lmcoord;
 varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
+varying vec3 vSunWorldPos;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
@@ -50,11 +51,13 @@ void main() {
   color = gl_Color;
 
   shadowPos = position;
+	
+	// -- -- --
+
+	vSunWorldPos = (gbufferModelView * vec4(sunPosition,1.0)).xyz;
 
   // -- -- -- -- -- -- -- --
   
-
-
 
   texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 
@@ -87,12 +90,14 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 cameraPosition;
+uniform vec3 sunPosition;
 
 uniform sampler2D gcolor;
 uniform sampler2D lightmap;
 uniform float rainStrength;
 uniform int moonPhase;
 uniform vec3 shadowLightPosition;
+
 
 uniform float near;
 uniform float far;
@@ -106,6 +111,7 @@ varying vec4 lmcoord;
 varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
+varying vec3 vSunWorldPos;
 
 varying vec4 shadowPos;
 
@@ -120,6 +126,8 @@ const int GL_EXP = 2048;
 void main() {
 
   float depth = min(1.0,gl_FragCoord.w*250.0);
+	
+	float toSun = dot( sunVecNorm, normalize(vLocalPos.xyz) );
 
   float toUp = dot(vNormal, upVecNorm);
   float toUpFitted = toUp*.05+1.0;
@@ -153,6 +161,8 @@ void main() {
   outCd.rgb = mix( outCd.rgb, length(color.rgb)*vec3(.5), rainStrFit);
   
   
+	
+	// -- -- --
   
   float distMix = min(1.0,gl_FragCoord.w*5.0);
   outCd.rgb = mix( outCd.rgb*mix(fogColor, vec3(1,1,1), distMix*.55+.45), outCd.rgb, distMix );
@@ -161,26 +171,57 @@ void main() {
   float sunGlowMult = .65*rainStrFitInverseFit;
   float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
   moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
-  moonPhaseMult = (moonPhaseMult*.4+.1);
 
-  // Add glow around sun / moon
-  vec3 camToPos = normalize( vLocalPos.xyz - cameraPosition);
-  float sunMoonGlow = dot(camToPos, sunVecNorm);
-  // Sun Glow Logic
-  float sunGlow = sunMoonGlow*max(0.0,abs(sunMoonGlow)-.3);
-  sunGlow = max(0.0,sunGlow)*sunGlowMult;
-  // Moon Glow Logic
-  float moonGlow = sunMoonGlow*max(0.0,abs(sunMoonGlow)-.8);
-  moonGlow = max(0.0,-moonGlow)*moonPhaseMult;
-  sunMoonGlow = mix( moonGlow, sunGlow, clamp(dayNight+.5,0.0,1.0));
-  //sunMoonGlow = sunMoonGlow*sunMoonGlow * rainStrFitInverseFit;
-  outCd.rgb += vec3( sunMoonGlow*.8 );
   
+	// -- -- --
+	
+	// Set colors during Sunset/rise and Moonrise/set
+	
+	float antiBlend = biasToOne( toSun*.5+.5 );
+	
+	// Sunset / Anti-Sunset
+	vec3 sunsetCd = vec3( 0.733, 0.682, 0.647 );
+	vec3 antiSunsetCd = vec3( 0.58, 0.522, 0.631 );
+	sunsetCd = mix( antiSunsetCd, sunsetCd, antiBlend );
+	
+	// Moonrise / Anti-Moonrise
+	vec3 moonriseCd = vec3( 0.592, 0.647, 0.82 );
+	vec3 antiMoonriseCd = vec3( 0.2, 0.239, 0.361 );
+	moonriseCd = mix( antiMoonriseCd, moonriseCd, (1.0-antiBlend)*moonPhaseMult );
+	
+	// --
+	
+	// The sunset / moonrise color influence
+	float riseSetInf = min(1.0,abs(dayNight)*4.0);
+	riseSetInf = 1.0 - riseSetInf*(riseSetInf*.5+.5);
+	
+	// The cross over from sunset colors to moonrise colors
+	float sunMoonCdBlend = clamp( (dayNight+.1)*6.2, 0.0, 1.0 );
+	
+	vec3 setRiseCd = mix( moonriseCd, sunsetCd, sunMoonCdBlend );
+	outCd.rgb = mix( outCd.rgb, setRiseCd, riseSetInf );
+	
+	// -- 
+	
+  // Add glow around sun
+	float sunGlowFit = (rainStrFitInverse*.6+.05);
+  outCd.rgb += vec3( min(1.0,-log(pow(toSun*-.5+.5,(0.20+rainStrFit)*riseSetInf))) * sunGlowFit );
+	
+  // Add glow around moon
+	//   moonPhaseMultFit multiplied number is glow's reach from moon
+	//   moonPhaseMultFit added number is glow base influence around moon
+	float moonPhaseMultFit = moonPhaseMult*.35+.05;
+  outCd.rgb += vec3( max( 0.0, moonPhaseMultFit - clamp( -log(pow(toSun*-.5+.5,6.0-moonPhaseMult*3.0)), 0.0,1.0)) * sunGlowFit );
+	
+	
+	// -- -- --
+	
+	
   // Opacity Logic
   outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.9+.1;//*.5;
   
-  vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+sunMoonGlow*.1)*rainStrFitInverseFit);
-  glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*1.2+.2);
+  vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+toSun*.1)*rainStrFitInverseFit);
+  glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*2.0+.3);
   float glowReach = ((1.0-depth*.5)+.5)*.5;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
@@ -258,6 +299,7 @@ void main() {
     outCd = mix( baseCd*color, outCd, debugBlender);
   #endif
 
+	
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
   //gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);

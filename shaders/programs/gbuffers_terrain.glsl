@@ -147,7 +147,7 @@ void main() {
   
   // -- -- --
   
-  float avgBlend = .75;
+  float avgBlend = .5;
   
   ivec2 txlOffset = ivec2(2);
   vec3 mixColor;
@@ -386,8 +386,8 @@ void main() {
 	
   // Ore Detail Blending Mitigation
   if( mc_Entity.x == 811 ){ // Dirt Grass
-    vDeltaMult=2.5;
-		vDeltaPow=1.95;
+    vDeltaMult=50.5;
+		vDeltaPow=4.2;
 	}else if( mc_Entity.x == 247  ){ // Glowstone
     vDeltaMult=2.5;
 		vDeltaPow=1.5;
@@ -414,9 +414,9 @@ void main() {
     vDeltaPow=4.0;
   }else if( mc_Entity.x == 303 ){
 		vAvgColor = vec4( 0.29, 0.107, 0.107, 1.0 );
-	
-  vDeltaMult=4.0;
-  vDeltaPow=2.8;
+		
+		vDeltaMult=4.0;
+		vDeltaPow=2.8;
 
   }
 	
@@ -430,6 +430,9 @@ void main() {
 		vColor = vec4( 0.324, 0.235, 0.214, 1.0 );
 		vDeltaPow = 0.050;
 		vDeltaMult = 5.0;
+	}else if( mc_Entity.x == 304 ){
+		// Magick numbers, boo!
+		vAvgColor.rgb = vec3(dot(vAvgColor.rgb, vec3(0.299, 0.087, 0.214)));
 	}
 	
 	// -- -- --
@@ -1235,6 +1238,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
+	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
