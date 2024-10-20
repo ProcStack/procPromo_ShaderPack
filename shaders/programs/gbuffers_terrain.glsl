@@ -252,31 +252,42 @@ void main() {
   
   
   vAlphaMult=1.0;
-  vIsLava=0.0;
+	
   vCdGlow=0.0;
-  vCrossBlockCull=0.0;
   vColorOnly=0.0;
+	
   vFinalCompare = mc_Entity.x == 811 ? 0.0 : 1.0;
   vFinalCompare = mc_Entity.x == 901 ? 0.0 : vFinalCompare;
 
+	// -- -- --
+
+  vIsLava=0.0;
+  vCrossBlockCull=0.0;
+	
+	// -- -- --
+	
   // Leaves
   vAlphaRemove = 0.0;
+	
+	// -- -- --
+	
   // Depth-based texture detail smoothing
   vDepthAvgColorInf = 1.0;
+	
+	// -- -- --
+	
   // Ore Detail Blending Mitigation
-  vDeltaPow=1.8;
+	// `vDeltaMult` - How strongly details are found in blocks to blur
+	//                  (colorB-colorA)*vDeltaMult
+	// `vDeltaPow` - Tighten the Bluring around those details from `vDeltaMult`
+	//                 Higher is tigher, 0 - 2 is safe; try 10+ though 
+	//  ```
+	//  pow(length(outCd-vAvgColor),vDeltaPow+light)*vDeltaMult*depth
+	//  ```
   vDeltaMult=3.0;
+  vDeltaPow=1.8;
 
-	// Color corrections
-	if( mc_Entity.x == 302 ){
-		vAvgColor = vec4( 0.224, 0.135, 0.114, 1.0 );
-		vColor = vec4( 0.224, 0.135, 0.114, 1.0 );
-		
-		vAvgColor = vec4( 0.324, 0.235, 0.214, 1.0 );
-		vColor = vec4( 0.324, 0.235, 0.214, 1.0 );
-		vDeltaPow = 0.050;
-		vDeltaMult = 5.0;
-	}
+	// -- -- --
 
 
   // Single plane cross blocks;
@@ -363,25 +374,61 @@ void main() {
   //if( mc_Entity.x == 812 ){
   //}
   
+	
+	// `vDeltaMult` - How strongly details are found in blocks to blur
+	//                  (colorB-colorA)*vDeltaMult
+	// `vDeltaPow` - Tighten the Bluring around those details from `vDeltaMult`
+	//                 Higher is sharper approach to the edge
+	//                   0 - 2 is safe; try 10+ though 
+	//  ```
+	//  pow(length(outCd-vAvgColor),vDeltaPow+light)*vDeltaMult*depth
+	//  ```
+	
   // Ore Detail Blending Mitigation
-  if( mc_Entity.x == 811 || mc_Entity.x == 247  ){
-		vDeltaPow=1.95;
+  if( mc_Entity.x == 811 ){ // Dirt Grass
     vDeltaMult=2.5;
+		vDeltaPow=1.95;
+	}else if( mc_Entity.x == 247  ){ // Glowstone
+    vDeltaMult=2.5;
+		vDeltaPow=1.5;
+		vAvgColor=vec4(0.58, 0.447, 0.137,0.0);
+		vDepthAvgColorInf=1.0;
+		vColorOnly=1.0;
+		
+		// Glow boost, yeah, should be a different variable
+		vIsLava = 0.4; 
+		
 	}else if( mc_Entity.x == 103 ){ // Most ores
-    vDeltaPow=0.80;
 		vDeltaMult=5.0;
-  }else if( mc_Entity.x == 104 ){ // Diamonds
     vDeltaPow=0.80;
+  }else if( mc_Entity.x == 104 ){ // Diamonds
 		vDeltaMult=1.5;
+    vDeltaPow=0.80;
 		vAvgColor=vec4(0.5,0.5,0.5,1.0);
   }else if( mc_Entity.x == 105 ){ // Powerder Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
   }else if( mc_Entity.x == 115 ){
-    vDeltaPow=4.0;
     vDeltaMult=1.10;
+    vDeltaPow=4.0;
+  }else if( mc_Entity.x == 303 ){
+		vAvgColor = vec4( 0.29, 0.106, 0.106, 1.0 );
+	
+  vDeltaMult=4.0;
+  vDeltaPow=2.8;
+
   }
 
+	// Color corrections
+	if( mc_Entity.x == 302 ){ // soul sand
+		vAvgColor = vec4( 0.224, 0.135, 0.114, 1.0 );
+		vColor = vec4( 0.224, 0.135, 0.114, 1.0 );
+		
+		vAvgColor = vec4( 0.324, 0.235, 0.214, 1.0 );
+		vColor = vec4( 0.324, 0.235, 0.214, 1.0 );
+		vDeltaPow = 0.050;
+		vDeltaMult = 5.0;
+	}
 	
 	// -- -- --
 	
@@ -717,6 +764,8 @@ void main() {
 	//float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
 	float avgColorBlender = min(1.0, pow(length(outCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
 	outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
+	//glowCd = outCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
+	//glowCd = vAvgColor.rgb;// * max(0.0, luma(txCd.rgb));
 
 
 // -- -- -- -- -- -- -- -- -- -- -- --
@@ -726,7 +775,8 @@ void main() {
 	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + isLava*(3.0+(1.0-depth)));
 	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
 	// TODO : Optimize
-	vec3 glowBaseCd = outCd.rgb;
+	vec3 glowBaseCd = mix( outCd.rgb, avgShading.rgb, min(1.0,avgColorMix+vColorOnly));
+	//glowCd = glowBaseCd;
 
 // -- -- -- -- -- -- -- --
 // Based on shadow lookup from Chocapic13's HighPerformance Toaster
