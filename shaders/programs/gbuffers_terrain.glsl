@@ -920,7 +920,7 @@ void main() {
 	fogColorBlend = min( 1.0, (fogColorBlend+invRainInf) * min(1.0,depth*(150.0-rainStrength*145.0*min(1.0,skyBrightness*4.0))) * (1.0-invRainInf) + invRainInf + glowInf);
 
 
-	vec3 toFogColor = mix( toSkyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.5+.5);
+	vec3 toFogColor = mix( toSkyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.7+.3);
 	
 	toFogColor = mix( outCd.rgb*(toFogColor*.8)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
 	
@@ -984,15 +984,14 @@ void main() {
 
 vec3 skyGreyCd = outCd.rgb;
 float skyGreyInf = 0.0;
-// TODO : Move whats possible to vert
-	float waterLavaSnow = float(isEyeInWater);
 	
 // Fog when Player in Water 
 	if( isEyeInWater == 1 ){ 
 		float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
 		// General brightness under water
-		outCd.rgb *=  1.0+lightLuma*.5+glowInf;
-		outCd.rgb *=  toFogColor*(.8+lightLuma*lightLuma*.3);//+.5;
+			
+		outCd.rgb *=  smoothDepth+lightLuma*.5+glowInf;
+		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.3)+(smoothDepth*.35+.25);
 		
 // Fog when Player in Lava 
 	}else if( isEyeInWater > 1 ){
@@ -1102,7 +1101,7 @@ float skyGreyInf = 0.0;
 	// -- -- -- -- -- -- -- -- -- -- 
 	// -- Lava & Powda Snow Fog - -- --
 	// -- -- -- -- -- -- -- -- -- -- -- --
-	float lavaSnowFogInf = 1.0-min(1.0, max(0.0,waterLavaSnow-1.0) );
+	float lavaSnowFogInf = 1.0-min(1.0, max(0.0,float(isEyeInWater)-1.0) );
 	glowHSV.z *= lavaSnowFogInf;
 	outCd.rgb = mix( fogColor.rgb, outCd.rgb, lavaSnowFogInf);
 
@@ -1121,7 +1120,7 @@ float skyGreyInf = 0.0;
 	
 	
 	// TODO : Dupelicate? Or actually doing something?
-	//outCd.a*=vAlphaMult;
+	outCd.a*=vAlphaMult;
 	
 	// Blend Average color with Smart Blur color through plasticity value
 	vec3 outCdHSV = rgb2hsv(outCd.rgb);

@@ -480,7 +480,7 @@ void main() {
       outCd.rgb = mix( outCd.rgb, fogColor, (1.0-distMix*.1) );
     }
     
-    outCd.a = max( vMinAlpha, outCd.a+(1.0-depth*depth*depth)*.2 );
+    outCd.a = max( vMinAlpha, outCd.a+biasToOne(depth*depth*depth)*.2 );
     
     vec3 glowCd = outCd.rgb*outCd.rgb;
     vec3 glowHSV = rgb2hsv(glowCd);
