@@ -1027,22 +1027,20 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
 
-	float lightInfNether = clamp( max((lightCd.r-.15),lightLumaBase*1.4)
+	float lightInfNether = clamp( max((lightCd.r),biasToOne(lightLumaBase*1.4))
 										       - (min(1.0,(.8-depth*.8)+.2))*1., 0.0, 1.0 );
-	lightInfNether += lightLumaBase*(depth*.5 +.5);
+	lightInfNether += lightLumaBase*(depth*.25 +.75);
 	
-	lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
-	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd*.75) );
-	outCd.rgb = mix( fogColor*.5+skyColor*.5, cdLitFog, lightInfNether );
+	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
+	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), 1.0-(1.0-lightCd) );
+	outCd.rgb = mix( fogColor*.65+skyColor*.35, cdLitFog, lightInfNether );
 	outCd.rgb *= mix(vec3(1.0), (fogColor*.5)*(toCamNormalDot*.75+.25), depth*.5);
 	float cdNetherBlend = shiftBlackLevels(1.0-depth*.65) - lightLumaBase*.3;
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
-	lightLumaBase = shiftBlackLevels( lightLumaBase )*0.5;
-	//	outCd.rgb = vec3(lightInfNether);
-	//outCd.rgb = vec3(lightLumaBase-(1.0-depth));
+	
 #else
 
-// Surface Normal Influence; 45%
+// Surface Normal Influence
 	float dotRainShift = 0.400;//rainStrengthInv*.45;
 	
 // Block Surface Rolloff
