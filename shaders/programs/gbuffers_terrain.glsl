@@ -92,6 +92,7 @@ out vec3 vCamViewVec;
 out vec3 vWorldNormal;
 out vec3 vAnimFogNormal;
 
+out float vShiftUVs;
 out float vDetailBlurringMult;
 out float vMultiTexelMap;
 
@@ -135,15 +136,14 @@ void main() {
   
   vColor = vaColor;
   
-// Fit 'worldTime' from 0-24000 -> 0-1; Scale x30
-//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
+	// Fit 'worldTime' from 0-24000 -> 0-1; Scale x30
+	//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
 	vWorldTime = float(worldTime)*0.00125;
 	
   texcoord = vaUV0;
   
   vec2 midcoord = mc_midTexCoord;
   texcoordmid=midcoord;
-  vec2 texelhalfbound = texelSize*16.0;
   
   // -- -- --
   
@@ -250,6 +250,9 @@ void main() {
   // -- -- -- -- -- -- -- --
   
   
+	// Shift the "edge" of the texture to the center
+	//   Only needed for grass_block and dirt so far
+	vShiftUVs = 0.0;
   
   vAlphaMult=1.0;
 	
@@ -386,8 +389,9 @@ void main() {
 	
   // Ore Detail Blending Mitigation
   if( mc_Entity.x == 811 ){ // Dirt Grass
-    vDeltaMult=50.5;
-		vDeltaPow=4.2;
+		vShiftUVs = 0.5;
+    vDeltaMult=25.5;
+		vDeltaPow=3.35;
 	}else if( mc_Entity.x == 247  ){ // Glowstone
     vDeltaMult=2.5;
 		vDeltaPow=1.5;
@@ -409,17 +413,25 @@ void main() {
   }else if( mc_Entity.x == 105 ){ // Powerder Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
-  }else if( mc_Entity.x == 115 ){
+  }else if( mc_Entity.x == 115 ){ // Birdh Wood & Log
     vDeltaMult=1.10;
     vDeltaPow=4.0;
-  }else if( mc_Entity.x == 303 ){
+  }else if( mc_Entity.x == 303 ){ // Nether Quartz Ore
 		vAvgColor = vec4( 0.29, 0.107, 0.107, 1.0 );
-		
 		vDeltaMult=4.0;
 		vDeltaPow=2.8;
-
-  }
-	
+  }else if( mc_Entity.x == 304 ){ // Hoppers
+		vAvgColor = vec4( 0.25, .25, .25, 1.0 );
+		vDeltaMult=4.0;
+		vDeltaPow=2.8;
+  }else if( mc_Entity.x == 305 ){ // Redstone Lamp : lit=false
+		vDeltaMult=3.0;
+		vDeltaPow=.5;
+  }else if( mc_Entity.x == 306 ){ // Wool & its colors
+		vAvgColor *= vec4( vec3(.75), 1.0 );
+		vDeltaMult=1.5;
+		vDeltaPow=1.;
+  }else
 
 	// Color corrections
 	if( mc_Entity.x == 302 ){ // soul sand
@@ -631,6 +643,7 @@ in float vNormalSunDot;
 in float vNormalSunInf;
 in vec3 vAnimFogNormal;
 
+in float vShiftUVs;
 in vec4 vAvgColor;
 in float vCrossBlockCull;
 
@@ -660,9 +673,9 @@ void main() {
 
 	// -- -- -- -- -- -- --
 
-// vWorldPos.y = -64 to 320
-// 1/255 = 0.003921568627451
-// 1/384 = 0.002604166666666
+	// vWorldPos.y = -64 to 320
+	// 1/255 = 0.003921568627451
+	// 1/384 = 0.002604166666666
 	float wYMult = (1.0+abs(screenSpace.x)*.03-rainStrength*0.01);
 	float worldPosYFit = clamp(vWorldPos.y*(0.0075*wYMult*wYMult), 0.0, 1.0);
 	worldPosYFit = max(0.0, 1.0-max(0.0,(1.0-worldPosYFit)*1.25)*.7 );
@@ -702,16 +715,19 @@ void main() {
 			float debugDetailBlurring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
 			//debugDetailBlurring *= debugDetailBlurring;
 			debugDetailBlurring = mix( DetailBlurring, debugDetailBlurring, step(screenSpace.x,0.75));
-			diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, debugDetailBlurring, baseCd, txCd, avgDelta );
+			diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, debugDetailBlurring, baseCd, txCd, avgDelta );
 		#else
-			//diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
-			diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, DetailBlurring, baseCd, txCd, avgDelta);
+			vec2 uvLimitPerc = vec2( 1.0, 1.0 ); // Vertical half slab limits is X, Horizontal is Y
+			//diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, uvLimitPerc, vShiftUVs, DetailBlurring, baseCd, txCd, avgDelta);
+			//diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, screenSpace.x, baseCd, txCd, avgDelta);
+			diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, DetailBlurring, baseCd, txCd, avgDelta );
 		#endif
 	}else{
 		txCd = texture(gcolor, tuv);
 	}
 
 	
+	vec4 baseBlurColor = txCd;
 	
 	
 // Default Minecraft Lighting
@@ -748,7 +764,9 @@ void main() {
 		txCd = mix( texture(gcolor, tuv), txCd, step(0.0, screenSpace.x+.75) );
 	#endif
 
+
 // -- -- -- -- -- -- -- --
+
 
 // Use Light Map Data
 	//float lightLuma = clamp((lightLumaBase-.265) * 1.360544217687075, 0.0, 1.0); // lightCd.r;
@@ -757,17 +775,19 @@ void main() {
 
 	vec3 lightCd = vec3(lightLuma);//vec3(max(lightLumaBase,lightLuma));
 	
+
 // -- -- -- -- -- -- -- --
+
 
 	outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
 
 	vec3 outCdAvgRef = outCd.rgb;
-	vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
+	//vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
 	//float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
 	//outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
 	
 	//float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
-	float avgColorBlender = min(1.0, pow(length(outCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
+	float avgColorBlender = min(1.0, pow(length(outCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma)*vDeltaMult*depthBias);
 	outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
 	//glowCd = outCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
 	//glowCd = vAvgColor.rgb;// * max(0.0, luma(txCd.rgb));
@@ -776,6 +796,7 @@ void main() {
 // -- -- -- -- -- -- -- -- -- -- -- --
 // -- Apply Shading To Base Color - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
 	float avgColorMix = depthDetailing*vDepthAvgColorInf;
 	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + isLava*(3.0+(1.0-depth)));
 	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
@@ -797,9 +818,12 @@ void main() {
 		
   vec3 tmpCd = vec3(1.0,0.0,0.0);
 	
+
+
 // -- -- -- -- -- -- -- -- -- -- -- --
 // -- Shadow Sampling & Influence - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
 #ifdef OVERWORLD
 	
 	skyBrightness = skyBrightnessMult;
@@ -903,6 +927,7 @@ void main() {
 #endif
 
 
+
 // -- -- -- -- -- -- -- --
 // -- Lighting & Diffuse - --
 // -- -- -- -- -- -- -- -- -- --
@@ -941,6 +966,7 @@ void main() {
 	
 #endif
 	
+
 // -- -- -- -- -- -- --
 // -- Fake Fresnel - -- --
 // -- -- -- -- -- -- -- -- --
@@ -985,14 +1011,17 @@ void main() {
 
 // -- -- -- -- -- -- 
 
+
 // -- -- -- -- -- -- -- -- -- -- --
 // -- Distance Based Color Boost -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- --
+
 	depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*0.8)))*distantVibrance) ); 
 	//surfaceShading = 1.0-(1.0-surfaceShading)*.4;
 	
 	outCd.rgb += outCd.rgb * depthBias * surfaceShading * depthDetailing  * toFogColor; // -.2;
 	
+
 // -- -- -- -- -- -- 
 	
     
@@ -1032,6 +1061,7 @@ void main() {
 	fogColorBlend=depthEnd;//+lightLumaBase*.1;
 
 #endif
+
 
 // -- -- -- -- -- -- --
 // -- Fog Vision - -- --
@@ -1238,6 +1268,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
+	//outCd.rgb = baseBlurColor.rgb;
 	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

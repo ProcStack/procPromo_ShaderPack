@@ -263,8 +263,8 @@ void main() {
   //vec2 screenSpace = (gl_FragCoord.xy/gl_FragCoord.z);
   //screenSpace = (screenSpace*texelSize)-.5;
 
-  //diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize*1.0, DetailBlurring, baseCd, txCd, avgDelta);
-  diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize*2.0, DetailBlurring, baseCd, txCd, avgDelta);
+  //diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize*1.0, 0.0, DetailBlurring, baseCd, txCd, avgDelta);
+  diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize*2.0, 0.0, DetailBlurring, baseCd, txCd, avgDelta);
   //txCd = diffuseNoLimit( gcolor, tuv, vec2(0.10) );
   
   vec2 luv = lmcoord.st;

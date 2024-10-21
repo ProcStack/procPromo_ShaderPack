@@ -148,69 +148,44 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
 }
 
 
-void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+
+void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float resScalar, float shiftUVs, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
   baseCd = texture2D(tx, uv);
   sampleCd = baseCd ;
-  vec3 boxAvg=baseCd.rgb;
+
   // Flatten Black/White to 0; -1 to 1
   vec3 bwFlatten = vec3(1.200,0.930,1.20);
   vec3 sampleXYZ = linearToXYZ( sampleCd.rgb ) * bwFlatten;
-  // linearToXYZ( lin )
+  
   vec2 res = texelRes * resScalar;
   
   vec2 curUV;
-  vec2 curId;
-  float curUVDist=0.0;
   vec4 curCd;
   vec3 curXYZ;
-  vec3 curLab;
   float delta=0.0;
-  float uvEdge=0.0;
   float maxDelta = 0.0;
-  vec3 brightestCd = vec3(0.0);
   for( int x=0; x<boxSamplesCount; ++x){
-    curUV =  uv + boxSamples[x]*res ;
-    //curUV =  clamp(uv + boxSamples[x]*res, vec2(0.0), vec2(1.0) ) ;
+    // I don't know why, there is a one texel offset in some textures
+    //   Might be from optifine texture rotation
+    //   grass, dirt, etc.
+    curUV =  uv + boxSamples[x]*res - texelRes * shiftUVs ;
     
     curUV = fract(curUV)*uvLimits.pq+uvLimits.st;
     
     curCd = texture2D(tx, curUV);
     curXYZ = linearToXYZ( curCd.rgb ) * bwFlatten ;
     
-    delta = dot(normalize(sampleXYZ.rgb), normalize(curXYZ.rgb));
-    delta = max(0.0,delta);//*delta;
-    //delta = max(0.0,1.0-((1.0-delta)*5.20));//*delta;
-    
-    //delta *= 0.31-(length( sampleXYZ.rgb-curXYZ.rgb )*0.95);
-    //delta = 0.09-smoothstep( delta, .15722, .87225 );
-    //delta *= 0.51-(length( sampleXYZ.rgb-curXYZ.rgb )*2.35);
-    //delta *= (0.71+resScalar)-(length( sampleXYZ.rgb-curXYZ.rgb )*2.35*(.5-resScalar*.5));
-    //delta *= 0.50151-(length( sampleXYZ.rgb-curXYZ.rgb )*(1.5-resScalar));
-    //delta *= resScalar;
+    delta = clamp( dot(sampleXYZ, curXYZ.rgb), -1.0, 1.0 );
     delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
-    delta = .3-smoothstep( delta, .15722, .87225 )*.3;
+    delta = smoothstep( .25, .85, delta )*.5;
     
-    //delta = step( sampleXYZ.g, curXYZ.g );
-    
-    //brightestCd = mix( brightestCd, curCd.rgb, step( curXYZ.g, sampleXYZ.g ) );
     sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta);
     maxDelta = max( maxDelta, delta );
     avgDelta += delta;
-    boxAvg += curCd.rgb;
   }
-  //sampleCd.rgb *= vec3(1.0-clamp( 1.0-length( sampleXYZ ), 0.0, .20 )*(maxDelta));
 
-  //avgDelta = min(1.0, maxDelta*.075);
   avgDelta = min(1.0, maxDelta*boxSampleFit);
   
-  //sampleCd.rgb = vec3(maxDelta);
-  //sampleCd.rgb = vec3(avgDelta);
-  //sampleCd.rgb = brightestCd;
-  //sampleCd.rgb = sampleXYZ.rgb;
-  //sampleCd.rgb = texture2D(tx, uv).rgb;
-  
-  boxAvg = min( vec3(1,1,1), boxAvg*boxSampleFit );
-  //sampleCd.rgb = boxAvg.rrr;
 }
 
 
@@ -220,9 +195,8 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
 
 
 
-void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, vec2 uvLimitPercent, float shiftUVs, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
   sampleCd = baseCd ;
-  vec3 boxAvg=baseCd.rgb;
   
   // Flatten Black/White to 0; -1 to 1
   vec3 bwFlatten = vec3(1.200,0.930,1.20);
@@ -233,7 +207,7 @@ void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, fl
   
   
   
-  float edgePixelSize =  (1.0/16.0);
+  float edgePixelSize =  (1.0/8.0);
   vec2 blendEdgeInf = vec2( (uv-uvmid)*(64.0*resScalar)+.5 );
   
   // To prevent blending neighboring atlas texture
@@ -243,41 +217,53 @@ void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, fl
   edgeBlendInf.z = int( step( edgePixelSize, 1.0-(blendEdgeInf.r)) );
   edgeBlendInf.w = int( step( edgePixelSize, 1.0-(blendEdgeInf.g)) );
   
-  
+  // uvLimitPercent.x - Fix side of vertical half slabs
+  // uvLimitPercent.y - Fix side of horizontal half slabs
+  //vec2 faceEdgeLimits = vec2( edgePixelSize * 0.0545 ) * uvLimitPercent;
+  vec2 faceEdgeLimits = vec2( edgePixelSize * 0.0545 ) * uvLimitPercent;
   
   ivec2 curOffset;
+  vec2 curUV;
   float curUVDist=0.0;
   vec4 curCd;
   vec3 curXYZ;
   float delta=0.0;
   float maxDelta = 0.0;
   float minDelta = 0.0;
+	
+	int live = 1;
   for( int x=0; x<boxSamplesCount; ++x){
     curOffset = boxFetchSamples[x];
-    curOffset.x = curOffset.x < 0 ? curOffset.x*edgeBlendInf.x : curOffset.x*edgeBlendInf.z;
-    curOffset.y = curOffset.y < 0 ? curOffset.y*edgeBlendInf.y : curOffset.y*edgeBlendInf.w;
+
+		//live = curOffset.x < 0 || curOffset.y < 0 || curOffset.y > 16 ? 0.0 : 1.0;
+    //curOffset.x = curOffset.x < 0 ? curOffset.x*edgeBlendInf.x : curOffset.x*edgeBlendInf.z;
+    //curOffset.y = curOffset.y < 0 ? curOffset.y*edgeBlendInf.y : curOffset.y*edgeBlendInf.w;
     
+    // I don't know there is a one texel offset in some textures
+    //   grass, dirt, etc.
+    curUV = uv-uvmid + vec2(curOffset)*res - texelRes * shiftUVs ;
+    live = curUV.x < -faceEdgeLimits.x || curUV.x > faceEdgeLimits.x || curUV.y < -faceEdgeLimits.y || curUV.y > faceEdgeLimits.y ? 0 : 1;
     
-    
-    curCd = textureOffset(tx, uv, curOffset);
+    curCd = textureOffset(tx, uv, curOffset*live);
+		// Change RGB to XYZ
     curXYZ = linearToXYZ( curCd.rgb ) * bwFlatten ;
     
-    delta = clamp( dot((sampleXYZ.rgb), (curXYZ.rgb)), -1.0, 1.0 );
-
+		// Detect difference in color & brightness with dot()
+    delta = clamp( dot(sampleXYZ, curXYZ.rgb), -1.0, 1.0 );
     
-    
-    
+		
     delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
-    delta = smoothstep( .25, .85, delta )*.5;
+    delta = smoothstep( .25, .85, delta )*.5 *float(live);
     
-    sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta);
-    maxDelta = max( maxDelta, delta );
-    avgDelta += delta;
+    sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta );// *float(live);
+    maxDelta = max( maxDelta, delta*live );
+    avgDelta += delta*live;
   }
 
   avgDelta = min(1.0, avgDelta*boxSampleFit);
   //avgDelta = maxDelta;
   
+  //sampleCd = baseCd;
   
   //sampleCd.rgb = mix( sampleCd.rgb, baseCd.rgb, min(1.0, length( sampleCd.rgb - baseCd.rgb )*5.0) );
   float infVal =  min(1.0, length( sampleCd.rgb - baseCd.rgb )*10.0) ;
