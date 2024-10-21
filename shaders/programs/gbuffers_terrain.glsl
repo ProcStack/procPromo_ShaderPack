@@ -390,8 +390,8 @@ void main() {
   // Ore Detail Blending Mitigation
   if( mc_Entity.x == 811 ){ // Dirt Grass
 		vShiftUVs = 0.5;
-    vDeltaMult=25.5;
-		vDeltaPow=3.35;
+    vDeltaMult=50.5;
+		vDeltaPow=4.53;
 	}else if( mc_Entity.x == 247  ){ // Glowstone
     vDeltaMult=2.5;
 		vDeltaPow=1.5;
