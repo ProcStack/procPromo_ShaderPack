@@ -124,7 +124,7 @@ void main() {
 	
 	
 	
-  vKeepBack = mc_Entity.x == 301 ? 1.0 : -dot(normalize(vLocalPos.xyz),gl_Normal.xyz);
+  vKeepBack = mc_Entity.x == 86 ? 1.0 : -dot(normalize(vLocalPos.xyz),gl_Normal.xyz);
 
 #ifdef OVERWORLD
   

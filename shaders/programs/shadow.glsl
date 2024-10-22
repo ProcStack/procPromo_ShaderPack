@@ -3,7 +3,6 @@
 //
 // Guided by Chocapic13's HighPerformance Toaster shader pack
 
-#extension GL_EXT_gpu_shader4 : enable
 	
 #ifdef VSH
 
@@ -40,6 +39,7 @@
   
 		vec4 position =  ftransform();
 		//vec4 position =  gbufferProjection * gbufferModelView * vec4( vaPosition, 1.0 ) ;
+		//vec4 position =   vec4( vaPosition+chunkOffset, 1.0 ) ;
 		
 		
     texcoord = gl_MultiTexCoord0.xy;
@@ -98,7 +98,7 @@
 		
     vIsTranslucent = 0.0;
 		// Colored Translucent Blocks; stained glass, water, etc.
-    if ( mc_Entity.x == 301 || mc_Entity.x == 703 ){
+    if ( mc_Entity.x == 86 || mc_Entity.x == 703 ){
       vIsTranslucent = 1.0;
     }
 		
@@ -141,12 +141,8 @@ const int shadowcolor1Format = RG16;
 
     shadowCd.a= min( 1.0, shadowCd.a * outAlpha + vIsLeaves );
 		
-		if( shadowCd.a<0.01 ){
-			discard;
-		}
-		
 		shadowCd.a*=1.0-vIsTranslucent;
-    
+
     outCd = shadowCd;
     outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
     outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );

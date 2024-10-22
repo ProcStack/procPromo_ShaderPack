@@ -41,7 +41,6 @@ uniform vec3 chunkOffset;
 uniform int worldTime;
 
 uniform float dayNight;
-uniform ivec2 eyeBrightnessSmooth;
 uniform float eyeBrightnessFit;
 uniform vec3 shadowLightPosition;
 
@@ -130,9 +129,8 @@ void main() {
   
   vCamViewVec =  normalize((mat3(gbufferModelView) * normalize(vec3(-1.0,0.0,.0)))*vec3(1.0,0.0,1.0));
   
+
   // -- -- -- -- -- -- -- --
-
-
   
   vColor = vaColor;
   
@@ -584,8 +582,6 @@ uniform int shadowQuality;
 uniform vec2 texelSize;
 uniform float aspectRatio;
 
-uniform ivec2 eyeBrightness;
-uniform ivec2 eyeBrightnessSmooth;
 
 // To Implement
 //uniform float wetness;  //rainStrength smoothed with wetnessHalfLife or drynessHalfLife
@@ -593,10 +589,10 @@ uniform ivec2 eyeBrightnessSmooth;
 //fogMode==GL_LINEAR
 //fogMode==GL_EXP
 //fogMode==GL_EXP2
-uniform float fogStart;
-uniform float fogEnd;
+//uniform float fogStart;
+//uniform float fogEnd;
 //uniform int fogShape;
-uniform float fogDensity;
+//uniform float fogDensity;
 //uniform int heldBlockLightValue;
 //uniform int heldBlockLightValue2;
 uniform float rainStrength;
@@ -673,6 +669,10 @@ void main() {
 
 	// -- -- -- -- -- -- --
 
+	float rainStrengthInv = 1.0-rainStrength;
+
+	// -- -- -- -- -- -- --
+	
 	// vWorldPos.y = -64 to 320
 	// 1/255 = 0.003921568627451
 	// 1/384 = 0.002604166666666
@@ -680,7 +680,7 @@ void main() {
 	float worldPosYFit = clamp(vWorldPos.y*(0.0075*wYMult*wYMult), 0.0, 1.0);
 	worldPosYFit = max(0.0, 1.0-max(0.0,(1.0-worldPosYFit)*1.25)*.7 );
 
-	float rainStrengthInv = 1.0-rainStrength;
+	
 
 	float skyBrightness = 1.0;
 	
@@ -697,8 +697,8 @@ void main() {
 	#else
 		baseTxCd.a = mix(baseTxCd.a, 1.0, vAlphaRemove) * vAlphaMult;
 	#endif
-	
-	if ( baseTxCd.a < .02 ){
+
+	if ( baseTxCd.a  < .02 ){
 		discard;
 	}
 	
@@ -818,7 +818,7 @@ void main() {
 		
   vec3 tmpCd = vec3(1.0,0.0,0.0);
 	
-
+	float shadowRainStrength = rainStrength;
 
 // -- -- -- -- -- -- -- -- -- -- -- --
 // -- Shadow Sampling & Influence - -- --
@@ -916,6 +916,10 @@ void main() {
   
 // -- -- --
 
+	shadowRainStrength *= shadowData.b;
+
+// -- -- --
+
 //  Distance influence of surface shading --
 //  TODO : !! Cleans up shadow crawl with better values
   shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightness * rainStrengthInv * dayNightMult;
@@ -964,27 +968,39 @@ void main() {
 // Add day/night & to sun normal; w/ Sky Brightness limits
 	surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
 	
+// WARNING - I could see not knowing why I'm doing this in the future
+//             Even reading the code.
+//    Sky Brightness influence in the fog color blenderings.
+  diffuseSun *= skyBrightnessMult;
+
 #endif
 	
+
+
+
+
 
 // -- -- -- -- -- -- --
 // -- Fake Fresnel - -- --
 // -- -- -- -- -- -- -- -- --
+
 	float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias*.5),1.0)));
 	outCd*=mix(1.0, dotToCam*.3+.7, isLava);
 	
 	
-// Apply Black Level Shift from User Settings
-//   Since those set to 0 would be rather low,
-//     Default is to run black shift with no check.
-// Level Shifting here first, instead of strictly a composite pass to retain more color detail
-//   Felt I'd need to store too many values to buffers for a post process to work well
-//     It didn't make sense to do, for me
+
+	// Apply Black Level Shift from User Settings
+	//   Since those set to 0 would be rather low,
+	//     Default is to run black shift with no check.
+	// Level Shifting here first, instead of strictly a composite pass to retain more color detail
+	//   Felt I'd need to store too many values to buffers for a post process to work well
+	//     It didn't make sense to do, for me
 	lightCd = shiftBlackLevels( lightCd );
 	surfaceShading = max( surfaceShading, lightCd.r );
 	surfaceShading = ( surfaceShading * lightCd.r );
 	surfaceShading = shiftBlackLevels( surfaceShading );
 	
+
 
 // -- -- -- -- -- -- --
 // -- Fog Coloring - -- --
@@ -992,9 +1008,9 @@ void main() {
 
 	vec3 toSkyColor = skyColor;
 
-// Fog-World Blending Influence
-  float fogColorBlend = clamp( .9+depth+rainStrength, .1, 1.0 );
-	fogColorBlend *= (1.0-nightVision);// min( 1.0-nightVision, skyBrightness );
+	// Fog-World Blending Influence
+	float fogColorBlend = mix( 0.0, rainStrength, diffuseSun );
+  fogColorBlend = clamp( .9+depth+fogColorBlend, .1, 1.0 ) * (1.0-nightVision);
 	
 	float invRainInf = rainStrengthInv*.2;
 	
@@ -1005,7 +1021,7 @@ void main() {
 	
 	toFogColor = mix( outCd.rgb*(toFogColor*.8)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
 	
-// Includes `Night Vision` in fogColorBlend
+	// Includes `Night Vision` in fogColorBlend
 	toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
 
 
@@ -1268,7 +1284,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
-	//outCd.rgb = baseBlurColor.rgb;
+	//outCd.rgb = vec3(shadowRainStrength);
 	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
