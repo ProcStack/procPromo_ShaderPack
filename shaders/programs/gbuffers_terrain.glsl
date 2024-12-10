@@ -42,6 +42,7 @@ uniform int worldTime;
 
 uniform float dayNight;
 uniform float eyeBrightnessFit;
+uniform ivec2 eyeBrightnessSmooth;
 uniform vec3 shadowLightPosition;
 
 in vec3 mc_Entity;
@@ -221,8 +222,8 @@ void main() {
 
 	// Sky Influence
 	//   TODO : Move to 
-	//skyBrightnessMult=eyeBrightnessSmooth.y * 0.004166666666666666; //  1.0/240.0
-	skyBrightnessMult=eyeBrightnessFit;
+	skyBrightnessMult=eyeBrightnessSmooth.y * 0.004166666666666666; //  1.0/240.0
+	//skyBrightnessMult=eyeBrightnessFit;
 	
 	// Sun Influence
 	sunPhaseMult = max(0.0,1.0-max(0.0,dayNight)*2.0);
