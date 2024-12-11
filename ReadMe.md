@@ -1,4 +1,4 @@
-# ProcStack's procPromo v0.3
+# ProcStack's procPromo v0.4
 ### Optifine Shader Pack
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
