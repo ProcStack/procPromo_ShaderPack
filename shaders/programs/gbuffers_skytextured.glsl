@@ -103,15 +103,15 @@ uniform vec3 fogColor;
 void main() {
   
   
-  
+  vec2 uv = vTexcoord.st;
+  vec4 outCd = vec4(0.0);
   
   
 #ifdef OVERWORLD
-  vec2 uv = vTexcoord.st;
   vec2 fituv = fract(vFittedUV);
 
   vec4 baseCd = texture2D(gcolor, uv) * vColor;
-  vec4 outCd = baseCd;
+  outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 
   float bodyThresh = .125;
@@ -128,23 +128,26 @@ void main() {
   vec3 sunCd = mix( outCd.rgb, vGlowEdgeCd * dfLen, sunBody);
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
-#endif
-
-
-#ifdef THE_END
+#elif defined(NETHER)
+  vec4 baseCd = texture2D(gcolor, uv) * vColor;
+  outCd = baseCd;
+  //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
+#elif defined(THE_END)
   float skyDotZ = dot(normalize(vSkyUV), vec3(0.0,0.0,1.0))*.5+.5;
   float skyDotY = dot(normalize(vSkyUV), vec3(0.0,1.0,0.0));
 	vec3 noiseX = texture( noisetex, fract(vec2(skyDotY,skyDotZ) + vec2(.75,1.75)*vWorldTime)).rgb;
 
-
-  vec2 uv = fract( vTexcoord.st*.2 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
+  uv = fract( vTexcoord.st*.2 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
   noiseX.z = (noiseX.z*.5+.5);
   vec4 baseCd = texture2D(gcolor, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
   uv += noiseX.xy + vTexcoord.st*.1;
   vec4 mixCd = texture2D(gcolor, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
-  vec4 outCd = mix( baseCd, mixCd, noiseX.x);
+  outCd = mix( baseCd, mixCd, noiseX.x);
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
-
+#else
+  vec4 baseCd = texture2D(gcolor, uv) * vColor;
+  outCd = baseCd;
+  //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #endif
 
 
