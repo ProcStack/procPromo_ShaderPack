@@ -1076,7 +1076,7 @@ void main() {
 	//vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
 	
 	endFogCd = mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
-	outCd.rgb *= endFogCd;
+	outCd.rgb *= .5 + noiseX*.5;
 	toSkyColor = skyColor;//outCd.rgb ;
 	fogColorBlend=depthEnd;//+lightLumaBase*.1;
 

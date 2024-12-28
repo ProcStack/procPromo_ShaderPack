@@ -11,6 +11,7 @@ uniform int renderStage;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform int moonPhase;
+uniform int worldTime;
 
 uniform vec3 fogColor;
 uniform vec3 skyColor;
@@ -21,12 +22,22 @@ varying vec4 vPos;
 varying vec3 vGlowEdgeCd;
 varying vec2 vFittedUV;
 varying float vDfLenMult;
+varying float vWorldTime;
+varying vec3 vSkyUV;
 
 void main() {
 
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
   vPos=position;
+
+  vSkyUV = gl_Vertex.xyz;
   
+	// Fit 'worldTime' from 0-24000 -> 0-1; Scale x30
+	//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
+	//vWorldTime = float(worldTime)*0.00125;
+	vWorldTime = float(worldTime)*0.00025;
+
+
   gl_Position = gl_ProjectionMatrix * position;
 
   float moonPhaseMult = (1.0-abs(((mod(moonPhase+3,8))-3))*.25)*.7+.3;
@@ -73,6 +84,7 @@ void main() {
 uniform sampler2D gcolor;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
+uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 
 varying vec4 vPos;
 varying vec4 vColor;
@@ -80,6 +92,8 @@ varying vec4 vTexcoord;
 varying vec3 vGlowEdgeCd;
 varying vec2 vFittedUV;
 varying float vDfLenMult;
+varying float vWorldTime;
+varying vec3 vSkyUV;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
@@ -88,16 +102,18 @@ uniform vec3 fogColor;
 
 void main() {
   
-  vec2 uv = vTexcoord.st;
-  vec2 fituv = fract(vFittedUV);
   
-  vec4 baseCd = texture2D(gcolor, uv) * vColor;
-  vec4 outCd = baseCd;
-  //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
   
   
   
 #ifdef OVERWORLD
+  vec2 uv = vTexcoord.st;
+  vec2 fituv = fract(vFittedUV);
+
+  vec4 baseCd = texture2D(gcolor, uv) * vColor;
+  vec4 outCd = baseCd;
+  //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
+
   float bodyThresh = .125;
   float uvbase = max( abs(fituv.x-.5), abs(fituv.y-.5) );
   float sunBody = step(bodyThresh,uvbase);
@@ -113,6 +129,25 @@ void main() {
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
 #endif
+
+
+#ifdef THE_END
+  float skyDotZ = dot(normalize(vSkyUV), vec3(0.0,0.0,1.0))*.5+.5;
+  float skyDotY = dot(normalize(vSkyUV), vec3(0.0,1.0,0.0));
+	vec3 noiseX = texture( noisetex, fract(vec2(skyDotY,skyDotZ) + vec2(.75,1.75)*vWorldTime)).rgb;
+
+
+  vec2 uv = fract( vTexcoord.st*.2 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
+  noiseX.z = (noiseX.z*.5+.5);
+  vec4 baseCd = texture2D(gcolor, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
+  uv += noiseX.xy + vTexcoord.st*.1;
+  vec4 mixCd = texture2D(gcolor, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
+  vec4 outCd = mix( baseCd, mixCd, noiseX.x);
+  //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
+
+#endif
+
+
   #if ( DebugView == 4 )
     float debugBlender = step( .0, vPos.x);
     outCd = mix( baseCd, outCd, debugBlender);

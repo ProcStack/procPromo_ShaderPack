@@ -105,8 +105,7 @@ void main() {
   
   //outCd = texture2D(lightmap, texcoord.xy);
   outCd.a = vDayNight*upDot;
-    
-    
+   
     
   #if ( DebugView == 4 )
     float debugBlender = step( .0, basePos.x);
