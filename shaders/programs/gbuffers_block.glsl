@@ -619,10 +619,12 @@ void main() {
       //uvProj *= (1.0-depthBias)*.1+.8 ;
       uvProj.x += dotToCam;
       
-      float pxVal = uvProj.x*-100.0;
-      float pyVal = uvProj.y*10.0;
 			float ftime = float(worldTime);
-      uvProj.x += sin( pxVal + pyVal + uvProj.y*ftime*.025  )*.007;
+      float pxVal = uvProj.x*-100.0;
+      float pyVal = fract(uvProj.y*3.0+ftime);
+      float uvShift = sin( pxVal + pyVal + uvProj.y*ftime*.05  );
+      uvShift *= abs(uvShift);
+      uvProj.x += uvShift*.02*screenSpace.y;
       uvProj += vec2(ftime*.001,ftime*.001);
 			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*.00002+sin(uvProj.y*ftime*.007)*.02);
       uvProj = fract(uvProj);
