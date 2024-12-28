@@ -64,7 +64,7 @@ const float shadowThreshold = shadowDistance/(shadowMapFov*.5);
 const float shadowThreshold_Entity = shadowThreshold*.45;
 
 // Shadow Biases; Scalping Reduction
-const float shadowThreshBase = 0.000023; // Bias near to Camera
+const float shadowThreshBase = 0.00003; // Bias near to Camera
 const float shadowThreshBase_Entity = 0.00003; // gbuffers_entities.glsl
 const float shadowThreshDist = 0.000026; // Bias far from Camera
 
@@ -185,9 +185,6 @@ vec4 distortShadowShift(vec4 shadowSpacePos) {
   shadowSpacePos.xy /= outUV;
   //
   
-  #ifdef SHADOW
-    //shadowSpacePos.z *= oneThird;
-  #endif
   return shadowSpacePos;
 }
 

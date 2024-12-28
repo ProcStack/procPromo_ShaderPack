@@ -124,8 +124,10 @@ void main() {
 	
   vWorldNormal = vaNormal;
   vNormal = normalize(normal);
-  vNormalSunDot = dot(normalize(shadowLightPosition), vNormal);
-  vNormalSunInf = step(-.01,vNormalSunDot);
+  vNormalSunDot = dot(normalize(shadowLightPosition), vNormal)*1.5-.5;
+
+  float posLen = length(position);
+  vNormalSunInf = step(.02,vNormalSunDot)*max(0.0, 1.0-posLen*0.04);
   vAnimFogNormal = normalMatrix*vec3(1.0,0.0,0.0);
   
   vCamViewVec =  normalize((mat3(gbufferModelView) * normalize(vec3(-1.0,0.0,.0)))*vec3(1.0,0.0,1.0));
@@ -832,9 +834,10 @@ void main() {
 #if ShadowSampleCount > 0
 
   vec3 localShadowOffset = shadowPosOffset;
-  localShadowOffset.z *= (skyBrightness*.5+.5);
+  //localShadowOffset.z *= (skyBrightness*.5+.5);
   //localShadowOffset.z *= min(1.0,outDepth*20.0+.7)*.1+.9;
-  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias)) * shadowThreshold );
+  //localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias)) * shadowThreshold );
+  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
   
   vec4 shadowPosLocal = shadowPos;
   //shadowPosLocal.xy += vCamViewVec.xz;
@@ -949,7 +952,7 @@ void main() {
 // Mix translucent color
 	float lColorMix = clamp( shadowData.r*(1.0-shadowBase)
 														* clamp( shadowDepthInf*2.0-1.0, 0.0, 1.0)
-														- shadowData.b*.7+.3, 0.0, 1.0 ) * vNormalSunInf ;
+														- shadowData.b*.5, 0.0, 1.0 ) * vNormalSunInf ;
 	//lightCd = mix( lightCd, lightCd*(fogColor*(1.0-worldPosYFit)+(shadowCd.rgb*.5+.15)*worldPosYFit), lColorMix );
 	lightCd = mix( lightCd, (shadowCd.rgb*2.0+.15), lColorMix );
 
@@ -985,8 +988,8 @@ void main() {
 // -- Fake Fresnel - -- --
 // -- -- -- -- -- -- -- -- --
 
-	float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias*.5),1.0)));
-	outCd*=mix(1.0, dotToCam*.3+.7, isLava);
+	float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias*.25),1.0)));
+	outCd*=mix(1.0, dotToCam, isLava);
 	
 	
 
@@ -1143,7 +1146,7 @@ float skyGreyInf = 0.0;
 #else
 
 // Surface Normal Influence
-	float dotRainShift = 0.400;//rainStrengthInv*.45;
+	float dotRainShift = 0.450;//rainStrengthInv*.45;
 	
 // Block Surface Rolloff
 //   Helps with block visibility in the dark
@@ -1285,7 +1288,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
-	//outCd.rgb = vec3(shadowRainStrength);
+	//outCd.rgb = vec3((1.0-depthBias));
 	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

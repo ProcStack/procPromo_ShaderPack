@@ -25,6 +25,7 @@
 	in vec3 vaPosition;
   in vec4 mc_Entity;
 	in vec2 mc_midTexCoord;
+	in vec4 vaColor;
 
   out vec2 texcoord;
 	out vec2 texmidcoord;
@@ -73,9 +74,11 @@
 
 
 
-
+		
     color=outCd;
-    
+		color = vaColor;
+		color = gl_Color;
+		
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
     
@@ -140,13 +143,17 @@ const int shadowcolor1Format = RG16;
     vec4 shadowCd = color;
 
     shadowCd.a= min( 1.0, shadowCd.a * outAlpha + vIsLeaves );
+
+    if( shadowCd.a<0.01 ){
+      discard;
+    }
 		
 		shadowCd.a*=1.0-vIsTranslucent;
-
     outCd = shadowCd;
-    outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
-    outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );
-    outData = vec4( vIsTranslucent, length(vShadowPos), 0.0, 0.0 );
+    //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
+    outData = vec4( length(vShadowPos)/far, length(vShadowPos), shadowCd.aa );
+    //outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );
+    //outData = vec4( vIsTranslucent, length(vShadowPos), 0.0, 0.0 );
   }
 
 #endif
