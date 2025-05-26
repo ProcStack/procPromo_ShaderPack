@@ -13,9 +13,11 @@
   uniform sampler2D gtexture;
   uniform mat4 gbufferModelView;
   uniform mat4 gbufferProjection;
+  uniform mat4 gbufferShadowProjection;
   uniform mat4 shadowProjection;
   uniform mat4 shadowProjectionInverse;
   uniform mat4 shadowModelView;
+  uniform mat4 gbufferShadowModelView;
   uniform mat4 shadowModelViewInverse;
   uniform int blockEntityId;
 
@@ -42,11 +44,13 @@
     //vec4 position = shadowProjection * shadowModelView * vec4(vaPosition + chunkOffset, 1.0);
     //vec4 position = gbufferProjection * gbufferModelView * vec4(vaPosition + chunkOffset, 1.0);
     //vec4 position = projectionMatrix * modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0);
+    //vec4 position = gbufferShadowProjection * gbufferShadowModelView * vec4(vaPosition + chunkOffset, 1.0);
 
     // Either work on optifine, not iris --
     //vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-    vec4 position = ftransform();
-    //vec4 position = vec4(basePos, 1.0);
+    vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(vaPosition + chunkOffset, 1.0);
+    
+    //vec4 position = ftransform();
 
     //texcoord = gl_MultiTexCoord0.xy;
     texcoord = vaUV0;
@@ -87,7 +91,7 @@
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
 
-    position = distortShadowShift( position );
+    //position = distortShadowShift( position );
 
 
     /*vec2 outUV=position.xy;

@@ -893,7 +893,6 @@ void main() {
 
   reachMult = max(0.0, reachMult - (min(1.0,outDepth*20.0)*.5));
 
-/*
 #if ShadowSampleCount == 2
   vec2 posOffset;
   
@@ -923,7 +922,6 @@ void main() {
     shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition, .03), boxSampleFit);
   }
 #endif
-*/
   
   float shadowDepthInf = clamp( (depth*distancDarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
