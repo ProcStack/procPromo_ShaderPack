@@ -10,7 +10,7 @@
   #include "/shaders.settings"
   #include "utils/shadowCommon.glsl"
 
-  uniform sampler2D gcolor;
+  uniform sampler2D gtexture;
   uniform mat4 gbufferModelView;
   uniform mat4 gbufferProjection;
   uniform mat4 shadowProjection;
@@ -26,9 +26,9 @@
   in vec4 mc_Entity;
   in vec2 mc_midTexCoord;
   in vec4 vaColor;
+  in vec2 vaUV0; // texture
 
   out vec2 texcoord;
-  out vec2 texmidcoord;
   out vec4 color;
   out vec3 vShadowPos;
   out float vShadowDist;
@@ -46,29 +46,30 @@
     // Either work on optifine, not iris --
     //vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
     vec4 position = ftransform();
+    //vec4 position = vec4(basePos, 1.0);
 
-
-    texcoord = gl_MultiTexCoord0.xy;
+    //texcoord = gl_MultiTexCoord0.xy;
+    texcoord = vaUV0;
     vec2 midcoord=mc_midTexCoord;
 
-    vec4 outCd = gl_Color;
+    vec4 outCd = vaColor;
 
     float avgBlend = .5;
 
     ivec2 txlOffset = ivec2(2);
     vec3 mixColor;
-    outCd = gl_Color*texture(gcolor, midcoord);
+    outCd = vaColor*texture(gtexture, midcoord);
     vec4 tmpCd = outCd;
     mixColor = tmpCd.rgb;
     #if (BaseQuality > 1)
-      tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+      tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
       mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-      tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
+      tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
       mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
       #if (BaseQuality == 2)
-        tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+        tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
         mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-        tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+        tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
         mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
       #endif
     #endif
@@ -82,7 +83,6 @@
 
     color=outCd;
     color = vaColor;
-    color = gl_Color;
 
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
@@ -144,11 +144,10 @@ const int shadowcolor1Format = RG16;
 
   #include "/shaders.settings"
 
-	uniform sampler2D gcolor;
+	uniform sampler2D gtexture;
 	uniform float far;
 
   in vec2 texcoord;
-	in vec2 texmidcoord;
   in vec4 color;
   in vec3 vShadowPos;
   in float vShadowDist;
@@ -158,7 +157,7 @@ const int shadowcolor1Format = RG16;
 
   void main() {
 
-    float outAlpha = texture2D(gcolor,texcoord.xy).a;
+    float outAlpha = texture2D(gtexture,texcoord.xy).a;
     vec4 shadowCd = color;
 
     shadowCd.a= min( 1.0, shadowCd.a * outAlpha + vIsLeaves );

@@ -120,8 +120,8 @@ void main() {
   vPos = vec4(position,1.0);
   vLocalPos = basePos;
   vWorldPos = vec4( vaPosition, 1.0);
-  //gl_Position = gbufferProjection * vPos;
-  gl_Position = ftransform();
+  gl_Position = gbufferProjection * vPos;
+  //gl_Position = ftransform();
 	
   vWorldNormal = vaNormal;
   vNormal = normalize(normal);
