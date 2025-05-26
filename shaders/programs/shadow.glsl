@@ -10,19 +10,25 @@
   #include "/shaders.settings"
   #include "utils/shadowCommon.glsl"
 
-	uniform sampler2D gcolor;
+  uniform sampler2D gcolor;
+  uniform mat4 gbufferModelView;
+  uniform mat4 gbufferProjection;
+  uniform mat4 shadowProjection;
+  uniform mat4 shadowProjectionInverse;
+  uniform mat4 shadowModelView;
+  uniform mat4 shadowModelViewInverse;
   uniform int blockEntityId;
-	
-	uniform vec3 chunkOffset;
 
-	
-	in vec3 vaPosition;
+  uniform vec3 chunkOffset;
+
+
+  in vec3 vaPosition;
   in vec4 mc_Entity;
-	in vec2 mc_midTexCoord;
-	in vec4 vaColor;
+  in vec2 mc_midTexCoord;
+  in vec4 vaColor;
 
   out vec2 texcoord;
-	out vec2 texmidcoord;
+  out vec2 texmidcoord;
   out vec4 color;
   out vec3 vShadowPos;
   out float vShadowDist;
@@ -31,50 +37,56 @@
 
 
   void main() {
-  
+
     vec3 basePos = vaPosition + chunkOffset ;
+    //vec4 position = shadowProjection * shadowModelView * vec4(vaPosition + chunkOffset, 1.0);
+    //vec4 position = gbufferProjection * gbufferModelView * vec4(vaPosition + chunkOffset, 1.0);
+    //vec4 position = projectionMatrix * modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0);
+
+    // Either work on optifine, not iris --
+    //vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
     vec4 position = ftransform();
-		
-		
+
+
     texcoord = gl_MultiTexCoord0.xy;
-		vec2 midcoord=mc_midTexCoord;
-		
-		vec4 outCd = gl_Color;
+    vec2 midcoord=mc_midTexCoord;
 
-  float avgBlend = .5;
-  
-  ivec2 txlOffset = ivec2(2);
-  vec3 mixColor;
-  outCd = gl_Color*texture(gcolor, midcoord);
-  vec4 tmpCd = outCd;
+    vec4 outCd = gl_Color;
+
+    float avgBlend = .5;
+
+    ivec2 txlOffset = ivec2(2);
+    vec3 mixColor;
+    outCd = gl_Color*texture(gcolor, midcoord);
+    vec4 tmpCd = outCd;
     mixColor = tmpCd.rgb;
-  #if (BaseQuality > 1)
-  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
-    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
-    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-  #if (BaseQuality == 2)
-  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
-    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-  tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
-    mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-  #endif
-  #endif
-  //mixColor = mix( vec3(length(outCd.rgb)), mixColor, step(.1, length(mixColor)) );
-  mixColor = mix( vec3(outCd.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
+    #if (BaseQuality > 1)
+      tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+      mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+      tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
+      mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+      #if (BaseQuality == 2)
+        tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
+        mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+        tmpCd = outCd*textureOffset(gcolor, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
+        mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
+      #endif
+    #endif
+    //mixColor = mix( vec3(length(outCd.rgb)), mixColor, step(.1, length(mixColor)) );
+    mixColor = mix( vec3(outCd.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
 
-  outCd = vec4( mixColor, outCd.a); // 1.0);
+    outCd = vec4( mixColor, outCd.a); // 1.0);
+
+    //outCd = vec4( mixColor, 1.0);
 
 
-
-		
     color=outCd;
-		color = vaColor;
-		color = gl_Color;
-		
+    color = vaColor;
+    color = gl_Color;
+
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
-    
+
     position = distortShadowShift( position );
 
 
@@ -87,36 +99,36 @@
     outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
     position.xy /= outUV;*/
     //
-    
+
 
 
     gl_Position = position;
     vShadowPos = position.xyz;
-    
-		//vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
-		vShadowDist = length( position );
-		
-    
-    
-    
+
+    //vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
+    vShadowDist = length( position );
+
+
+
+
     vIsLeaves=0.0;
-    
+
     // Leaves
     if ( SolidLeaves && (mc_Entity.x == 810 || mc_Entity.x == 8101) ){
       vIsLeaves = 1.0;
     }
-		
+
     vIsTranslucent = 0.0;
-		// Colored Translucent Blocks; stained glass, water, etc.
+    // Colored Translucent Blocks; stained glass, water, etc.
     if ( mc_Entity.x == 86 || mc_Entity.x == 703 ){
       vIsTranslucent = 1.0;
     }
-		
-		// Beacon Beams!!
+
+    // Beacon Beams!!
     //if ( blockEntityId == 603  ){
     //  color.a = 0.0;
     //}
-    
+
   }
 
 #endif
