@@ -1,4 +1,4 @@
-#version 450
+#version 330 compatibility
 
 #define OVERWORLD
 #define SHADOW

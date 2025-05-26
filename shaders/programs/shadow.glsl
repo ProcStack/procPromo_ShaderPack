@@ -11,12 +11,6 @@
   #include "utils/shadowCommon.glsl"
 
 	uniform sampler2D gcolor;
-  uniform mat4 gbufferModelView;
-  uniform mat4 gbufferProjection;
-	uniform mat4 shadowProjection;
-	uniform mat4 shadowProjectionInverse;
-	uniform mat4 shadowModelView;
-	uniform mat4 shadowModelViewInverse;
   uniform int blockEntityId;
 	
 	uniform vec3 chunkOffset;
@@ -38,9 +32,8 @@
 
   void main() {
   
-		vec4 position =  ftransform();
-		//vec4 position =  gbufferProjection * gbufferModelView * vec4( vaPosition, 1.0 ) ;
-		//vec4 position =   vec4( vaPosition+chunkOffset, 1.0 ) ;
+    vec3 basePos = vaPosition + chunkOffset ;
+    vec4 position = ftransform();
 		
 		
     texcoord = gl_MultiTexCoord0.xy;
@@ -83,10 +76,24 @@
     //distortToNDC( gbufferModelView, position, camDir );
     
     position = distortShadowShift( position );
+
+
+    /*vec2 outUV=position.xy;
+    outUV.xy = abs(outUV.xy);
+    //
+    float pLen = outUV.x*.5;
+    outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+    pLen = outUV.y*.5;
+    outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+    position.xy /= outUV;*/
+    //
+    
+
+
     gl_Position = position;
     vShadowPos = position.xyz;
     
-		vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
+		//vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
 		vShadowDist = length( position );
 		
     

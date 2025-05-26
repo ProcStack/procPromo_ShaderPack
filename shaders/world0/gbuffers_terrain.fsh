@@ -1,4 +1,4 @@
-#version 330
+#version 330 compatibility
 
 #extension GL_EXT_gpu_shader4 : enable
 const bool   shadowHardwareFiltering0 = true;

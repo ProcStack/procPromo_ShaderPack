@@ -66,7 +66,9 @@ void main() {
   }
   if (renderStage == MC_RENDER_STAGE_MOON) {
     vGlowEdgeCd = fogColor*moonPhaseMult;
-    vFittedUV = gl_MultiTexCoord0.xy*vec2(4.0,2.0);
+    // Render stages arn't triggering on Iris, this is the Iris fix
+    // TODO : Check on OptiFine when they finally update to 1.21.5, been waiting 2 months...
+    vFittedUV = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;//*vec2(4.0,2.0);
     vDfLenMult = .3;
   }
   

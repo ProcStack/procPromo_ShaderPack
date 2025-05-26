@@ -67,7 +67,7 @@ out vec4 vtexcoordam; // .st for add, .pq for mul
 
 
 #ifdef OVERWORLD
-  out float skyBrightnessMult;
+  out vec2 skyBrightnessMult;
   out float dayNightMult;
   out float sunPhaseMult;
 	out vec4 shadowPos;
@@ -120,7 +120,8 @@ void main() {
   vPos = vec4(position,1.0);
   vLocalPos = basePos;
   vWorldPos = vec4( vaPosition, 1.0);
-  gl_Position = ftransform(); // hmmmmmm
+  //gl_Position = gbufferProjection * vPos;
+  gl_Position = ftransform();
 	
   vWorldNormal = vaNormal;
   vNormal = normalize(normal);
@@ -173,9 +174,10 @@ void main() {
   vAvgColor = vec4( mixColor, vColor.a); // 1.0);
 
 
-  lmcoord = vaUV0;//vec2(vaUV2);
+  //lmcoord = vaUV0;//vec2(vaUV2);
+  lmcoord = vec2(vaUV2);
 
-  lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
+  //lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
   // Get atlas shift & limits for detail blurring
   vec2 texcoordminusmid = texcoord.xy-midcoord;
@@ -195,7 +197,7 @@ void main() {
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
   float shadowPushAmmount =  (depth*.2 + .00030 ) ;
 	
-  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
+  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * vaNormal;
 	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
 	
 	// `+ (0.75-depth*.55)` is scalping fixes
@@ -218,13 +220,13 @@ void main() {
 
 
 	// Sun Moon Influence
-	skyBrightnessMult = 1.0;
+	skyBrightnessMult = vec2(1.0);
 	dayNightMult = 0.0;
 	sunPhaseMult = 1.0;
 
 	// Sky Influence
 	//   TODO : Move to 
-	skyBrightnessMult=eyeBrightnessSmooth.y * 0.004166666666666666; //  1.0/240.0
+	skyBrightnessMult = vec2(eyeBrightnessSmooth) * 0.004166666666666666666666; //  1.0/240.0
 	//skyBrightnessMult=eyeBrightnessFit;
 	
 	// Sun Influence
@@ -241,10 +243,6 @@ void main() {
   
 #endif
   
-  
-  //gl_Position = toClipSpace3(gbufferProjection, position);
-  //gl_Position = ftransform();
-  //gl_Position = gbufferProjection * vec4( position, 1.0);
   
   
   
@@ -617,7 +615,7 @@ in vec4 vtexcoordam; // .st for add, .pq for mul
 
 
 #ifdef OVERWORLD
-  in float skyBrightnessMult;
+  in vec2 skyBrightnessMult;
   in float dayNightMult;
   in float sunPhaseMult;
 	in vec4 shadowPos;
@@ -664,7 +662,18 @@ void main() {
 
 	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 
+  // Light map UVs --
+
 	vec2 luv = lmcoord;
+
+  // Iris, don't let me down now!
+  luv *= 0.004166666666666666666666; //  1.0/240.0
+  luv.y += 0.03125; // Offset 5/16ths into shadow row
+  //luv = luv*(1.0-LightBlackLevel*.1)+LightBlackLevel*.1; // Brighten pitch black
+  luv = luv*.98+.02; // Brighten pitch black
+
+  // -- -- --
+
 	float outDepth = min(.9999,gl_FragCoord.w);
 	float isLava = vIsLava;
 	vec4 avgShading = vAvgColor;
@@ -829,7 +838,7 @@ void main() {
 
 #ifdef OVERWORLD
 	
-	skyBrightness = skyBrightnessMult;
+	skyBrightness = skyBrightnessMult.y;
 
 #if ShadowSampleCount > 0
 
@@ -846,11 +855,24 @@ void main() {
 //  vWorldNormal.y*(1.0-shadowData.b)
 
   shadowPosLocal = distortShadowShift( shadowPosLocal );
+
+/*
+  vec2 outUV=shadowPosLocal.xy;
+  outUV.xy = abs(outUV.xy);
+  //
+  float pLen = outUV.x*.5;
+  outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  pLen = outUV.y*.5;
+  outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  shadowPosLocal.xy /= outUV;
+*/
+
   vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult;
   float shadowFade = clamp( (1.0-max(abs(shadowPosLocal.x),abs(shadowPosLocal.y))) * shadowEdgeFade, 0.0, 1.0) ;
 
 // Get base shadow value
-  float shadowBase=shadow2D(shadowtex0, projectedShadowPosition + localShadowOffset).x; 
+  //float shadowBase=shadow2D(shadowtex0, projectedShadowPosition + localShadowOffset).x; 
+  float shadowBase = texture(shadowtex0, projectedShadowPosition + localShadowOffset);
 	shadowAvg = shadowBase ;
 	
 // Get base shadow source block color
@@ -871,7 +893,7 @@ void main() {
 
   reachMult = max(0.0, reachMult - (min(1.0,outDepth*20.0)*.5));
 
-
+/*
 #if ShadowSampleCount == 2
   vec2 posOffset;
   
@@ -880,7 +902,7 @@ void main() {
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, axisSamplesFit);
+    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition, .03), axisSamplesFit);
   }
 #elif ShadowSampleCount == 3
   vec2 posOffset;
@@ -889,7 +911,7 @@ void main() {
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition, .03), boxSampleFit);
   }
 #elif ShadowSampleCount > 3
   vec2 posOffset;
@@ -898,10 +920,10 @@ void main() {
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition, .03), boxSampleFit);
   }
 #endif
-
+*/
   
   float shadowDepthInf = clamp( (depth*distancDarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
@@ -975,7 +997,7 @@ void main() {
 // WARNING - I could see not knowing why I'm doing this in the future
 //             Even reading the code.
 //    Sky Brightness influence in the fog color blenderings.
-  diffuseSun *= skyBrightnessMult;
+  diffuseSun *= skyBrightnessMult.y;
 
 #endif
 	
@@ -1288,7 +1310,10 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
-	//outCd.rgb = vec3((1.0-depthBias));
+
+
+	//outCd.rgb = vec3(lightLumaCd.rrr);
+
 	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
