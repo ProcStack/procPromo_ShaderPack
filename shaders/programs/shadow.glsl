@@ -48,7 +48,7 @@
 
     // Either work on optifine, not iris --
     //vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-    vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(vaPosition + chunkOffset, 1.0);
+    vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4( vaPosition + chunkOffset, 1.0);
     
     //vec4 position = ftransform();
 
@@ -91,7 +91,7 @@
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
 
-    //position = distortShadowShift( position );
+    position = distortShadowShift( position );
 
 
     /*vec2 outUV=position.xy;

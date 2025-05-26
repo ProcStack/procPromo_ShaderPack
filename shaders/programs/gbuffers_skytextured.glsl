@@ -4,7 +4,7 @@
 
 #ifdef VSH
 
-uniform sampler2D gcolor;
+uniform sampler2D gtexture;
 uniform mat4 gbufferModelView;
 uniform int renderStage;
 
@@ -13,7 +13,7 @@ uniform vec3 moonPosition;
 uniform int moonPhase;
 uniform int worldTime;
 
-uniform vec3 fogColor;
+uniform vec3 fogtexture;
 uniform vec3 skyColor;
 
 varying vec4 vTexcoord;
@@ -60,15 +60,15 @@ void main() {
 
 
   if (renderStage == MC_RENDER_STAGE_SUN) {
-    vGlowEdgeCd = texture2D(gcolor, vec2(0.59375)).rgb; // .5+.0625+.03125
+    vGlowEdgeCd = texture2D(gtexture, vec2(0.59375)).rgb; // .5+.0625+.03125
     vFittedUV = vTexcoord.st;
     vDfLenMult = .45;
   }
   if (renderStage == MC_RENDER_STAGE_MOON) {
-    vGlowEdgeCd = fogColor*moonPhaseMult;
+    vGlowEdgeCd = fogtexture*moonPhaseMult;
     // Render stages arn't triggering on Iris, this is the Iris fix
     // TODO : Check on OptiFine when they finally update to 1.21.5, been waiting 2 months...
-    vFittedUV = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;//*vec2(4.0,2.0);
+    vFittedUV = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy *vec2(4.0,2.0);
     vDfLenMult = .3;
   }
   
@@ -83,7 +83,7 @@ void main() {
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
-uniform sampler2D gcolor;
+uniform sampler2D gtexture;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
@@ -99,7 +99,7 @@ varying vec3 vSkyUV;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
-uniform vec3 fogColor;
+uniform vec3 fogtexture;
 
 
 void main() {
@@ -112,7 +112,7 @@ void main() {
 #ifdef OVERWORLD
   vec2 fituv = fract(vFittedUV);
 
-  vec4 baseCd = texture2D(gcolor, uv) * vColor;
+  vec4 baseCd = texture2D(gtexture, uv) * vColor;
   outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 
@@ -131,7 +131,7 @@ void main() {
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
 #elif defined(NETHER)
-  vec4 baseCd = texture2D(gcolor, uv) * vColor;
+  vec4 baseCd = texture2D(gtexture, uv) * vColor;
   outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #elif defined(THE_END)
@@ -141,13 +141,13 @@ void main() {
 
   uv = fract( vTexcoord.st*.2 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
   noiseX.z = (noiseX.z*.5+.5);
-  vec4 baseCd = texture2D(gcolor, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
+  vec4 baseCd = texture2D(gtexture, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
   uv += noiseX.xy + vTexcoord.st*.1;
-  vec4 mixCd = texture2D(gcolor, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
+  vec4 mixCd = texture2D(gtexture, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
   outCd = mix( baseCd, mixCd, noiseX.x);
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #else
-  vec4 baseCd = texture2D(gcolor, uv) * vColor;
+  vec4 baseCd = texture2D(gtexture, uv) * vColor;
   outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #endif

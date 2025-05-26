@@ -38,7 +38,7 @@ const float shadowMapFov = 90.0;
 const float shadowDistance = 320.0; //256.0; // 224.0; // 128.0;
 
 
-const float sunPathRotation = 0.0;
+const float sunPathRotation = 1.0;
 const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0] -1 Higher quality.  1 Shadow optimizations 
 const float shadowIntervalSize = 1.00;
 
