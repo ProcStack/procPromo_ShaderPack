@@ -690,9 +690,9 @@ void main() {
 
   // Iris, don't let me down now!
   luv *= 0.004166666666666666666666; //  1.0/240.0
-  luv.y += 0.03125; // Offset 5/16ths into shadow row
-  //luv = luv*(1.0-LightBlackLevel*.1)+LightBlackLevel*.1; // Brighten pitch black
-  luv = luv*.96+.02; // Brighten pitch black; Cut the top end
+  //luv.y += 0.03125; // Offset 5/16ths into shadow row
+  // //luv = luv*(1.0-LightBlackLevel*.1)+LightBlackLevel*.1; // Brighten pitch black
+  //luv = luv*.96+.02; // Brighten pitch black; Cut the top end
 
   // -- -- --
 
@@ -767,22 +767,12 @@ void main() {
 	
 	vec4 baseBlurColor = txCd;
 	
-	
-// Default Minecraft Lighting
-	vec4 lightLumaCd = texture(lightmap, luv);//*.9+.1;
-	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.0-.13,0.0,1.0);
-	
-	txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
-	txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
-	
-	
 // Glow Baseline Variables
 	float glowInf = 0.0;
 	vec3 glowCd = vec3(0,0,0);
 	glowCd = txCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
 	glowInf = max(0.0, maxComponent(txCd.rgb)*1.5-.9)*vCdGlow;
-	
-	
+
 // Screen Space UVing and Depth
 // TODO : Its a block game.... move the screen space stuff to vert stage
 //          Vert interpolation is good enough
@@ -795,6 +785,26 @@ void main() {
 	
 // A bias of .035 for retaining detail closer to camera
 	float depthDetailing = clamp(Distance_DetailBlendBias*1.5-depthBias, 0.0, 1.0);
+
+	
+// Default Minecraft Lighting
+	vec4 lightLumaCd = texture(lightmap, luv);//*.9+.1;
+  //lightLumaCd.rgb = mix(lightLumaCd.rgb, max( lightLumaCd.rgb, vec3(vColor.a*(vColor.a*.5+.5) * depthBias +  (1.0-depthBias))), step(vColor.a, 0.9999));
+  //lightLumaCd.rgb = mix(lightLumaCd.rgb, max( lightLumaCd.rgb, vec3(vColor.a*(vColor.a*.5+.5) * depthBias +  (1.0-depthBias))), step(vColor.a, 0.9999));
+
+	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.0-.13,0.0,1.0);
+  //float aoLightLumaInf = min(1.0, vColor.a+lightLumaBase);
+  //lightLumaCd.rgb *= aoLightLumaInf;
+  //lightLumaBase *= aoLightLumaInf;
+  //lightLumaCd.rgb = vColor.aaa;
+  //lightLumaBase = vColor.a;
+	
+	txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
+	txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
+	
+	
+	
+	
 
 // Side by side of active blurring and no blurring
 //   Other shader effects still applied though
@@ -1256,7 +1266,7 @@ float skyGreyInf = 0.0;
   // I just can't get this looking good on Iris
   //   So now no gets block occlusion!!
   //     ...Means I should do it better
-	//outCd.rgb = mix( outCd.rgb, outCd.rgb*outCd.rgb*.6, clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
+	outCd.rgb = mix( outCd.rgb, outCd.rgb*outCd.rgb, clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 
 #endif
 	
@@ -1368,7 +1378,9 @@ float skyGreyInf = 0.0;
 
 
 	//outCd.rgb = vec3(clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 ));
-	//outCd.rgb = vec3( skyBrightness );
+  //outCd.rgb = vec3( lightLumaCd.r);
+	//outCd.rgb = mix( outCd.rgb, outCd.rgb*outCd.rgb, clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
+	outCd.rgb = vec3( lightLumaCd.rgb );
 
 	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);

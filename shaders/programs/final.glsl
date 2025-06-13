@@ -359,9 +359,11 @@ void main() {
   // Edge depth boost
   float edgeDepthInf = (depthCos*.8+.02)*(1.85-dataCd.r*.5);
   
+  float outerEdgeInf =  1.0 - max( 0.0, (edgeDepthInf-.825)*4.0 ); 
+
   // Output Individual Edge Values
   innerEdgePerc = clamp(innerEdgePerc * edgeDepthInf * screenEdgeMult * innerMult, 0.0, rainInf )  ;
-  outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf ) ;
+  outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf * outerEdgeInf ) ;
 	
   
   // Combine Inner & Outer Edge Values
@@ -476,6 +478,7 @@ void main() {
 
 
 //outCd.rgb = vec3( step(.99999, edgeDepthInf));
+//outCd.rgb = vec3( outerEdgeInf  );
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
