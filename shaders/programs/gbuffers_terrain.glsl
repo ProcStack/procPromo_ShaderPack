@@ -690,9 +690,9 @@ void main() {
 
   // Iris, don't let me down now!
   luv *= 0.004166666666666666666666; //  1.0/240.0
-  //luv.y += 0.03125; // Offset 5/16ths into shadow row
+  luv.y += 0.03125; // Offset 5/16ths into shadow row
   // //luv = luv*(1.0-LightBlackLevel*.1)+LightBlackLevel*.1; // Brighten pitch black
-  //luv = luv*.96+.02; // Brighten pitch black; Cut the top end
+  luv = luv*.96+.02; // Brighten pitch black; Cut the top end
 
   // -- -- --
 
@@ -1266,7 +1266,7 @@ float skyGreyInf = 0.0;
   // I just can't get this looking good on Iris
   //   So now no gets block occlusion!!
   //     ...Means I should do it better
-	outCd.rgb = mix( outCd.rgb, outCd.rgb*outCd.rgb, clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
+	outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 
 #endif
 	
@@ -1380,7 +1380,7 @@ float skyGreyInf = 0.0;
 	//outCd.rgb = vec3(clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 ));
   //outCd.rgb = vec3( lightLumaCd.r);
 	//outCd.rgb = mix( outCd.rgb, outCd.rgb*outCd.rgb, clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
-	outCd.rgb = vec3( lightLumaCd.rgb );
+	//outCd.rgb = vec3( clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 
 	
 	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
