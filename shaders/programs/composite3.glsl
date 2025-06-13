@@ -58,7 +58,7 @@ void main() {
   float reachDist = 1.0+0.40*(sampleCdAlpha*.5+.5);
   reachDist = 1.5-sampleCdAlpha*.5;
 
-  reachDist*=GLOW_PERC3 * GlowBrightness;//*2.0;
+  reachDist*=Glow_Perc3 * GlowBrightness;//*2.0;
   //sampleCdAlpha = min(1.0, sampleCdAlpha+max(0.0, GlowBrightness-1.0));
   
   int reachSteps = 7 + BaseQuality*6 ;

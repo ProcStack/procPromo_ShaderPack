@@ -72,6 +72,7 @@ void main() {
     vDfLenMult = .3;
   }
   
+    vFittedUV = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
   
   gl_FogFragCoord = gl_Position.z;
 }
@@ -157,7 +158,7 @@ void main() {
     float debugBlender = step( .0, vPos.x);
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
-  
+  outCd.a=1.0;
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3(0.0),1.0);
 

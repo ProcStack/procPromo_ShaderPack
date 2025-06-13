@@ -66,14 +66,14 @@ void main() {
   vec4 sampleCd = texture2D(colortex6, texcoord);
   float sampleDepth = 1.0+(1.0-texture2D(colortex1, texcoord).x);
 
-  float depthInf = ( 1.0 + GLOW_PERC1 * GLOW_REACH ) * GlowBrightness;
+  float depthInf = ( 1.0 + Glow_Perc1 * Glow_Reach ) * GlowBrightness;
 
   float glowBrightness = sampleCd.b;
-  float reachInf = depthInf + sampleDepth*GLOW_REACH;
+  float reachInf = depthInf + sampleDepth*Glow_Reach;
 	
   vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize * reachInf );
 	
-  //baseBloomCd.b *= GLOW_PERC1;
+  //baseBloomCd.b *= Glow_Perc1;
 	
 	vec4 outCd = vec4(vec3(0.0),1.0);
   outCd.rgb = hsv2rgb(baseBloomCd.rgb);

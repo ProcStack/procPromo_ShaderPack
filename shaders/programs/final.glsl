@@ -357,11 +357,11 @@ void main() {
   // Screen edges influence
   float screenEdgeMult = max(0.0, 1.0-maxComponent(uvShifted) * 2.5); // Higher the #, darker the edges
   // Edge depth boost
-  float edgeDepthInf = (depthCos*.8+.02)*(2.5-dataCd.r*.5);
+  float edgeDepthInf = (depthCos*.8+.02)*(1.85-dataCd.r*.5);
   
   // Output Individual Edge Values
   innerEdgePerc = clamp(innerEdgePerc * edgeDepthInf * screenEdgeMult * innerMult, 0.0, rainInf )  ;
-  outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf );
+  outerEdgePerc = clamp( outerEdgePerc * edgeDepthInf * outerMult, 0.0, rainInf ) ;
 	
   
   // Combine Inner & Outer Edge Values
@@ -384,9 +384,11 @@ void main() {
 #endif
   
   
+
 // -- -- -- -- -- -- -- --
 // -- Glow Mixing -- -- -- --
 // -- -- -- -- -- -- -- -- -- --
+
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
   vec3 outGlowCd = max( blurSecondCd, max(blurInitCd, blurFirstCd) );
@@ -403,6 +405,9 @@ void main() {
   float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   
+
+
+
 // -- -- -- -- -- -- -- -- -- --
 // -- Debugging Visualization -- --
 // -- -- -- -- -- -- -- -- -- -- -- --
@@ -411,7 +416,8 @@ void main() {
 //   hmmmmm picture-in-picture
 //     drooollllssss
 //
-// Shadow Cam
+
+// Debug - Shadow Cam
 #if ( DebugView == 2 )
 	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
 	float fitWidth = 1.0 + aspectRatio*.45;
@@ -445,7 +451,7 @@ void main() {
 
 	// -- -- --
 	
-// Shadow Debug
+// Debug - Shadow Debug
 //   Adding the mini cam cause its fun
 #elif ( DebugView == 3 )
 	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
@@ -461,12 +467,15 @@ void main() {
 	outCd.rgb = mix( outCd.rgb, shadowCd, step(shadowHelperMix, 0.502));
 
 
-// Vanilla -vs- procPromo Debugger
+// Debug - Vanilla -vs- procPromo Debugger
 #elif ( DebugView == 4 )
 	float debugBlender = step( .5, uv.x);
 	outCd = mix( baseCd, outCd, debugBlender);
 	
 #endif
+
+
+//outCd.rgb = vec3( step(.99999, edgeDepthInf));
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

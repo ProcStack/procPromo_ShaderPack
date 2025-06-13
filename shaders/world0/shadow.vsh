@@ -1,29 +1,8 @@
-#version 330 compatibility
+#version 450 compatibility
 
 #define OVERWORLD
 #define SHADOW
 
 #define VSH
 
-
-  #include "/shaders.settings"
-  #include "/programs/utils/shadowCommon.glsl"
-  in vec2 vaUV0; // texture
-in vec4 vaColor;
-in vec4 vaPosition;
-
-out vec4 color;
-out vec2 texcoord;
-
-void main() {
-
-    vec4 position = ftransform();
-
-    position = distortShadowShift( position );
-
-    gl_Position = position;
-
-
-    color = gl_Color;
-    texcoord = vaUV0;
-}
+#include "/programs/shadow.glsl"

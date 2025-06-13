@@ -392,7 +392,7 @@ void main() {
 
 
   
-  float shadowDepthInf = clamp( (depth*distancDarkenMult), 0.0, 1.0 );
+  float shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
 	
 	// Verts not facing the sun should never have non-1.0 shadow values

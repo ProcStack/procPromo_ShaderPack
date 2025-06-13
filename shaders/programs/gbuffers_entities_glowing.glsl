@@ -38,7 +38,7 @@ varying float vDepth;
 
 void main() {
 
-  vec3 toCamPos = gl_Vertex.xyz*.005;
+  vec3 toCamPos = gl_Vertex.xyz*.001;
   vec4 position = gl_ModelViewMatrix * vec4(toCamPos, 1.0) ;
   position.xyz = position.xyz+normalize(position.xyz)*near*2.50;
 

@@ -56,7 +56,7 @@ void main() {
 	
   float reachDist = 1.5-sampleCd.a*.5;
 
-  reachDist *= GLOW_PERC2 * GLOW_REACH * GlowBrightness;//*2.0;
+  reachDist *= Glow_Perc2 * Glow_Reach * GlowBrightness;//*2.0;
 
   int reachSteps = 7 + BaseQuality*6 ;
   float texScalar = 13.0-reachDist*4.0;

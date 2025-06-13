@@ -6,18 +6,17 @@
 	
 #ifdef VSH
 
-
   #include "/shaders.settings"
   #include "utils/shadowCommon.glsl"
 
   uniform sampler2D gtexture;
+  uniform mat4 projectionMatrix;
+  uniform mat4 modelViewMatrix;
   uniform mat4 gbufferModelView;
   uniform mat4 gbufferProjection;
-  uniform mat4 gbufferShadowProjection;
   uniform mat4 shadowProjection;
   uniform mat4 shadowProjectionInverse;
   uniform mat4 shadowModelView;
-  uniform mat4 gbufferShadowModelView;
   uniform mat4 shadowModelViewInverse;
   uniform int blockEntityId;
 
@@ -44,13 +43,13 @@
     //vec4 position = shadowProjection * shadowModelView * vec4(vaPosition + chunkOffset, 1.0);
     //vec4 position = gbufferProjection * gbufferModelView * vec4(vaPosition + chunkOffset, 1.0);
     //vec4 position = projectionMatrix * modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0);
-    //vec4 position = gbufferShadowProjection * gbufferShadowModelView * vec4(vaPosition + chunkOffset, 1.0);
 
     // Either work on optifine, not iris --
     //vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-    vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4( vaPosition + chunkOffset, 1.0);
+    //basePos = cross( basePos, vec3(0.0, 1.0, 0.0) ); // Rotate to match shadow space
+    //vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4( basePos, 1.0);
     
-    //vec4 position = ftransform();
+    vec4 position = ftransform();
 
     //texcoord = gl_MultiTexCoord0.xy;
     texcoord = vaUV0;
@@ -65,12 +64,12 @@
     outCd = vaColor*texture(gtexture, midcoord);
     vec4 tmpCd = outCd;
     mixColor = tmpCd.rgb;
-    #if (BaseQuality > 1)
+    #if (BaseQuality > 0)
       tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
       mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
       tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(txlOffset.x, -txlOffset.y) );
       mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
-      #if (BaseQuality == 2)
+      #if (BaseQuality > 1)
         tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(-txlOffset.x, -txlOffset.y) );
         mixColor = mix( mixColor, tmpCd.rgb, avgBlend*tmpCd.a);
         tmpCd = outCd*textureOffset(gtexture, midcoord, ivec2(-txlOffset.x, txlOffset.y) );
@@ -105,13 +104,11 @@
     //
 
 
-
     gl_Position = position;
     vShadowPos = position.xyz;
 
     //vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
     vShadowDist = length( position );
-
 
 
 
