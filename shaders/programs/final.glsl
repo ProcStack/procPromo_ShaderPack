@@ -23,7 +23,6 @@ uniform float viewHeight;
 uniform float sunAngle;
 
 uniform vec3 sunPosition;
-uniform vec3 upVec;
 
 varying vec2 texcoord;
 varying vec2 res;

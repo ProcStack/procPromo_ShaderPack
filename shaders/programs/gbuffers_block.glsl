@@ -52,7 +52,6 @@ varying vec3 vScreenUV;
 varying vec2 vTexelSize;
 
 varying vec3 sunVecNorm;
-varying vec3 upVecNorm;
 varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
 
@@ -104,7 +103,6 @@ void main() {
   
   
   sunVecNorm = normalize(sunPosition);
-  upVecNorm = normalize(upPosition);
 
   vPos = gl_ProjectionMatrix * gl_Vertex;
   vPos = ftransform();
@@ -354,7 +352,6 @@ varying vec3 vWorldNormal;
 varying vec3 vAnimFogNormal;
 
 varying vec3 sunVecNorm;
-varying vec3 upVecNorm;
 varying float vAlphaMult;
 varying float vAltTextureMap;
 varying float vGlowMultiplier;

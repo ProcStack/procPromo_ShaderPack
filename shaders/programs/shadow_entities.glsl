@@ -11,7 +11,9 @@
 
   uniform sampler2D gtexture;
   uniform mat4 projectionMatrix;
+  uniform mat4 projectionMatrixInverse;
   uniform mat4 modelViewMatrix;
+  uniform mat4 modelViewMatrixInverse;
   uniform mat4 gbufferModelView;
   uniform mat4 gbufferProjection;
   uniform mat4 shadowProjection;
@@ -28,6 +30,7 @@
   in vec2 mc_midTexCoord;
   in vec4 vaColor;
   in vec2 vaUV0; // texture
+  in vec4 at_midBlock;
 
   out vec2 texcoord;
   out vec4 color;
@@ -41,9 +44,9 @@
 
     
     #ifdef IS_IRIS
-      vec4 basePos = vec4( vaPosition + chunkOffset, 1.0 );
-      vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-      position = shadowProjection * shadowModelView * gl_Vertex;
+      // Well how about that `chunkOffset` was breaking Entity locations
+      //   Removing the modelView and ChunkOffset fixes the issue in Iris
+      vec4 position = shadowProjection  * vec4(vaPosition,1.0);
     #else
       vec4 position = ftransform();
     #endif
@@ -52,13 +55,15 @@
     //texcoord = vaUV0;
     vec2 midcoord=mc_midTexCoord;
 
-    vec4 outCd = gl_Color;//vaColor;
+    vec4 outCd = vaColor;
+    //vec4 outCd = gl_Color;
 
     float avgBlend = .5;
 
     ivec2 txlOffset = ivec2(2);
     vec3 mixColor;
     outCd = vaColor*texture(gtexture, midcoord);
+    //outCd = gl_Color*texture(gtexture, midcoord);
     vec4 tmpCd = outCd;
     mixColor = tmpCd.rgb;
     #if (BaseQuality > 0)
@@ -82,7 +87,6 @@
 
 
     color=outCd;
-    //color = vaColor;
 
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );
@@ -155,10 +159,10 @@ const int shadowcolor1Format = RG16;
 
   void main() {
 
-    float outAlpha = texture2D(gtexture,texcoord.xy).a;
+    vec4 outAlpha = texture2D(gtexture,texcoord.xy);
     vec4 shadowCd = color;
 
-    shadowCd.a= min( 1.0, shadowCd.a * outAlpha + vIsLeaves );
+    shadowCd.a= min( 1.0, shadowCd.a * outAlpha.a + vIsLeaves );
 
     if( shadowCd.a<0.01 ){
       discard;
@@ -166,6 +170,7 @@ const int shadowcolor1Format = RG16;
 		
 		shadowCd.a*=1.0-vIsTranslucent;
     outCd = shadowCd;
+    outCd = outAlpha;
     //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
     outData = vec4( length(vShadowPos)/far, length(vShadowPos), shadowCd.aa );
     //outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );

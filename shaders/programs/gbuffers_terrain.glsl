@@ -19,7 +19,6 @@ const float eyeBrightnessHalflife = 4.0f;
 #include "/shaders.settings"
 
 uniform sampler2D gcolor;
-uniform vec3 sunVec;
 uniform int moonPhase;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferPreviousModelView;
@@ -41,6 +40,8 @@ uniform vec3 chunkOffset;
 uniform int worldTime;
 
 uniform float dayNight;
+uniform float sunMoonShadowInf;
+uniform float sunAngle;
 uniform float eyeBrightnessFit;
 uniform ivec2 eyeBrightnessSmooth;
 uniform vec3 shadowLightPosition;
@@ -70,6 +71,7 @@ out vec4 vtexcoordam; // .st for add, .pq for mul
   out vec2 skyBrightnessMult;
   out float dayNightMult;
   out float sunPhaseMult;
+  out float moonShadowToggle;
 	out vec4 shadowPos;
 #endif
 
@@ -115,7 +117,7 @@ const float EPSLION = 0.0001;
 
 void main() {
   //vec3 normal = normalMatrix * vaNormal;
-  vec3 normal = gl_Normal;
+  vec3 normal =  mat3(gl_ModelViewMatrix) * gl_Normal;
   //vec3 basePos = vaPosition + chunkOffset ;
   //vec3 position = mat3(gbufferModelView) * basePos + gbufferModelView[3].xyz;
   //vec3 position = (gbufferModelView * vec4(basePos,1.0)).xyz;
@@ -203,7 +205,7 @@ void main() {
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
   float shadowPushAmmount =  (depth*.2 + .00030 ) ;
 	
-  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * vaNormal;
+  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;//vaNormal;
 	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
 	
 	// `+ (0.75-depth*.55)` is scalping fixes
@@ -236,16 +238,18 @@ void main() {
 	//skyBrightnessMult=eyeBrightnessFit;
 	
 	// Sun Influence
-	sunPhaseMult = max(0.0,1.0-max(0.0,dayNight)*2.0);
+	sunPhaseMult = step(sunAngle, .5);//1.0-max(0.0,sunAngle*2.0-1.0);
+  
 	//sunPhaseMult = 1.0-(sunPhaseMult*sunPhaseMult*sunPhaseMult);
 	
 	
 	// Moon Influence
-	float moonPhaseMult = min(1.0,float(mod(moonPhase+4,8))*.125);
-	moonPhaseMult = moonPhaseMult - max(0.0, moonPhaseMult-0.50)*2.0;
+	float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
+  moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
 	moonPhaseMult = moonPhaseMult*.28 + .075; // Moon's shadowing multiplier
+	moonShadowToggle = sunMoonShadowInf * step(0.5, sunAngle);
 
-	dayNightMult = mix( 1.0, moonPhaseMult, sunPhaseMult * (1.0-skyBrightnessMult.x) );
+	dayNightMult = mix( 1.0, moonPhaseMult, (1.0-sunPhaseMult) * skyBrightnessMult.y );
   
 #endif
   
@@ -590,7 +594,6 @@ uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int fogMode;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
-uniform vec3 sunVec;
 uniform vec3 cameraPosition;
 uniform int isEyeInWater;
 uniform float BiomeTemp;
@@ -652,6 +655,7 @@ in vec4 vtexcoordam; // .st for add, .pq for mul
   in vec2 skyBrightnessMult;
   in float dayNightMult;
   in float sunPhaseMult;
+  in float moonShadowToggle;
 	in vec4 shadowPos;
 #endif
 
@@ -979,6 +983,7 @@ void main() {
   }
 #endif
   
+
   float shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
 
@@ -999,16 +1004,20 @@ void main() {
 // -- -- --
 
 	shadowRainStrength *= shadowData.b;
+  float nightLightInfluence = (1.0-lightLumaBase);
+  nightLightInfluence = clamp( nightLightInfluence*nightLightInfluence * 6.0, 0.1,1.0);
+  nightLightInfluence = mix( 1.0, nightLightInfluence, moonShadowToggle );
 
 // -- -- --
 
 //  Distance influence of surface shading --
 //  TODO : !! Cleans up shadow crawl with better values
-  shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid) * skyBrightness * rainStrengthInv * dayNightMult;
+  shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid)
+                    * skyBrightness * rainStrengthInv * dayNightMult * nightLightInfluence;
 	
   // -- -- --
 	
-  //diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf  );
+  diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf  ) * nightLightInfluence ;
 
 #endif
 // Shadow End
@@ -1055,7 +1064,7 @@ void main() {
 // WARNING - I could see not knowing why I'm doing this in the future
 //             Even reading the code.
 //    Sky Brightness influence in the fog color blenderings.
-  diffuseSun *= skyBrightness + (1.0-skyBrightness);
+  //diffuseSun *= skyBrightness + (1.0-skyBrightness);
 
 #endif
 	
@@ -1387,9 +1396,8 @@ float skyGreyInf = 0.0;
 #endif
 
 // -- -- --
-
-
   
+
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]

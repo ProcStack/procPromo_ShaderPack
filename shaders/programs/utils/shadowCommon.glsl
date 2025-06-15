@@ -57,7 +57,7 @@ const float shadowRadialBiasMult = 1.33;
 const float shadowRadialBiasOffset = .02;
 const float shadowAxisBiasMult = 1.13;
 const float shadowAxisBiasOffset = .65;
-const float shadowAxisBiasPosOffset = 0.02;
+const float shadowAxisBiasPosOffset = 0.01;
 
 // Peter-Pan'ing / Shadow Surface Offset
 const float shadowThreshold = shadowDistance/(shadowMapFov*.5);
@@ -184,7 +184,7 @@ vec4 distortShadowShift(vec4 shadowSpacePos) {
   outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
   shadowSpacePos.xy /= outUV;
   //
-  
+
   return shadowSpacePos;
 }
 
@@ -199,9 +199,6 @@ vec4 distortShadowShift(vec4 shadowSpacePos, float scalar) {
   shadowSpacePos.xy /= outUV;
   //
   
-  #ifdef SHADOW
-    //shadowSpacePos.z *= oneThird;
-  #endif
   return shadowSpacePos;
 }
 
