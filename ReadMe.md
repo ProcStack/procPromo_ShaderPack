@@ -1,5 +1,5 @@
 # ProcStack's procPromo v0.4
-### Optifine Shader Pack
+### Optifine & Iris Shader Pack
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
 <br/> Softer details, edge highlights, sharp shadows, and glowiness.*
@@ -40,7 +40,7 @@
 
 Ayo, I'm Kevin
 
-This is my first shader pack for Optifine,
+This is my first shader pack for Optifine, (now with Iris support!)
 <br/>&nbsp; It's been quite a journey so far.
 
 I wanted to build the backbone for a general purpose shader pack.
