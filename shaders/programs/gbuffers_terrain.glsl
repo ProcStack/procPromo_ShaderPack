@@ -517,6 +517,9 @@ void main() {
 
   // Sea Lantern
   if( mc_Entity.x == 272 ){ 
+    #ifdef NETHER
+      vCdGlow *= .65;
+    #endif
     //vCdGlow *= 1.1;
 		vDeltaPow = 2.250;
 		vDeltaMult = 3.5;
@@ -528,6 +531,10 @@ void main() {
   if( mc_Entity.x == 280 ){
     vCdGlow=idFitToGlow * worldGlowMult;
     vColor+=vColor*.15;
+    
+    #ifdef NETHER
+      vCdGlow *= .65;
+    #endif
     //vAvgColor = vec4( .8, .6, .0, 1.0 );
     
     //vDepthAvgColorInf =  0.0;
@@ -1217,7 +1224,7 @@ float skyGreyInf = 0.0;
     #ifdef OVERWORLD
 		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
 		#else
-      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045)+.25)*1.75+.35,0.0,1.0));
+      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045)+.15)*(2.15+lightLumaBase*.5)+.35,0.0,1.0));
     #endif
 		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
 
@@ -1238,9 +1245,9 @@ float skyGreyInf = 0.0;
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
 	outCd.rgb = mix( fogColor*.85+skyColor*.5, cdLitFog, lightInfNether );
 	outCd.rgb *= mix(vec3(1.0), (fogColor*.5)*(toCamNormalDot*.75+.25), depth*.5*toCamNormalDot - toCamNormalDot*.25);
-	float cdNetherBlend = min( 1.0, shiftBlackLevels(1.0-depth*.65) + lightLumaBase*lightLumaBase );
+	float cdNetherBlend = lightLumaBase * min( 1.0, depth*3.0+.25  );
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
-	
+
 #else
 
 // Surface Normal Influence
@@ -1337,8 +1344,9 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
   // Boost reds in lit areas of the nether
-  float netherRedBoost = clamp(lightLumaBase*lightLumaBase*1.85-0.50,0.0,1.0);
-  outCdHSV.g = min( 1.0, outCdHSV.g + outCdHSV.g * netherRedBoost * netherRedBoost * .85);
+  float netherRedBoost = clamp(lightLumaBase*lightLumaBase*1.5-0.50,0.0,1.0);
+  outCdHSV.g = min( 1.0, outCdHSV.g + outCdHSV.g * netherRedBoost * netherRedBoost * .25);
+  outCdHSV.b *= 0.85 + depthBias*.35;
 #endif
 
   
