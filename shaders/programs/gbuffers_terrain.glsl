@@ -1212,7 +1212,7 @@ float skyGreyInf = 0.0;
 		skyGreyCd = vec3(getSkyFogGrey(toSkyColor.rgb));
 		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
 		
-		vec3 blockBasinCd = outCd.rgb*clamp(worldPosYFit*.5+(depth-screenDewarp*.1*(1.0-skyBrightnessMult.y)+.25)*2.0+.3,0.0,1.0);
+		vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
 		
 		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
 
