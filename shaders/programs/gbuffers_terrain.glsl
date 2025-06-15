@@ -508,14 +508,15 @@ void main() {
   }
 
   // Frolights
-  if( mc_Entity.x == 223 ){ // verdant & ochre
+  if( mc_Entity.x == 238 ){ 
     vCdGlow *= .75;
 		vDeltaPow = 2.250;
 		vDeltaMult = 3.5;
+    vAvgColor.rgb *= vAvgColor.rgb*.5 +.5;
   }
 
   // Sea Lantern
-  if( mc_Entity.x == 272 ){ // verdant & ochre
+  if( mc_Entity.x == 272 ){ 
     //vCdGlow *= 1.1;
 		vDeltaPow = 2.250;
 		vDeltaMult = 3.5;
@@ -1212,8 +1213,12 @@ float skyGreyInf = 0.0;
 		skyGreyCd = vec3(getSkyFogGrey(toSkyColor.rgb));
 		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
 		
-		vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
-		
+    
+    #ifdef OVERWORLD
+		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
+		#else
+      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045)+.25)*1.75+.35,0.0,1.0));
+    #endif
 		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
 
 	}

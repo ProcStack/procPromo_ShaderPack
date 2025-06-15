@@ -1,5 +1,6 @@
 # ProcStack's procPromo v0.5
 ### Optifine & Iris Shader Pack
+
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
 <br/> Softer details, edge highlights, sharp shadows, and glowiness.*
@@ -11,6 +12,14 @@
 
 
 *(More screenshots in [/show](/show/ReadMe.md))*
+
+---
+
+### Some Iris Love
+As of **June 15th 2025**, **Iris** for **Fabric** *( Sodium Renderer )* is now working!
+<br/>&nbsp; It took me some time to work out the Shadow matrix issues,
+<br/>&nbsp; Among lighting and general differences between Optifine & Iris.
+<br/>&nbsp;&nbsp;&nbsp; Fun times!
 
 ---
 
@@ -64,12 +73,12 @@ Gotta love personal projects though,
 
 ---
 
-### My Working Environment
+### Testing Environment
 ```
   _ Nvidia 1080 GTX @ 4k
   _ Nvidia RTX 3080 Laptop @ 2.5k
-  _ Minecraft 1.18.1-1.20.2
-  _ Optifine, Fabric, Optifabric, & Minihud
+  _ Minecraft 1.18.1-1.20.4
+  _ Optifine, Iris, Fabric, Optifabric, & Minihud
 ```
 
 If you get any insano color glitches;
