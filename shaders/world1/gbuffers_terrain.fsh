@@ -1,4 +1,4 @@
-#version 120
+#version 330 compatibility
 
 #define THE_END
 

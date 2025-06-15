@@ -15,8 +15,10 @@ uniform vec3 sunPosition;
 uniform vec3 upPosition;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
+uniform mat3 normalMatrix;
 
 attribute vec4 mc_Entity;
+attribute vec3 vaNormal;
 
 varying vec4 texcoord;
 varying vec4 color;
@@ -41,7 +43,6 @@ void main() {
   dayNight = dot(sunVecNorm,upVecNorm);
 
   vNormal = normalize(gl_NormalMatrix * gl_Normal);
-
 
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
   vLocalPos = position;
@@ -134,8 +135,9 @@ void main() {
   float toSunMoon = dot(vNormal, sunVecNorm);
   float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
   
-  float sunRainToneMult = mix( 1.5, .4, rainStrength/15.);
-  float moonRainToneMult = mix( 1.2, .4, rainStrength/15.);
+  float rainMix = rainStrength/15.;
+  float sunRainToneMult = mix( 1.5, .4, rainMix);
+  float moonRainToneMult = mix( 1.2, .4, rainMix);
   
   vec3 awayFromSunCd = vec3( .85, .9, .97 )*sunRainToneMult;
   vec3 towardSunCd = vec3( 1.0, .93, .97 )*sunRainToneMult;
@@ -148,7 +150,8 @@ void main() {
   vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
-  vec4 baseCd = texture2D(gcolor, texcoord.st);
+  vec4 baseCd = vec4( texture2D(gcolor, texcoord.st).rgb, color.a );
+  baseCd.rgb = vec3(1.0); // I have no clue, things keep acting odd
   vec4 outCd = baseCd;
   outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
   outCd.rgb *= vec3(toUpFitted);
@@ -162,6 +165,12 @@ void main() {
   
   
 	
+	// -- -- --
+
+  // Distant fade out of horizon clouds
+  float distantClouds = min(1.0, length(vPos.xz)*.001);
+  distantClouds = 1.0 - (distantClouds*(distantClouds*.5+.5));
+
 	// -- -- --
   
   float distMix = min(1.0,gl_FragCoord.w*5.0);
@@ -218,10 +227,17 @@ void main() {
 	
 	
   // Opacity Logic
-  outCd.a *= color.a*.5+max(0.0,1.0-distMix*distMix*25.0)*.9+.1;//*.5;
+  #ifdef IS_IRIS
+    float alphaDistFit = .75;
+    float alphaOffset = 0.5;
+  #else
+    float alphaDistFit = .375;
+    float alphaOffset = 0.25;
+  #endif
+  outCd.a *= min( 1.0, color.a * max(0.0,1.0-distMix*distMix*30.0) * alphaDistFit * distantClouds + alphaOffset );
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+toSun*.1)*rainStrFitInverseFit);
-  glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*2.0+.3);
+  glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*2.0+.2) * distantClouds;
   float glowReach = ((1.0-depth*.5)+.5)*.5;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
@@ -298,8 +314,8 @@ void main() {
     float debugBlender = step( .0, vLocalPos.x);
     outCd = mix( baseCd*color, outCd, debugBlender);
   #endif
+  
 
-	
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
   //gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);

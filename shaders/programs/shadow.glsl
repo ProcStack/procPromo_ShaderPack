@@ -51,11 +51,11 @@
     
     vec4 position = ftransform();
 
-    //texcoord = gl_MultiTexCoord0.xy;
-    texcoord = vaUV0;
+    texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
+    //texcoord = vaUV0;
     vec2 midcoord=mc_midTexCoord;
 
-    vec4 outCd = vaColor;
+    vec4 outCd = gl_Color;//vaColor;
 
     float avgBlend = .5;
 
@@ -85,7 +85,7 @@
 
 
     color=outCd;
-    color = vaColor;
+    //color = vaColor;
 
     vec4 camDir = vec4(0.0);
     //distortToNDC( gbufferModelView, position, camDir );

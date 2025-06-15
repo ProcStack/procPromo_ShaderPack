@@ -21,6 +21,8 @@ uniform int blockEntityId;
 uniform int entityId;
 
 
+uniform int currentRenderedItemId;
+
 uniform sampler2D gcolor;
 
 uniform float viewWidth;
@@ -29,8 +31,6 @@ uniform float viewHeight;
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
 attribute vec4 at_tangent;                      //xyz = tangent vector, w = handedness, added in 1.7.10
-
-in vec3 at_velocity; // vertex offset to previous frame
 
 varying vec2 texelSize;
 varying vec2 texcoordmid;
@@ -185,6 +185,13 @@ void main() {
   if(mc_Entity.x == 603){
     vAvgColorBlend = 0.5;
   }
+
+  // Maps
+  if(entityId == 604){
+    vAvgColorBlend = 1.0;
+  }
+
+  //vAvgColorBlend = float( currentRenderedItemId  );
   
 }
 #endif
@@ -217,6 +224,7 @@ uniform vec3 fogColor;
 
 uniform int blockEntityId;
 uniform int entityId;
+
 
 varying vec4 color;
 varying vec4 texcoord;
@@ -266,7 +274,9 @@ void main() {
   //diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize*1.0, 0.0, DetailBlurring, baseCd, txCd, avgDelta);
   diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize*2.0, 0.0, DetailBlurring, baseCd, txCd, avgDelta);
   //txCd = diffuseNoLimit( gcolor, tuv, vec2(0.10) );
-  
+
+  txCd = mix( txCd, baseCd, vAvgColorBlend );
+
   vec2 luv = lmcoord.st;
   vec4 lightBaseCd = texture2D(lightmap, luv);
   vec3 lightCd = lightBaseCd.rgb*.85+.15;
@@ -475,12 +485,13 @@ void main() {
   lightCd = vec3( lightCd.r );// * (1.0+rainStrength*.2));
   outCd.rgb = mix( outCd.rgb*lightCd.rgb, entityColor.rgb, entityCd);  
 	
+  //outCd.rgb = vec3( vAvgColorBlend );
+
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(depth, outEffectGlow, 0.0, 1.0);
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
   gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
   gl_FragData[4] = vec4(vec3(0.0),1.0);
-
 
 }
 #endif

@@ -114,18 +114,20 @@ const mat4 LIGHT_TEXTURE_MATRIX = mat4(vec4(0.00390625, 0.0, 0.0, 0.0), vec4(0.0
 const float EPSLION = 0.0001;
 
 void main() {
-  vec3 normal = normalMatrix * vaNormal;
-  vec3 basePos = vaPosition + chunkOffset ;
+  //vec3 normal = normalMatrix * vaNormal;
+  vec3 normal = gl_Normal;
+  //vec3 basePos = vaPosition + chunkOffset ;
   //vec3 position = mat3(gbufferModelView) * basePos + gbufferModelView[3].xyz;
-  vec3 position = (gbufferModelView * vec4(basePos,1.0)).xyz;
+  //vec3 position = (gbufferModelView * vec4(basePos,1.0)).xyz;
+  vec3 position = (gbufferModelView * gl_Vertex).xyz;
 	
   vPos = vec4(position,1.0);
-  vLocalPos = basePos;
+  vLocalPos = gl_Vertex.xyz;//basePos;
   vWorldPos = vec4( vaPosition, 1.0);
-  gl_Position = gbufferProjection * vPos;
-  //gl_Position = ftransform();
+  //gl_Position = gbufferProjection * vPos;
+  gl_Position = ftransform();
 	
-  vWorldNormal = vaNormal;
+  vWorldNormal = gl_Normal;//vaNormal;
   vNormal = normalize(normal);
   vNormalSunDot = dot(normalize(shadowLightPosition), vNormal)*1.5-.5;
   
@@ -138,13 +140,14 @@ void main() {
 
   // -- -- -- -- -- -- -- --
   
-  vColor = vaColor;
+  vColor = gl_Color;//vaColor;
   
 	// Fit 'worldTime' from 0-24000 -> 0-1; Scale x30
 	//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
 	vWorldTime = float(worldTime)*0.00125;
 	
-  texcoord = vaUV0;
+  //texcoord = vaUV0;
+  texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
   
   vec2 midcoord = mc_midTexCoord;
   texcoordmid=midcoord;
@@ -177,7 +180,8 @@ void main() {
 
 
   //lmcoord = vaUV0;//vec2(vaUV2);
-  lmcoord = vec2(vaUV2);
+  //lmcoord = vec2(vaUV2);
+  lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
   //lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
@@ -492,11 +496,11 @@ void main() {
 
 
   // Bedrock
-  if( mc_Entity.x == 268 ){
+  if( mc_Entity.x == 68 ){
 		vDeltaPow = 2.250;
 		vDeltaMult = 2.5;
-    vColor *= vec4( vec3(.85), 1.0 );
-    vAvgColor *= vec4( vec3(.85), 1.0 );
+    vColor.rgb *= vec3(.85);
+    vAvgColor.rgb *= vec3(.85);
   }
 
   // Frolights
@@ -504,6 +508,15 @@ void main() {
     vCdGlow *= .75;
 		vDeltaPow = 2.250;
 		vDeltaMult = 3.5;
+  }
+
+  // Sea Lantern
+  if( mc_Entity.x == 272 ){ // verdant & ochre
+    //vCdGlow *= 1.1;
+		vDeltaPow = 2.250;
+		vDeltaMult = 3.5;
+    //vColor.rgb *= vec3(1.5);
+    vAvgColor.rgb *=  vec3(1.15);
   }
 
   // Fire / Soul Fire
@@ -569,7 +582,6 @@ const int gnormalFormat = RGB10_A2;
 #include "utils/mathFuncs.glsl"
 #include "utils/texSamplers.glsl"
 #include "utils/stylization.glsl"
-
 
 uniform sampler2D gcolor;
 uniform sampler2D lightmap;
@@ -681,18 +693,22 @@ void main() {
 	vec4 baseTxCd=texture(gcolor, tuv);
 	
 	vec4 txCd=vec4(1.0,1.0,0.0,1.0);
+	vec4 tmpCd=vec4(1.0,1.0,0.0,1.0);
 
 	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 
   // Light map UVs --
 
 	vec2 luv = lmcoord;
+  //luv *= 0.004166666666666666666666; //  1.0/240.0 // Use if using Core profile
 
   // Iris, don't let me down now!
-  luv *= 0.004166666666666666666666; //  1.0/240.0
-  luv.y += 0.03125; // Offset 5/16ths into shadow row
-  // //luv = luv*(1.0-LightBlackLevel*.1)+LightBlackLevel*.1; // Brighten pitch black
-  luv = luv*.96+.02; // Brighten pitch black; Cut the top end
+  //   Edit, it let me down
+  #if !defined( IS_IRIS )
+    luv.y += 0.03125; // Offset 5/16ths into shadow row
+    // //luv = luv*(1.0-LightBlackLevel*.1)+LightBlackLevel*.1; // Brighten pitch black
+    luv = luv*.96+.02; // Brighten pitch black; Cut the top end
+  #endif
 
   // -- -- --
 
@@ -788,11 +804,13 @@ void main() {
 
 	
 // Default Minecraft Lighting
-	vec4 lightLumaCd = texture(lightmap, luv);//*.9+.1;
+	vec4 lightLumaCd = texture(lightmap, luv);//*1.1;
+  //lightLumaCd.rgb = vec3(vColor.a);
+  
   //lightLumaCd.rgb = mix(lightLumaCd.rgb, max( lightLumaCd.rgb, vec3(vColor.a*(vColor.a*.5+.5) * depthBias +  (1.0-depthBias))), step(vColor.a, 0.9999));
   //lightLumaCd.rgb = mix(lightLumaCd.rgb, max( lightLumaCd.rgb, vec3(vColor.a*(vColor.a*.5+.5) * depthBias +  (1.0-depthBias))), step(vColor.a, 0.9999));
 
-	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.0-.13,0.0,1.0);
+	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.26-.13,0.0,1.0);
   //float aoLightLumaInf = min(1.0, vColor.a+lightLumaBase);
   //lightLumaCd.rgb *= aoLightLumaInf;
   //lightLumaBase *= aoLightLumaInf;
@@ -864,7 +882,6 @@ void main() {
   float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal);
   float surfaceShading = 9.0-abs(toCamNormalDot);
 		
-  vec3 tmpCd = vec3(1.0,0.0,0.0);
 	
 	float shadowRainStrength = rainStrength;
 
@@ -991,7 +1008,7 @@ void main() {
 	
   // -- -- --
 	
-  diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf  );
+  //diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf  );
 
 #endif
 // Shadow End
@@ -1046,14 +1063,11 @@ void main() {
 
 
 
-
 // -- -- -- -- -- -- --
 // -- Fake Fresnel - -- --
 // -- -- -- -- -- -- -- -- --
-
 	float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias*.25),1.0)));
 	outCd*=mix(1.0, dotToCam, isLava);
-	
 	
 
 	// Apply Black Level Shift from User Settings
@@ -1228,7 +1242,6 @@ float skyGreyInf = 0.0;
 #endif
 
 
-
 // Add color to glow
 	float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
 	//glowCd = addToGlowPass(glowCd, mix(txCd.rgb,outCd.rgb,.5) * (depth*.8+.2));
@@ -1266,8 +1279,8 @@ float skyGreyInf = 0.0;
   // I just can't get this looking good on Iris
   //   So now no gets block occlusion!!
   //     ...Means I should do it better
+	//outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 	outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
-
 #endif
 	
 	glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
@@ -1376,14 +1389,8 @@ float skyGreyInf = 0.0;
 // -- -- --
 
 
-
-	//outCd.rgb = vec3(clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 ));
-  //outCd.rgb = vec3( lightLumaCd.r);
-	//outCd.rgb = mix( outCd.rgb, outCd.rgb*outCd.rgb, clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
-	//outCd.rgb = vec3( clamp( lightLumaCd.r*2.0-1.0, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
-
-	
-	outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
+  
+  outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
 	outLighting = vec4( lightLumaBase, lightLumaBase, 0.0, 1.0);

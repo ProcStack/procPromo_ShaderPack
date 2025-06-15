@@ -595,14 +595,6 @@ void main() {
 
 
 
-
-    
-		
-		
-		
-		
-		
-		
     
     float glowValueMult = 1.0;
     

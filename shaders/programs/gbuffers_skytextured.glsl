@@ -58,21 +58,27 @@ void main() {
   //     I should add a toggle button in settings...
 
 
-
-  if (renderStage == MC_RENDER_STAGE_SUN) {
+  vFittedUV = vTexcoord.st;
+  /*if (renderStage == MC_RENDER_STAGE_SUN) {
     vGlowEdgeCd = texture2D(gtexture, vec2(0.59375)).rgb; // .5+.0625+.03125
-    vFittedUV = vTexcoord.st;
     vDfLenMult = .45;
   }
   if (renderStage == MC_RENDER_STAGE_MOON) {
     vGlowEdgeCd = fogtexture*moonPhaseMult;
-    // Render stages arn't triggering on Iris, this is the Iris fix
-    // TODO : Check on OptiFine when they finally update to 1.21.5, been waiting 2 months...
     vFittedUV = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy *vec2(4.0,2.0);
     vDfLenMult = .3;
-  }
+  }*/
   
-    vFittedUV = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
+  // Iris is having some issues with MC_RENDER_STAGEs SUN and MOON
+  if( isSun>.5 ){
+    vFittedUV = vTexcoord.st;
+    vGlowEdgeCd = texture2D(gtexture, vec2(0.59375)).rgb; // .5+.0625+.03125
+    vDfLenMult = .45;
+  }else{
+    vFittedUV = vTexcoord.st*vec2(4.0,2.0) ;
+    vGlowEdgeCd = fogtexture*moonPhaseMult;
+    vDfLenMult = .3;
+  }
   
   gl_FogFragCoord = gl_Position.z;
 }
@@ -88,6 +94,7 @@ uniform sampler2D gtexture;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
+uniform int renderStage;
 
 varying vec4 vPos;
 varying vec4 vColor;
@@ -159,6 +166,9 @@ void main() {
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
   outCd.a=1.0;
+
+  //outCd.rgb = sunPosition.yyy;
+
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3(0.0),1.0);
 

@@ -16,6 +16,9 @@ uniform mat4 gbufferProjectionInverse;
 uniform int heldBlockLightValue;
 uniform int heldBlockLightValue2;
 
+uniform int blockEntityId;
+uniform int entityId;
+
 uniform vec3 sunPosition;
 
 uniform float viewWidth;
@@ -24,8 +27,6 @@ uniform float viewHeight;
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
 attribute vec4 at_tangent;                      //xyz = tangent vector, w = handedness, added in 1.7.10
-
-in vec3 at_velocity; // vertex offset to previous frame
 
 varying vec2 texelSize;
 varying vec4 texcoord;
@@ -133,7 +134,9 @@ void main() {
   
   
   // Items that shouldn't have additional effects
-  vTexColorOnly = float( heldItemId == 118 || heldItemId2 == 118 );
+  vTexColorOnly = float( mc_Entity.x == 605  );
+  vTexColorOnly = float( entityId );
+  vTexColorOnly = float( blockEntityId );
 }
 #endif
 
@@ -175,6 +178,7 @@ varying float vWhichHandItem; // 0 = left; 1 = right
 varying float vLeftGlowPerc;
 varying float vRightGlowPerc;
 varying float vGlowPerc;
+varying float vBlurPerc;
 
 varying float vTexColorOnly;
 
@@ -244,6 +248,8 @@ void main() {
     outCd = mix( outCd, baseCd, debugBlender);
   #endif
   
+  //outCd.rgb = vec3( vTexColorOnly );
+
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(1.0,gl_FragCoord.w)-.0001 ), 1.0);
   gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);
