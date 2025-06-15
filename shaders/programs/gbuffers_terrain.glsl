@@ -1212,10 +1212,9 @@ float skyGreyInf = 0.0;
 		skyGreyCd = vec3(getSkyFogGrey(toSkyColor.rgb));
 		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
 		
-		vec3 blockBasinCd = outCd.rgb*clamp(worldPosYFit*.5+(depth-screenDewarp*.18+.25)*2.0+.3,0.0,1.0);
+		vec3 blockBasinCd = outCd.rgb*clamp(worldPosYFit*.5+(depth-screenDewarp*.1*(1.0-skyBrightnessMult.y)+.25)*2.0+.3,0.0,1.0);
 		
 		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
-  tmpCd.rgb = outCd.rgb;
 
 	}
 
@@ -1291,7 +1290,6 @@ float skyGreyInf = 0.0;
   //   So now no gets block occlusion!!
   //     ...Means I should do it better
 	//outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
-	outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 #endif
 	
 	glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
@@ -1399,7 +1397,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
-  outCd = tmpCd;
+  //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
