@@ -123,6 +123,7 @@ varying float dayNight;
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
 
+const float Fifteenth = 1.0/15.0;
 
 void main() {
 
@@ -135,7 +136,7 @@ void main() {
   float toSunMoon = dot(vNormal, sunVecNorm);
   float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
   
-  float rainMix = rainStrength/15.;
+  float rainMix = rainStrength * Fifteenth;
   float sunRainToneMult = mix( 1.5, .4, rainMix);
   float moonRainToneMult = mix( 1.2, .4, rainMix);
   

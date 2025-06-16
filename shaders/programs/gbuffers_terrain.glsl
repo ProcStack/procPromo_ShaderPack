@@ -1244,7 +1244,7 @@ float skyGreyInf = 0.0;
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
 	outCd.rgb = mix( fogColor*.85+skyColor*.5, cdLitFog, lightInfNether );
-	outCd.rgb *= mix(vec3(1.0), (fogColor*.5)*(toCamNormalDot*.75+.25), depth*.5*toCamNormalDot - toCamNormalDot*.25);
+	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.5*toCamNormalDot - toCamNormalDot*.65);
 	float cdNetherBlend = lightLumaBase * min( 1.0, depth*3.0+.25  );
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
 
@@ -1345,7 +1345,7 @@ float skyGreyInf = 0.0;
 #ifdef NETHER
   // Boost reds in lit areas of the nether
   float netherRedBoost = clamp(lightLumaBase*lightLumaBase*1.5-0.50,0.0,1.0);
-  outCdHSV.g = min( 1.0, outCdHSV.g + outCdHSV.g * netherRedBoost * netherRedBoost * .25);
+  outCdHSV.g = min( 1.0, outCdHSV.g + outCdHSV.g * netherRedBoost * netherRedBoost * .15);
   outCdHSV.b *= 0.85 + depthBias*.35;
 #endif
 

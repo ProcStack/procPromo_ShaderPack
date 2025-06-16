@@ -23,6 +23,7 @@ varying vec3 vGlowEdgeCd;
 varying vec2 vFittedUV;
 varying float vDfLenMult;
 varying float vWorldTime;
+varying float isSun;
 varying vec3 vSkyUV;
 
 void main() {
@@ -44,7 +45,7 @@ void main() {
 
   vec3 modelPos = gbufferModelView[3].xyz;
   
-  float isSun = step( .5, dot( normalize(sunPosition), normalize(position.xyz) ) );
+  isSun = step( .5, dot( normalize(sunPosition), normalize(position.xyz) ) );
 
   
   vColor = gl_Color;
@@ -95,6 +96,8 @@ uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int renderStage;
+uniform float rainStrength;
+uniform vec3 skyColor;
 
 varying vec4 vPos;
 varying vec4 vColor;
@@ -103,12 +106,14 @@ varying vec3 vGlowEdgeCd;
 varying vec2 vFittedUV;
 varying float vDfLenMult;
 varying float vWorldTime;
+varying float isSun;
 varying vec3 vSkyUV;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
 uniform vec3 fogtexture;
 
+const float Fifteenth = 1.0/15.0;
 
 void main() {
   
@@ -116,6 +121,7 @@ void main() {
   vec2 uv = vTexcoord.st;
   vec4 outCd = vec4(0.0);
   
+  float rainMix = rainStrength ;
   
 #ifdef OVERWORLD
   vec2 fituv = fract(vFittedUV);
@@ -138,6 +144,15 @@ void main() {
   vec3 sunCd = mix( outCd.rgb, vGlowEdgeCd * dfLen, sunBody);
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
+
+
+
+  // Clear sky Blue = 0xFF = 255/255 = 1.0
+  // Rain sky Blue = 0x88 = 136/255 = 0.53333333333
+  // Thunder sky Blue = 0x33 = 51/255 = 0.2 = 1.0/(1.0-.2) = 1.25
+  float skyGreyInf =  (skyColor.b-.2)*1.25;
+  outCd.a = mix( 1.0, skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun, rainMix );
+
 #elif defined(NETHER)
   vec4 baseCd = texture2D(gtexture, uv) * vColor;
   outCd = baseCd;
@@ -165,9 +180,9 @@ void main() {
     float debugBlender = step( .0, vPos.x);
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
-  outCd.a=1.0;
 
-  //outCd.rgb = sunPosition.yyy;
+//outCd.rgb = vec3(isSun);
+//outCd.a=1.0;
 
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3(0.0),1.0);
