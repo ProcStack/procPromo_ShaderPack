@@ -1223,7 +1223,6 @@ float skyGreyInf = 0.0;
 
 //Fog when Player in Air
 	}else{
-	
 		// Clear sky Blue = 0xFF = 255/255 = 1.0
 		// Rain sky Blue = 0x88 = 136/255 = 0.53333333333
 		// Thunder sky Blue = 0x33 = 51/255 = 0.2 = 1.0/(1.0-.2) = 1.25
@@ -1231,12 +1230,11 @@ float skyGreyInf = 0.0;
 	
 		skyGreyCd = vec3(getSkyFogGrey(toSkyColor.rgb));
 		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
-		
     
     #ifdef OVERWORLD
 		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
 		#else
-      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+.25)*(1.85+lightLumaBase*.25)+.35,0.0,1.0));
+      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+.25)*(2.85+lightLumaBase*.65)+.35,0.0,1.0));
     #endif
 		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
 
@@ -1251,16 +1249,17 @@ float skyGreyInf = 0.0;
 
 	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.4))
 										       - (min(1.0,(0.7-depth*.5)+.1))*0.85, 0.0, 1.0 );
-	lightInfNether += min(1.0, lightLumaBase*(depth*.25 +.75+toCamNormalDot*.25)+.55);
-	lightInfNether = (1.0-(1.0-lightInfNether)*.75)*depthBias;
+	lightInfNether += min(1.0, lightLumaBase*(depth*.25 +.75+toCamNormalDot*.25)+.35);
+	lightInfNether = (1.0-(1.0-lightInfNether)*.1)*(depthBias*.45+.65);
 	
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
-	outCd.rgb = mix( fogColor*.85, cdLitFog*.8+fogColor*.2, lightInfNether );
-	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.5*toCamNormalDot - toCamNormalDot*.65);
+	outCd.rgb = mix( fogColor*.85, cdLitFog*(depthBias*.1+.8)+fogColor*.2, lightInfNether );
+	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.75*toCamNormalDot - toCamNormalDot*.65);
 	float cdNetherBlend = lightLumaBase * min( 1.0, depth*3.0+.25  );
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
 
+	//tmpCd.rgb = outCd.rgb;
 #else
 
 // Surface Normal Influence
@@ -1423,7 +1422,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
-  //outCd = tmpCd;
+ //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
