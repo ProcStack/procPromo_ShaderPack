@@ -1236,7 +1236,7 @@ float skyGreyInf = 0.0;
     #ifdef OVERWORLD
 		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
 		#else
-      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045)+.15)*(2.15+lightLumaBase*.5)+.35,0.0,1.0));
+      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+.25)*(1.85+lightLumaBase*.25)+.35,0.0,1.0));
     #endif
 		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
 
@@ -1256,7 +1256,7 @@ float skyGreyInf = 0.0;
 	
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
-	outCd.rgb = mix( fogColor*.85, cdLitFog*.9+fogColor*.15, lightInfNether );
+	outCd.rgb = mix( fogColor*.85, cdLitFog*.8+fogColor*.2, lightInfNether );
 	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.5*toCamNormalDot - toCamNormalDot*.65);
 	float cdNetherBlend = lightLumaBase * min( 1.0, depth*3.0+.25  );
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
