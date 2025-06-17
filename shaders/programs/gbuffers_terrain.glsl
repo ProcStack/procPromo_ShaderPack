@@ -527,6 +527,14 @@ void main() {
     vAvgColor.rgb *=  vec3(1.15);
   }
 
+  // Dried Ghast
+  if( mc_Entity.x == 260 ){ 
+    vCdGlow = 0.0;
+		vDeltaPow = 1.150;
+		vDeltaMult = 5.5;
+    vAvgColor.rgb *=  vec3(1.1);
+  }
+
   // Fire / Soul Fire
   if( mc_Entity.x == 280 ){
     vCdGlow=idFitToGlow * worldGlowMult;
@@ -1189,7 +1197,7 @@ float skyGreyInf = 0.0;
 		float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
 		// General brightness under water
 			
-		outCd.rgb *=  smoothDepth+lightLuma*.5+glowInf;
+		outCd.rgb *=  smoothDepth+lightLuma*.35+glowInf*.5-max(0.0,.15-glowInf);
 		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.3)+(smoothDepth*.35+.25);
 		
 // -- -- --
