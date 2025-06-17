@@ -541,7 +541,8 @@ void main() {
     vColor+=vColor*.15;
     
     #ifdef NETHER
-      vCdGlow *= .65;
+      vCdGlow *= .5;
+      vColor.rgb *= vec3(.85);
     #endif
     //vAvgColor = vec4( .8, .6, .0, 1.0 );
     
@@ -818,6 +819,9 @@ void main() {
 // Get scene depth, and make glowy things less depth influenced
 	float depth = min(1.0, max(0.0, gl_FragCoord.w+glowInf*.5));
 	float depthBias = biasToOne(depth, 9.5);
+
+  glowInf *= depthBias;
+  glowCd *= depthBias;
 	
 // A bias of .035 for retaining detail closer to camera
 	float depthDetailing = clamp(Distance_DetailBlendBias*1.5-depthBias, 0.0, 1.0);
@@ -1248,10 +1252,11 @@ float skyGreyInf = 0.0;
 	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.4))
 										       - (min(1.0,(0.7-depth*.5)+.1))*0.85, 0.0, 1.0 );
 	lightInfNether += min(1.0, lightLumaBase*(depth*.25 +.75+toCamNormalDot*.25)+.55);
+	lightInfNether = (1.0-(1.0-lightInfNether)*.75)*depthBias;
 	
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
-	outCd.rgb = mix( fogColor*.85+skyColor*.5, cdLitFog, lightInfNether );
+	outCd.rgb = mix( fogColor*.85, cdLitFog*.9+fogColor*.15, lightInfNether );
 	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.5*toCamNormalDot - toCamNormalDot*.65);
 	float cdNetherBlend = lightLumaBase * min( 1.0, depth*3.0+.25  );
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
@@ -1311,7 +1316,7 @@ float skyGreyInf = 0.0;
   //     ...Means I should do it better
 	//outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 #endif
-	
+
 	glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
 
 	glowCd = mix(glowCd, vColor.rgb, isLava );
