@@ -1063,7 +1063,7 @@ void main() {
 														* clamp( shadowDepthInf*2.0-1.0, 0.0, 1.0)
 														- shadowData.b*.5, 0.0, 1.0 ) * vNormalSunInf ;
 	//lightCd = mix( lightCd, lightCd*(fogColor*(1.0-worldPosYFit)+(shadowCd.rgb*.5+.15)*worldPosYFit), lColorMix );
-	lightCd = mix( lightCd, (shadowCd.rgb*2.0+.15), lColorMix );
+	lightCd = mix( lightCd, (shadowCd.rgb*2.0+.5), lColorMix );
 
 // Strength of final shadow
 	outCd.rgb *= mix(max( vec3(min(1.0,shadowAvg+lightLuma*shadowLightInf)), lightCd*shadowMaxSaturation), vec3(1.0),shadowAvg);
@@ -1247,10 +1247,10 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
 
-	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.4))
-										       - (min(1.0,(0.7-depth*.5)+.1))*0.85, 0.0, 1.0 );
-	lightInfNether += min(1.0, lightLumaBase*(depth*.25 +.75+toCamNormalDot*.25)+.35);
-	lightInfNether = (1.0-(1.0-lightInfNether)*.1)*(depthBias*.45+.65);
+	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.5))
+										       - (min(1.0,(0.8-depth*.5)+.1))*0.85, 0.0, 1.0 );
+	lightInfNether += min(1.0, lightLumaBase*(depth*.05 +.85+toCamNormalDot*.85)+.2);
+	lightInfNether *= (depthBias*.45+.85);
 	
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
@@ -1358,11 +1358,12 @@ float skyGreyInf = 0.0;
   // Boost reds in lit areas of the nether
   float netherRedBoost = clamp(lightLumaBase*lightLumaBase*1.5-0.50,0.0,1.0);
   outCdHSV.g = min( 1.0, outCdHSV.g + outCdHSV.g * netherRedBoost * netherRedBoost * .15);
-  outCdHSV.b *= 0.85 + depthBias*.35;
+  outCdHSV.b *= 0.85 + depthBias*.15;
+  //glowHSV.z *= 0.85 + depthBias*.25;
 #endif
 
   
-	outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );
+	outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );// *vec3(1.1) ;
 	
 // Boost bright colors morso
 	boostPeaks(outCd.rgb);
