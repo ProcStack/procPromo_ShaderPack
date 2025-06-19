@@ -22,10 +22,8 @@ option.LightBlackLevel.comment=Set how dark lighting can get; This offsets black
 option.LightWhiteLevel=White Color Levels
 option.LightWhiteLevel.comment=Set how bright block lighting can get. As light emitting blocks also appear to glow, this will also affect how much glow is visible.  0.0, white = §7grey. 1.0, white = white. 2.0, white = §l§oWHITE
 
-option.WorldColor=World Colors
-value.WorldColor.false=§1C§ao§3l§bo§6r§ei§5z§de§4d
-value.WorldColor.true=§fG§7r§8e§7y§fs§7c§8a§7l§fe
-option.WorldColor.comment=Toggle full color or greyscale. When greyscale, everything appears black & white, except for glowing colors, for funsies. §7§o(Color Blind options to come).
+option.FogAmount=Fog Amount
+option.FogAmount.comment=Set how much the fog influences the world.
 
 # -- -- --
 
@@ -76,3 +74,10 @@ value.DebugView.2=Shadow Cam
 value.DebugView.3=Shadow Debug
 value.DebugView.4=Vanilla vs procPromo
 option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Blurring, test blurring methods and side-by-side views.  Shadow Cam, see what the sun & moon see.  Shadow Debug, shadow sample positions. Vanilla vs procPromo, side-by-side comparison
+
+# -- -- --
+
+option.WorldColor=World Colors
+value.WorldColor.false=§1C§ao§3l§bo§6r§ei§5z§de§4d
+value.WorldColor.true=§fG§7r§8e§7y§fs§7c§8a§7l§fe
+option.WorldColor.comment=Toggle full color or greyscale. When greyscale, everything appears black & white, except for glowing colors, for funsies. §7§o(Color Blind options to come).

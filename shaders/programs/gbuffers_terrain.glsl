@@ -1123,25 +1123,27 @@ void main() {
 
 	// Fog-World Blending Influence
 	float fogColorBlend = mix( 0.0, rainStrength, diffuseSun );
-  fogColorBlend = clamp( .9+depth+fogColorBlend, .1, 1.0 ) * (1.0-nightVision);
+  fogColorBlend = clamp( (depthBias*depthBias+.71)+fogColorBlend, 0.0, 1.0 ) * (1.0-nightVision);
 	
 	float invRainInf = rainStrengthInv*.2;
 	
 
 
 	vec3 toFogColor = toSkyColor;
+  float fogInf = -(FogAmount-1.0)+1.0;
 	
   #ifdef OVERWORLD
-	  fogColorBlend = min( 0.75, (fogColorBlend+invRainInf) * min(1.0,depth*(100.0-rainStrength*40.0*min(1.0,skyBrightness*4.0))) * (1.0-invRainInf) + invRainInf + glowInf);
-    toFogColor = mix( toSkyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.7+.3);
+	  fogColorBlend = min( 1.0, (fogColorBlend*(fogColorBlend*.35+.65)+invRainInf) * min(1.0,depthBias*(depthBias+0.85)
+                    * (100.0-rainStrength*40.0*min(1.0,skyBrightness*4.0))*fogInf)
+                    * (1.0-invRainInf) + invRainInf + glowInf + (fogInf-1.0));
+    //toFogColor = mix( fogColor*.5, fogColor*.9+outCd.rgb*.1, depth*.85+.15);
     toFogColor = mix( outCd.rgb*(toFogColor*.65)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
     // Includes `Night Vision` in fogColorBlend
     toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
   #else
-	  fogColorBlend = min( 0.85, fogColorBlend * min(1.0,depthBias*(depthBias*.5+.5)*2.5+LightBlackLevel) + glowInf);
-    toFogColor = mix( fogColor, fogColor*.9+outCd.rgb*.1, depth*.7+.3);
+	  fogColorBlend = min( 0.9, fogColorBlend * min(1.0,depthBias*(depthBias*.5+.5)*2.5*fogInf+LightBlackLevel) + glowInf);
+    toFogColor = mix( toFogColor, toFogColor*.9+outCd.rgb*.1, depth*.7+.3);
   #endif
-
 
 
 // -- -- -- -- -- -- 
@@ -1241,19 +1243,18 @@ float skyGreyInf = 0.0;
 		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
     
     #ifdef OVERWORLD
-		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
+		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depthBias-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
+      skyGreyCd = skyGreyCd*.35+toSkyColor*.3+fogColor*.35;
 		#else
       vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd*fogColor+clamp(
                   worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+
                     (lightLumaBase*.25*(depthBias+.15+lightLumaBase*.2*(depthBias*.5+.5))+.05+LightBlackLevel) )
-                    *(1.85+lightLumaBase*.65)+.05,
+                    *(1.85+lightLumaBase*.5),
                   0.0,1.0));
-      skyGreyCd = fogColor;
+      skyGreyCd = mix( fogColor*fogColor, fogColor,  clamp((fogColor.r-fogColor.g-.1)*20.0,0.0,1.0));
     #endif
     outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
-tmpCd.rgb = vec3(blockBasinCd);
-tmpCd.rgb = vec3(outCd.rgb );
-//tmpCd.rgb = vec3(fogColorBlend);
+    tmpCd.rgb = outCd.rgb;
 	}
 
 	
@@ -1439,7 +1440,7 @@ tmpCd.rgb = vec3(outCd.rgb );
 
 // -- -- --
 
-  outCd = tmpCd;
+  //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
