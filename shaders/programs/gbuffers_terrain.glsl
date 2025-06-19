@@ -401,10 +401,14 @@ void main() {
 		vShiftUVs = 0.5;
     vDeltaMult=50.5;
 		vDeltaPow=4.53;
-	}else if( mc_Entity.x == 247  ){ // Glowstone
+	}else if( mc_Entity.x == 257  ){ // Glowstone
     vDeltaMult=2.5;
 		vDeltaPow=1.5;
 		vAvgColor=vec4(0.729, 0.557, 0.318,0.0);
+    
+    #ifdef NETHER
+		  vColor.rgb *= 2.5;
+    #endif
 		
 		vDepthAvgColorInf=1.0;
 		vColorOnly=1.0;
@@ -518,7 +522,7 @@ void main() {
   // Sea Lantern
   if( mc_Entity.x == 272 ){ 
     #ifdef NETHER
-      vCdGlow *= .65;
+      vCdGlow *= .60;
     #endif
     //vCdGlow *= 1.1;
 		vDeltaPow = 2.250;
@@ -1077,7 +1081,6 @@ void main() {
 	lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg))*lightLuma, shadowAvg*vNormalSunInf) ;
 
 
-
 // Add day/night & to sun normal; w/ Sky Brightness limits
 	surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
 	
@@ -1124,15 +1127,21 @@ void main() {
 	
 	float invRainInf = rainStrengthInv*.2;
 	
-	fogColorBlend = min( 0.75, (fogColorBlend+invRainInf) * min(1.0,depth*(100.0-rainStrength*40.0*min(1.0,skyBrightness*4.0))) * (1.0-invRainInf) + invRainInf + glowInf);
 
 
-	vec3 toFogColor = mix( toSkyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.7+.3);
+	vec3 toFogColor = toSkyColor;
 	
-	toFogColor = mix( outCd.rgb*(toFogColor*.65)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
-	
-	// Includes `Night Vision` in fogColorBlend
-	toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
+  #ifdef OVERWORLD
+	  fogColorBlend = min( 0.75, (fogColorBlend+invRainInf) * min(1.0,depth*(100.0-rainStrength*40.0*min(1.0,skyBrightness*4.0))) * (1.0-invRainInf) + invRainInf + glowInf);
+    toFogColor = mix( toSkyColor*.5, fogColor*.9+outCd.rgb*.1, depth*.7+.3);
+    toFogColor = mix( outCd.rgb*(toFogColor*.65)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
+    // Includes `Night Vision` in fogColorBlend
+    toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
+  #else
+	  fogColorBlend = min( 0.85, fogColorBlend * min(1.0,depthBias*(depthBias*.5+.5)*2.5+LightBlackLevel) + glowInf);
+    toFogColor = mix( fogColor, fogColor*.9+outCd.rgb*.1, depth*.7+.3);
+  #endif
+
 
 
 // -- -- -- -- -- -- 
@@ -1234,10 +1243,17 @@ float skyGreyInf = 0.0;
     #ifdef OVERWORLD
 		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
 		#else
-      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+.25)*(2.85+lightLumaBase*.65)+.35,0.0,1.0));
+      vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd*fogColor+clamp(
+                  worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+
+                    (lightLumaBase*.25*(depthBias+.15+lightLumaBase*.2*(depthBias*.5+.5))+.05+LightBlackLevel) )
+                    *(1.85+lightLumaBase*.65)+.05,
+                  0.0,1.0));
+      skyGreyCd = fogColor;
     #endif
-		outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
-
+    outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
+tmpCd.rgb = vec3(blockBasinCd);
+tmpCd.rgb = vec3(outCd.rgb );
+//tmpCd.rgb = vec3(fogColorBlend);
 	}
 
 	
@@ -1256,10 +1272,9 @@ float skyGreyInf = 0.0;
 	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
 	outCd.rgb = mix( fogColor*.85, cdLitFog*(depthBias*.1+.8)+fogColor*.2, lightInfNether );
 	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.75*toCamNormalDot - toCamNormalDot*.65);
-	float cdNetherBlend = lightLumaBase * min( 1.0, depth*3.0+.25  );
+	float cdNetherBlend = min( 1.0, lightLumaBase * min( 1.0, depth+.25  ));
 	outCd.rgb = mix( outCd.rgb*(outCd.rgb*.5+.5), outCd.rgb, cdNetherBlend);
 
-	//tmpCd.rgb = outCd.rgb;
 #else
 
 // Surface Normal Influence
@@ -1356,10 +1371,11 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
   // Boost reds in lit areas of the nether
-  float netherRedBoost = clamp(lightLumaBase*lightLumaBase*1.5-0.50,0.0,1.0);
-  outCdHSV.g = min( 1.0, outCdHSV.g + outCdHSV.g * netherRedBoost * netherRedBoost * .15);
-  outCdHSV.b *= 0.85 + depthBias*.15;
-  //glowHSV.z *= 0.85 + depthBias*.25;
+  float netherRedBoost = clamp(lightLumaBase*1.5-0.50,0.0,1.0);
+  outCdHSV.g = clamp( outCdHSV.g*(outCdHSV.g*.5+.5) + netherRedBoost * netherRedBoost * .45,
+               outCdHSV.g*.8+.2, min(outCdHSV.g*2.0,depthBias*depthBias*.25+.45));
+  //outCdHSV.b *= 0.75 + depthBias*.25 + (lightLumaBase*.6-.3);
+  glowHSV.z *= 0.7 + depthBias*.25;
 #endif
 
   
@@ -1423,7 +1439,7 @@ float skyGreyInf = 0.0;
 
 // -- -- --
 
- //outCd = tmpCd;
+  outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
