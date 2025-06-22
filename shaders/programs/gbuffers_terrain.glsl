@@ -38,6 +38,7 @@ uniform vec2 texelSize;
 uniform vec3 chunkOffset;
 
 uniform int worldTime;
+uniform float frameTimeCounter;
 
 uniform float dayNight;
 uniform float sunMoonShadowInf;
@@ -147,6 +148,7 @@ void main() {
 	// Fit 'worldTime' from 0-24000 -> 0-1; Scale x30
 	//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
 	vWorldTime = float(worldTime)*0.00125;
+	vWorldTime = frameTimeCounter*0.00125;
 	
   //texcoord = vaUV0;
   texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
@@ -1183,6 +1185,7 @@ void main() {
 	vec3 endFogCd = skyColor;
 	
 	float timeOffset = (float(worldTime)*0.00004166666)*30.0;
+	timeOffset = vWorldTime*30.0;
 	
 	vec3 worldPos = (abs(cameraPosition+vLocalPos.xyz)*vec3(.09,.06,.05)*.01);
 	worldPos = ( worldPos+texture( noisetex, fract(worldPos.xz+worldPos.yy)).rgb );

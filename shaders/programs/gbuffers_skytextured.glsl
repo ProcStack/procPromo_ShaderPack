@@ -12,6 +12,7 @@ uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform int moonPhase;
 uniform int worldTime;
+uniform float frameTimeCounter;
 
 uniform vec3 fogtexture;
 uniform vec3 skyColor;
@@ -37,6 +38,7 @@ void main() {
 	//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
 	//vWorldTime = float(worldTime)*0.00125;
 	vWorldTime = float(worldTime)*0.00025;
+	vWorldTime = frameTimeCounter*.01;
 
 
   gl_Position = gl_ProjectionMatrix * position;
@@ -162,12 +164,13 @@ void main() {
   float skyDotY = dot(normalize(vSkyUV), vec3(0.0,1.0,0.0));
 	vec3 noiseX = texture( noisetex, fract(vec2(skyDotY,skyDotZ) + vec2(.75,1.75)*vWorldTime)).rgb;
 
-  uv = fract( vTexcoord.st*.2 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
+  uv = fract( vTexcoord.st*.15 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
   noiseX.z = (noiseX.z*.5+.5);
   vec4 baseCd = texture2D(gtexture, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
   uv += noiseX.xy + vTexcoord.st*.1;
   vec4 mixCd = texture2D(gtexture, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
   outCd = mix( baseCd, mixCd, noiseX.x);
+  outCd.rgb *= 1.0-outCd.rgb*.5;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #else
   vec4 baseCd = texture2D(gtexture, uv) * vColor;
@@ -181,7 +184,7 @@ void main() {
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
 
-//outCd.rgb = vec3(isSun);
+//outCd.rgb = vec3(vWorldTime);
 //outCd.a=1.0;
 
   gl_FragData[0] = outCd;
