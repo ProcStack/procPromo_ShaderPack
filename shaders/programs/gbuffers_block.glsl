@@ -25,7 +25,6 @@ uniform float viewWidth;
 uniform float viewHeight;
 
 uniform float frameTimeCounter;
-uniform int worldTime;
 
 attribute vec4 mc_Entity;
 attribute vec2 mc_midTexCoord;
@@ -100,7 +99,7 @@ void main() {
   lmtexcoord.xy = gl_MultiTexCoord0.xy;
   vWorldNormal = mat3(gbufferModelViewInverse) * gl_Normal;
   vAnimFogNormal = gl_NormalMatrix*vec3(1.0,0.0,0.0);
-	vWorldTime = frameTimeCounter*.01;
+	vWorldTime = sin(frameTimeCounter*.01);
 
   // -- -- -- -- -- -- -- --
   
@@ -314,7 +313,6 @@ uniform sampler2DShadow shadow;
 
 uniform vec2 texelSize;
 
-uniform int worldTime;
 uniform ivec2 eyeBrightness;
 uniform ivec2 eyeBrightnessSmooth;
 
@@ -619,7 +617,7 @@ void main() {
       uvShift *= abs(uvShift);
       uvProj.x += uvShift*.02*screenSpace.y;
       uvProj += vec2(ftime*5.1,ftime*5.1);
-			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*2.2+sin(uvProj.y*ftime*60.7)*.35);
+			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*2.2+sin(uvProj.y*ftime*6.7)*.35);
       uvProj = fract(uvProj);
       
       
