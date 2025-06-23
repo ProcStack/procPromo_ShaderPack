@@ -62,6 +62,7 @@ varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vColorOnly;
+varying float vWorldTime;
 
 #ifdef OVERWORLD
 	// Sun Moon Influence
@@ -99,6 +100,8 @@ void main() {
   lmtexcoord.xy = gl_MultiTexCoord0.xy;
   vWorldNormal = mat3(gbufferModelViewInverse) * gl_Normal;
   vAnimFogNormal = gl_NormalMatrix*vec3(1.0,0.0,0.0);
+	vWorldTime = frameTimeCounter*.01;
+
   // -- -- -- -- -- -- -- --
   
   
@@ -357,6 +360,7 @@ varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vColorOnly;
+varying float vWorldTime;
 
 #ifdef OVERWORLD
 	// Sun Moon Influence
@@ -608,14 +612,14 @@ void main() {
       //uvProj *= (1.0-depthBias)*.1+.8 ;
       uvProj.x += dotToCam;
       
-			float ftime = float(worldTime);
+			float ftime = vWorldTime;
       float pxVal = uvProj.x*-100.0;
-      float pyVal = fract(uvProj.y*3.0+ftime);
-      float uvShift = sin( pxVal + pyVal + uvProj.y*ftime*.05  );
+      float pyVal = fract(uvProj.y*3.0+ftime*50.);
+      float uvShift = sin( pxVal + pyVal + uvProj.y*ftime*0.1  );
       uvShift *= abs(uvShift);
       uvProj.x += uvShift*.02*screenSpace.y;
-      uvProj += vec2(ftime*.001,ftime*.001);
-			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*.00002+sin(uvProj.y*ftime*.007)*.02);
+      uvProj += vec2(ftime*5.1,ftime*5.1);
+			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*2.2+sin(uvProj.y*ftime*60.7)*.35);
       uvProj = fract(uvProj);
       
       

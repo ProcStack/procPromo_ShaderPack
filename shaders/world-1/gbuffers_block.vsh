@@ -1,6 +1,6 @@
 #version 120
 
-#define OVERWORLD
+#define NETHER
 
 #define textured
 

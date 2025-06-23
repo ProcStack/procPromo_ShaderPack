@@ -27,7 +27,7 @@ const float Distance_Vibrance = 0.073; // Higher gives distant block colors a bo
 const float Distance_DetailBlendBias = 1.035; // Retain detail near camera, distance offset bias
 
 const float GlowMult_Overworld = 0.35;
-const float GlowMult_Nether = 0.5;
+const float GlowMult_Nether = 0.45;
 
 const float ColorBoost_IsLava = .55;
 const float ColorBoost_IsLavaNether = 1.0;

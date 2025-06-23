@@ -86,6 +86,7 @@ uniform float rainStrength;
 uniform int worldTime;
 uniform float nightVision;
 
+uniform int biome;
 
 uniform float darknessFactor; //                   strength of the darkness effect (0.0-1.0)
 uniform float darknessLightFactor; //              lightmap variations caused by the darkness effect (0.0-1.0) 
@@ -474,7 +475,6 @@ void main() {
 	outCd = mix( baseCd, outCd, debugBlender);
 	
 #endif
-
 
 //outCd.rgb = vec3( step(.99999, edgeDepthInf));
 //outCd.rgb = vec3( outerEdgeInf  );

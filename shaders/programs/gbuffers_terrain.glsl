@@ -889,6 +889,7 @@ void main() {
 	//glowCd = vAvgColor.rgb;// * max(0.0, luma(txCd.rgb));
 
 
+
 // -- -- -- -- -- -- -- -- -- -- -- --
 // -- Apply Shading To Base Color - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -1171,7 +1172,7 @@ void main() {
 // TODO : MOVE TO POST PROCESSING ... ya dingus
 #ifdef THE_END
 
-	float depthEnd = min(1.0, max(0.0, outDepth*2.5+lightLumaBase*.5-screenDewarp*.005-.005));
+	float depthEnd = min(1.0, max(0.0, outDepth*2.25+lightLumaBase*.5-screenDewarp*.005-.005));
 	depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
 	depthEnd = depthEnd*.7+.3;
 	
@@ -1266,19 +1267,22 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
 
+  float fogColorDampen = max(0.0,dot(vec3(1.,1.,1.),fogColor)-.2);
+  fogColorDampen = min(1.0, (1.0 - fogColorDampen*fogColorDampen)+(depthBias*depthBias*.45-.2)-fogColorDampen);
+
 	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.5))
 										       - (min(1.0,(0.8-depth*.5)+.1))*0.85, 0.0, 1.0 );
 	lightInfNether += min(1.0, lightLumaBase*(depth*.05 +.5+toCamNormalDot*.8));
-	lightInfNether *= (depthBias*.45+.85);
+	//lightInfNether = mix( (depthBias*.45+.5+fogColorDampen*1.85), lightInfNether, fogColorDampen*2.);
+	lightInfNether = mix( lightInfNether, (depthBias*.45+.5+fogColorDampen*1.85), fogColorDampen);
 	
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
-	vec3 cdLitFog = outCd.rgb ;//* min( vec3(1.0), 1.0-(1.0-lightCd*0.06) );
-	outCd.rgb = mix( fogColor*.85, cdLitFog*(depthBias*.1+.8)+fogColor*.2, lightInfNether );
-	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), (1.0-depth)*.75*toCamNormalDot - toCamNormalDot*.65);
-	float cdNetherBlend = min( 1.0, lightLumaBase * min( 1.0, depth+.25  ) * 2.0);
+	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), lightCd+depthBias*fogColorDampen );
+	outCd.rgb = mix( fogColor*.9, cdLitFog*(depthBias*.1+.8)+fogColor*.2, lightInfNether );
+	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), max(0.0,(1.0-depth)*.75*toCamNormalDot - toCamNormalDot*.65 + fogColorDampen*.5));
+	float cdNetherBlend = min( 1.0, lightLumaBase * min( 1.0, depth+.25 + fogColorDampen  ) );
 	outCd.rgb = mix( outCd.rgb+toFogColor, outCd.rgb, cdNetherBlend);
-tmpCd.rgb = outCd.rgb;
-//tmpCd.rgb = vec3(cdNetherBlend);
+
 #else
 
 // Surface Normal Influence
@@ -1376,10 +1380,13 @@ tmpCd.rgb = outCd.rgb;
 #ifdef NETHER
   // Boost reds in lit areas of the nether
   float netherRedBoost = clamp(lightLumaBase*1.5-0.50,0.0,1.0);
-  outCdHSV.g = clamp( outCdHSV.g*(outCdHSV.g*.5+.5) + netherRedBoost * netherRedBoost * .45,
-               outCdHSV.g*.93+.07, min(outCdHSV.g*1.0,depthBias*depthBias*.25+.45));
+  outCdHSV.g = clamp( outCdHSV.g + netherRedBoost * netherRedBoost * .05,
+               .0, min(1.0,min(outCdHSV.g*1.35,depthBias*depthBias*.45+.65+outCdHSV.g)));
   //outCdHSV.b *= 0.75 + depthBias*.25 + (lightLumaBase*.6-.3);
-  glowHSV.z *= 0.65 + depthBias*.25;
+  //glowHSV.z *= 0.65 + depthBias*.25;
+  
+  glowHSV.g *= fogColorDampen;
+  glowHSV.b = glowHSV.b * (fogColorDampen*.75 + depthBias*.25);
 #endif
 
   
@@ -1444,6 +1451,7 @@ tmpCd.rgb = outCd.rgb;
 // -- -- --
 
   //outCd = tmpCd;
+  //outCd.rgb = vec3(fogColorDampen);;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
