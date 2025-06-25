@@ -145,7 +145,8 @@ void main() {
     //outCd.rgb=skyCd.xyz;
 
 
-  float toSunMoonDot = dot( vSunPos, normalize(vWorldPos) ) * .5 + .5 ;
+  float halfUpDot = upDot*.5;
+  float toSunMoonDot = dot( vSunPos, normalize(vWorldPos) ) * .3+.3 + (1.0-upDot)*.4;
 
   // Set morning or evening base color
   vec3 morningFogColors = mix( skyColorAnitMorning, fogColorMorning, toSunMoonDot );
@@ -157,12 +158,13 @@ void main() {
   
   outCd.rgb = mix( morningColors, eveningColors, vFogSkyBlends.y );
 
+
   // Set day color
-  vec3 dayColors = mix( mix( fogColorDay, skyColorDay, upDot ), vec3(skyGrey), rainStrength);
+  vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(skyGrey), rainStrength);
   outCd.rgb = mix( outCd.rgb, dayColors, vFogSkyBlends.x );
 
   // Set night color
-  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, upDot ), vec3(skyGrey), rainStrength);
+  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, halfUpDot ), vec3(skyGrey), rainStrength);
   outCd.rgb = mix( outCd.rgb, nightColors, vFogSkyBlends.z );
   
   
