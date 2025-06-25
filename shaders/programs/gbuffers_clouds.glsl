@@ -309,6 +309,8 @@ void main() {
 #endif
   
   // -- -- --
+
+  outCd.rgb = mix( outCd.rgb, vec3( luma(color.rgb) ), rainStrFit);
   
 
   #if ( DebugView == 4 )

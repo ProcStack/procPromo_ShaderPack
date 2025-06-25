@@ -334,13 +334,13 @@ void main() {
   skyBrightnessInf = 1.0;
   // Make the edge lines fatter in the dark
 	float invLighting = 1.0-(dataCd.r*.4+.35);
-  reachMult *= 1.0+invLighting;
+  reachMult *= 1.1+invLighting;
   // Bias the Cosine Depth closer to the camera
   //depthCos=biasToOne(depthCos);
   depthCos=biasToOne(depthCos*(2.2*invLighting));
   
   innerMult = .95;
-  outerMult = 1.25;
+  outerMult = 1.35;
 #endif
   
   vec3 avgNormal = normalCd.rgb;

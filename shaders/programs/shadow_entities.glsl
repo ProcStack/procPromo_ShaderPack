@@ -109,7 +109,7 @@
     vShadowPos = position.xyz;
 
     //vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
-    vShadowDist = length( position );
+    vShadowDist = length( position.xyz );
 
 
 
@@ -163,16 +163,17 @@ const int shadowcolor1Format = RG16;
     vec4 shadowCd = color;
 
     shadowCd.a= min( 1.0, shadowCd.a * outAlpha.a + vIsLeaves );
+    float shadowDist = vShadowDist;//length(vShadowPos);
 
     if( shadowCd.a<0.01 ){
       discard;
     }
-		
+    
 		shadowCd.a*=1.0-vIsTranslucent;
     outCd = shadowCd;
     outCd = outAlpha;
     //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
-    outData = vec4( length(vShadowPos)/far, length(vShadowPos), shadowCd.aa );
+    outData = vec4( shadowDist/far, shadowDist, shadowCd.aa );
     //outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );
     //outData = vec4( vIsTranslucent, length(vShadowPos), 0.0, 0.0 );
   }

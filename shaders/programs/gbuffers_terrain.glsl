@@ -1144,7 +1144,8 @@ void main() {
     // Includes `Night Vision` in fogColorBlend
     toFogColor = mix( vec3(1.0), toFogColor, fogColorBlend);
   #else
-	  fogColorBlend = min( 0.8, fogColorBlend * min(1.0,depthBias*(depthBias*.5+.5)*2.5*fogInf+LightBlackLevel) + glowInf);
+    toFogColor = fogColor;
+	  fogColorBlend = min( 0.8, fogColorBlend * min(1.0,depthBias*(depthBias*.5+1.5)*.5*fogInf+LightBlackLevel) + glowInf*.5);
     toFogColor = mix( toFogColor, toFogColor*.9+outCd.rgb*.1, depth*.7+.3);
   #endif
 
@@ -1210,6 +1211,7 @@ void main() {
 
 vec3 skyGreyCd = outCd.rgb;
 float skyGreyInf = 0.0;
+float darknessOffset = 0.0;
 	
 // Fog when Player in Water 
 	if( isEyeInWater == 1 ){ 
@@ -1217,8 +1219,8 @@ float skyGreyInf = 0.0;
 		// General brightness under water
 			
 		outCd.rgb *=  smoothDepth+lightLuma*.35+glowInf*.5-max(0.0,.15-glowInf);
-		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.3)+(smoothDepth*.35+.25);
-		
+		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.93)+(smoothDepth*.35+.25);
+		darknessOffset = .2;
 // -- -- --
 
 // Fog when Player in Lava 
@@ -1252,12 +1254,12 @@ float skyGreyInf = 0.0;
 		#else
       vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd*fogColor+clamp(
                   worldPosYFit*.5+max(0.0,(depth*(depth*.5+.5)-screenDewarp*.035)+
-                    (lightLumaBase*.25*(depthBias+.15+lightLumaBase*.2*(depthBias*.5+.5))+.05+LightBlackLevel) )
+                    (lightLumaBase*.25*(depthBias+.15+lightLumaBase*.2*(depthBias*.5+.5))+.5+LightBlackLevel) )
                     *(1.85+lightLumaBase*.5),
                   0.0,1.0));
-      skyGreyCd = mix( fogColor, fogColor*(toCamNormalDot*.65*lightLumaBase+.25),  clamp((fogColor.r-fogColor.g-.1)*20.0,0.0,1.0));
+      skyGreyCd = mix( fogColor, fogColor*(toCamNormalDot*.5*lightLumaBase+.5),  clamp((fogColor.r-fogColor.g-.1)*20.0,0.0,1.0));
     #endif
-    outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
+    //outCd.rgb = mix( skyGreyCd, blockBasinCd, fogColorBlend );
 	}
 
 	
@@ -1268,36 +1270,44 @@ float skyGreyInf = 0.0;
 #ifdef NETHER
 
   float fogColorDampen = max(0.0,dot(vec3(1.,1.,1.),fogColor)-.2);
-  fogColorDampen = min(1.0, (1.0 - fogColorDampen*fogColorDampen)+(depthBias*depthBias*.45-.2)-fogColorDampen);
+  //fogColorDampen = min(1.0, (1.0 - fogColorDampen*fogColorDampen)+(depthBias*depthBias*.45-.2)-fogColorDampen);
+  fogColorDampen = min(1.0, max(0.0, 1.0 - fogColorDampen*fogColorDampen*2.5)+(depthBias*depthBias*.25)) * (depthBias*.8+.2);
+  float cdLightBoost = clamp( lightLuma*6.0-5.0, 0.0, 1.0 )   ;
+  cdLightBoost *= cdLightBoost*cdLightBoost * (depthBias*.8+.1);
 
 	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.5))
 										       - (min(1.0,(0.8-depth*.5)+.1))*0.85, 0.0, 1.0 );
-	lightInfNether += min(1.0, lightLumaBase*(depth*.05 +.5+toCamNormalDot*.8));
+	lightInfNether += min(1.0, cdLightBoost*(depth*.05 +.25+toCamNormalDot*.85));
 	//lightInfNether = mix( (depthBias*.45+.5+fogColorDampen*1.85), lightInfNether, fogColorDampen*2.);
-	lightInfNether = mix( lightInfNether, (depthBias*.45+.5+fogColorDampen*1.85), fogColorDampen);
+	//lightInfNether = clamp( mix( lightInfNether, (depthBias*.45+.5+fogColorDampen*.85), fogColorDampen), 0.0, 1.0 );
+	//lightInfNether = mix( lightInfNether, (depthBias*.13+fogColorDampen*.87), fogColorDampen);
 	
 	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
-	vec3 cdLitFog = outCd.rgb * min( vec3(1.0), lightCd+depthBias*fogColorDampen );
-	outCd.rgb = mix( fogColor*.9, cdLitFog*(depthBias*.1+.8)+fogColor*.2, lightInfNether );
-	outCd.rgb *= mix(vec3(1.0), (fogColor*.25)*(toCamNormalDot*.25+.35), max(0.0,(1.0-depth)*.75*toCamNormalDot - toCamNormalDot*.65 + fogColorDampen*.5));
-	float cdNetherBlend = min( 1.0, lightLumaBase * min( 1.0, depth+.25 + fogColorDampen  ) );
-	outCd.rgb = mix( outCd.rgb+toFogColor, outCd.rgb, cdNetherBlend);
+ //tmpCd.rgb = vec3(lightInfNether);
+	//outCd.rgb *= mix(vec3(1.0), (fogColor*.25+outCd.rgb*.05)*(toCamNormalDot*.25+.35), clamp( (1.0-depth)*.5*toCamNormalDot - toCamNormalDot*.65 - fogColorDampen*.5, 0.0, 1.0));
+	//float cdNetherBlend = min( 1.0, lightLumaBase * min( 1.0, depthBias*10.+.25 + fogColorDampen + cdLightBoost  ) );
+	float cdNetherBlend = min( 1.0, lightInfNether * min( 1.0, fogColorDampen + LightBlackLevel ) );
+	outCd.rgb = mix( mix(fogColor, outCd.rgb, fogColorDampen), outCd.rgb*(0.85+LightBlackLevel) + outCd.rgb * cdLightBoost, cdNetherBlend );
 
 #else
 
 // Surface Normal Influence
-	float dotRainShift = 0.450;//rainStrengthInv*.45;
+	float dotRainShift = 0.450 * rainStrengthInv;
 	
+  //vec3 cdRainBoost = max( lightCd, clamp( lightLumaCd.rgb*10.0-9.0, vec3(0.0), vec3(1.0) ))*rainStrength ;
+  //float cdRainBoost = clamp( lightLuma*10.0-9.0, 0.0, 1.0 ) * rainStrength * depthBias ;
+  float cdRainBoost = clamp( lightLuma*20.0-19.0, 0.0, 1.0 ) * rainStrength * depthBias ;
+  //outCd.rgb += cdRainBoost * (depthBias*.7+.3) ;
+
 // Block Surface Rolloff
 //   Helps with block visibility in the dark
   // Grey out all blocks when raining
-	//outCd.rgb *= mix(toFogColor.rgb, vec3(toCamNormalDot*dotRainShift+(.55+dotRainShift)), min(1.0,depth*.5+min(.5,lightCd.r)));
+	outCd.rgb *= mix(vec3(1.0), vec3(toCamNormalDot*dotRainShift+(.55+dotRainShift)), min(1.0,depth*.5+min(.5,lightCd.r*.5)));
 
   // Bring back more color when raining
-	outCd.rgb *= mix(toFogColor.rgb, vec3(min(1.0,toCamNormalDot*dotRainShift+(.55+dotRainShift))), min(1.0,depth*.15+lightCd.r*lightCd.r));
-		
-#endif
+ 	outCd.rgb *= mix(toFogColor.rgb+lightCd, vec3(min(1.0,toCamNormalDot*dotRainShift+(.55+dotRainShift)))+cdRainBoost, min(1.0,depth*1.5+max(lightLuma*depthBias,cdRainBoost)*.15)) + darknessOffset;
 
+#endif
 
 // Add color to glow
 	float outCdMin = max(outCd.r, max( outCd.g, outCd.b ) );
@@ -1451,7 +1461,6 @@ float skyGreyInf = 0.0;
 // -- -- --
 
   //outCd = tmpCd;
-  //outCd.rgb = vec3(fogColorDampen);;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

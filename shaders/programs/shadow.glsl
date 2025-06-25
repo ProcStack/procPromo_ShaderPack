@@ -105,7 +105,7 @@
     vShadowPos = position.xyz;
 
     //vShadowDist = length( (gbufferProjection*vec4(vaPosition+chunkOffset,1.0)).xyz );
-    vShadowDist = length( position );
+    vShadowDist = length( position.xyz );
 
 
 
@@ -119,6 +119,10 @@
     vIsTranslucent = 0.0;
     // Colored Translucent Blocks; stained glass, water, etc.
     if ( mc_Entity.x == 86 || mc_Entity.x == 703 ){
+      vIsTranslucent = 1.0;
+    }
+
+    if ( mc_Entity.x == 689 ){
       vIsTranslucent = 1.0;
     }
 
@@ -159,16 +163,19 @@ const int shadowcolor1Format = RG16;
     vec4 shadowCd = color;
 
     shadowCd.a= min( 1.0, shadowCd.a * outAlpha + vIsLeaves );
+    float shadowDist = vShadowDist;//length(vShadowPos);
 
-    if( shadowCd.a<0.01 ){
+    if( shadowCd.a<0.01  ){
       discard;
     }
+
+    //shadowDist = step( .05, shadowDist );
 		
-		shadowCd.a*=1.0-vIsTranslucent;
+		//shadowCd.a*=1.0-vIsTranslucent;
     outCd = shadowCd;
     //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
-    outData = vec4( length(vShadowPos)/far, length(vShadowPos), shadowCd.aa );
-    //outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );
+    outData = vec4( shadowDist/far, shadowDist, shadowCd.aa );
+    //outData = vec4( vIsTranslucent, shadowDist, 0.0, 0.0 );
     //outData = vec4( vIsTranslucent, length(vShadowPos), 0.0, 0.0 );
   }
 
