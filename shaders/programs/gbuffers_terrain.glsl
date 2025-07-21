@@ -403,7 +403,11 @@ void main() {
 		vShiftUVs = 0.5;
     vDeltaMult=50.5;
 		vDeltaPow=4.53;
-	}else if( mc_Entity.x == 257  ){ // Glowstone
+	}else if( mc_Entity.x == 218  ){ // Shroomlight
+    vDeltaMult=4.5;
+		vDeltaPow=1.5;
+		//vAvgColor=vec4(0.429, 0.557, 0.318,0.0);
+	}else if( mc_Entity.x == 231  ){ // Glowstone
     vDeltaMult=2.5;
 		vDeltaPow=1.5;
 		vAvgColor=vec4(0.729, 0.557, 0.318,0.0);
@@ -415,8 +419,6 @@ void main() {
 		vDepthAvgColorInf=1.0;
 		vColorOnly=1.0;
 		
-		// Glow boost, yeah, should be a different variable
-		vIsLava = 0.4; 
 		
 	}else if( mc_Entity.x == 101 ){ // Most ores
 		vDeltaMult=3.0;
@@ -428,6 +430,11 @@ void main() {
 		vDeltaMult=1.5;
     vDeltaPow=0.80;
 		vAvgColor=vec4(0.5,0.5,0.5,1.0);
+    vDeltaPow=0.80;
+  }else if( mc_Entity.x == 1041 ){ // Ores
+		vDeltaMult=5.0;
+    vDeltaPow=0.80;
+    vDepthAvgColorInf = .8;
   }else if( mc_Entity.x == 105 ){ // Powerder Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
@@ -1269,7 +1276,7 @@ float darknessOffset = 0.0;
 
 #ifdef NETHER
 
-  float fogColorDampen = max(0.0,dot(vec3(1.,1.,1.),fogColor)-.2);
+  float fogColorDampen = max(0.0,dot(vec3(1.,1.,1.),fogColor)-.81);
   //fogColorDampen = min(1.0, (1.0 - fogColorDampen*fogColorDampen)+(depthBias*depthBias*.45-.2)-fogColorDampen);
   fogColorDampen = min(1.0, max(0.0, 1.0 - fogColorDampen*fogColorDampen*2.5)+(depthBias*depthBias*.25)) * (depthBias*.8+.2);
   float cdLightBoost = clamp( lightLuma*6.0-5.0, 0.0, 1.0 )   ;
