@@ -1299,7 +1299,7 @@ float darknessOffset = 0.0;
 #else
 
 // Surface Normal Influence
-	float dotRainShift = 0.450 * rainStrengthInv;
+	float dotRainShift = 0.40 * rainStrengthInv;
 	
   //vec3 cdRainBoost = max( lightCd, clamp( lightLumaCd.rgb*10.0-9.0, vec3(0.0), vec3(1.0) ))*rainStrength ;
   //float cdRainBoost = clamp( lightLuma*10.0-9.0, 0.0, 1.0 ) * rainStrength * depthBias ;
@@ -1312,7 +1312,9 @@ float darknessOffset = 0.0;
 	outCd.rgb *= mix(vec3(1.0), vec3(toCamNormalDot*dotRainShift+(.55+dotRainShift)), min(1.0,depth*.5+min(.5,lightCd.r*.5)));
 
   // Bring back more color when raining
- 	outCd.rgb *= mix(toFogColor.rgb+lightCd, vec3(min(1.0,toCamNormalDot*dotRainShift+(.55+dotRainShift)))+cdRainBoost, min(1.0,depth*1.5+max(lightLuma*depthBias,cdRainBoost)*.15)) + darknessOffset;
+ 	outCd.rgb *= mix( toFogColor.rgb+lightCd,
+        vec3(min(1.0,toCamNormalDot*dotRainShift+dotRainShift))+cdRainBoost,
+        min(1.0,depth*1.5+max(lightLuma*depthBias,cdRainBoost)*.15)) + darknessOffset;
 
 #endif
 
