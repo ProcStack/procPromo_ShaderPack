@@ -8,6 +8,7 @@
 #ifdef VSH
 
 #include "utils/shadowCommon.glsl"
+#include "utils/mathFuncs.glsl"
 const float eyeBrightnessHalflife = 4.0f;
 
 #define SEPARATE_AO
@@ -435,10 +436,15 @@ void main() {
 		vDeltaMult=5.0;
     vDeltaPow=0.80;
     vDepthAvgColorInf = .8;
-  }else if( mc_Entity.x == 105 ){ // Powerder Snow & Lapis
+  }else if( mc_Entity.x == 105 ){ // Powdered Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
-  }else if( mc_Entity.x == 115 ){ // Birdh Wood & Log
+  }else if( mc_Entity.x == 106 ){ // Snow Layers
+    //vDeltaPow=0.90;
+		//vAvgColor=vec4(0.985,0.985,0.985,1.0);
+		//vColor=vec4(0.9,0.9,0.9,1.0);
+		vAvgColor.rgb=vec3(luma(vAvgColor.rgb));
+  }else if( mc_Entity.x == 115 ){ // Birch Wood & Log
     vDeltaMult=1.10;
     vDeltaPow=4.0;
   }else if( mc_Entity.x == 180 ){ // Wood Shelves

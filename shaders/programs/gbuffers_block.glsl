@@ -61,6 +61,7 @@ varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vBlendPerc;
+varying float vChestBlender;
 varying float vColorOnly;
 varying float vWorldTime;
 
@@ -245,6 +246,7 @@ texcoordmid=midcoord;
   
   vAlphaMult=1.0;
   vBlendPerc=1.0;
+  vChestBlender=0.0;
   vColorOnly=0.0;
 
 
@@ -258,22 +260,26 @@ texcoordmid=midcoord;
     vColorOnly=.001;
     //color.rgb=vec3(1.0);
     vAltTextureMap = 0.0;
-  }else if( blockEntityId == 910 ){
-    vColorOnly=0.5;
-    avgColor=vec4(0.5333333333333333, 0.3098039215686275, 0.2313725490196078, 1.0)*2.;
-    vBlendPerc=0.5;
-  }else if( blockEntityId == 911 ){
-    vColorOnly=0.5;
-    avgColor=vec4(0.3882352941176471, 0.3098039215686275, 0.2431372549019608, 1.0)*2.5;
-    vBlendPerc=0.5;
-  }else if( blockEntityId == 912 ){
-    vColorOnly=0.5;
-    avgColor=vec4(0.2666666666666667, 0.4392156862745098, 0.3058823529411765, 1.0)*2.5;
-    vBlendPerc=0.5;
-  }else if( blockEntityId == 913 ){
-    vColorOnly=0.5;
-    avgColor=vec4(0.2352941176470588, 0.4745098039215686, 0.3882352941176471, 1.0)*2.;
-    vBlendPerc=0.5;
+  }else if( blockEntityId == 902 ){ // Chests / Trapped Chests
+    vColorOnly = 1.0;
+    avgColor.rgb = vec3(0.6235294117647059, 0.4352941176470588, 0.1372549019607843)*.9;
+    vChestBlender = 0.85;
+  }else if( blockEntityId == 910 ){ // Copper Chests
+    vColorOnly = 0.5;
+    avgColor = vec4(0.5333333333333333, 0.3098039215686275, 0.2313725490196078, 1.0)*2.;
+    vBlendPerc = 0.5;
+  }else if( blockEntityId == 911 ){ // Exposed Copper Chests
+    vColorOnly = 0.5;
+    avgColor = vec4(0.3882352941176471, 0.3098039215686275, 0.2431372549019608, 1.0)*2.5;
+    vBlendPerc = 0.5;
+  }else if( blockEntityId == 912 ){ // Weathered Copper Chests
+    vColorOnly = 0.5;
+    avgColor = vec4(0.2666666666666667, 0.4392156862745098, 0.3058823529411765, 1.0)*2.5;
+    vBlendPerc = 0.5;
+  }else if( blockEntityId == 913 ){ // Oxidized Copper Chests
+    vColorOnly = 0.5;
+    avgColor = vec4(0.2352941176470588, 0.4745098039215686, 0.3882352941176471, 1.0)*2.;
+    vBlendPerc = 0.5;
   }
   
 }
@@ -374,6 +380,7 @@ varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
 varying float vBlendPerc;
+varying float vChestBlender;
 varying float vColorOnly;
 varying float vWorldTime;
 
@@ -443,6 +450,11 @@ void main() {
     lightCd.rgb *= LightWhiteLevel;
     vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
     float avgBlender = vColorOnly * clamp(1.0-(1.0-dot(txCd.rgb, avgColor.rgb)*.75)*1.5, 0.0, 1.0);
+  if( blockEntityId == 902 ){ // Chests / Trapped Chests; Non-Branching
+    //chestAvgBlender = max( 1.0-max(dot(normalize(txCd.rgb), normalize(avgColor.rgb))-.65, 0.0)*5.0, 0.0 );
+    float chestAvgBlender = max( 1.0 - abs(dot(normalize(txCd.rgb), normalize(avgColor.rgb))-1.0)*20.0, 0.0 );
+    avgBlender = mix( avgBlender, chestAvgBlender, vChestBlender );
+  }
     outCd.rgb = mix( outCd.rgb, avgColor.rgb * color.rgb, avgBlender );
 
 #ifdef OVERWORLD
@@ -613,44 +625,44 @@ void main() {
 
 
 
+  
+  float glowValueMult = 1.0;
+  
+  if(blockEntityId == 706){
+    //outCd.rgb = vNormal.xyz;
     
-    float glowValueMult = 1.0;
+    // Screen Space UVing
+    vec2 screenSpace = (gl_FragCoord.xy);
+    screenSpace = (screenSpace*texelSize)-.5;
     
-    if(blockEntityId == 706){
-      //outCd.rgb = vNormal.xyz;
-      
-      // Screen Space UVing
-      vec2 screenSpace = (gl_FragCoord.xy);
-      screenSpace = (screenSpace*texelSize)-.5;
-      
-      float dotToCam = dot( vNormal, normalize(vPos.xyz))*.3;
-      
-      vec2 uvProj = screenSpace.yx;
-      //uvProj *= (1.0-depthBias)*.1+.8 ;
-      uvProj.x += dotToCam;
-      
-			float ftime = vWorldTime;
-      float pxVal = uvProj.x*-100.0;
-      float pyVal = fract(uvProj.y*3.0+ftime*50.);
-      float uvShift = sin( pxVal + pyVal + uvProj.y*ftime*0.1  );
-      uvShift *= abs(uvShift);
-      uvProj.x += uvShift*.02*screenSpace.y;
-      uvProj += vec2(ftime*5.1,ftime*5.1);
-			uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*2.2+sin(uvProj.y*ftime*6.7)*.35);
-      uvProj = fract(uvProj);
-      
-      
-      outCd = texture2D(gcolor, uvProj);
-      glowValueMult = outCd.r*.4;
-      outCd = outCd * color ;
-      glowCd += outCd.rgb*glowValueMult;
-    }
+    float dotToCam = dot( vNormal, normalize(vPos.xyz))*.3;
+    
+    vec2 uvProj = screenSpace.yx;
+    //uvProj *= (1.0-depthBias)*.1+.8 ;
+    uvProj.x += dotToCam;
+    
+    float ftime = vWorldTime;
+    float pxVal = uvProj.x*-100.0;
+    float pyVal = fract(uvProj.y*3.0+ftime*50.);
+    float uvShift = sin( pxVal + pyVal + uvProj.y*ftime*0.1  );
+    uvShift *= abs(uvShift);
+    uvProj.x += uvShift*.02*screenSpace.y;
+    uvProj += vec2(ftime*5.1,ftime*5.1);
+    uvProj.y+=cos( (uvProj.x+uvProj.y) *ftime*2.2+sin(uvProj.y*ftime*6.7)*.35);
+    uvProj = fract(uvProj);
+    
+    
+    outCd = texture2D(gcolor, uvProj);
+    glowValueMult = outCd.r*.4;
+    outCd = outCd * color ;
+    glowCd += outCd.rgb*glowValueMult;
+  }
 
 
-    vec3 glowHSV = rgb2hsv(glowCd);
-    //glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
-    //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
-    glowHSV.z *= vGlowMultiplier * glowValueMult;
+  vec3 glowHSV = rgb2hsv(glowCd);
+  //glowHSV.z *= glowInf * (depthBias*.5+.2) * GlowBrightness;
+  //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
+  glowHSV.z *= vGlowMultiplier * glowValueMult;
 
   #if ( DebugView == 4 )
     float debugBlender = step( vPos.x, .0 );
@@ -659,7 +671,7 @@ void main() {
     outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
   #endif
 	
-
+    //outCd.rgb = vec3( avgBlender );
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
