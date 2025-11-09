@@ -800,7 +800,10 @@ void main() {
 
 	// -- -- -- -- -- -- --
 
-	float rainStrengthVal = rainStrength*skyBrightnessMult.y;
+	float rainStrengthVal = rainStrength;
+  #ifdef OVERWORLD
+    rainStrengthVal *= skyBrightnessMult.y;
+  #endif
 	float rainStrengthInv = 1.0-rainStrengthVal;
 
 	// -- -- -- -- -- -- --
