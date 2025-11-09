@@ -441,6 +441,10 @@ void main() {
   }else if( mc_Entity.x == 115 ){ // Birdh Wood & Log
     vDeltaMult=1.10;
     vDeltaPow=4.0;
+  }else if( mc_Entity.x == 180 ){ // Wood Shelves
+		vDeltaMult=2.5;
+		vDeltaPow=.5;
+    vCdGlow *= .0;
   }else if( mc_Entity.x == 303 ){ // Nether Quartz Ore
 		vAvgColor = vec4( 0.29, 0.107, 0.107, 1.0 );
 		vDeltaMult=4.0;
@@ -470,7 +474,44 @@ void main() {
 	}else if( mc_Entity.x == 304 ){
 		// Magick numbers, boo!
 		vAvgColor.rgb = vec3(dot(vAvgColor.rgb, vec3(0.299, 0.087, 0.214)));
-	}
+  }else
+  
+  // Copper Lanterns
+  if( mc_Entity.x == 920 ){
+    vAvgColor=vec4(0.5333333333333333, 0.3098039215686275, 0.2313725490196078, 1.0)*2.35;
+		vDeltaMult=2.5;
+		vDeltaPow=1.;
+  }else if( mc_Entity.x == 921 ){
+    vAvgColor=vec4(0.3882352941176471, 0.3098039215686275, 0.2431372549019608, 1.0)*2.5;
+		vDeltaMult=2.5;
+		vDeltaPow=0.7;
+  }else if( mc_Entity.x == 922 ){
+    vAvgColor=vec4(0.2666666666666667, 0.4392156862745098, 0.3058823529411765, 1.0)*2.5;
+		vDeltaMult=2.0;
+		vDeltaPow=1.;
+  }else if( mc_Entity.x == 923 ){
+    vAvgColor=vec4(0.2352941176470588, 0.4745098039215686, 0.3882352941176471, 1.0)*2.;
+		vDeltaMult=1.5;
+		vDeltaPow=.7;
+  }
+  // Copper Lanterns
+  if( mc_Entity.x == 930 ){
+    vAvgColor=vec4(0.5333333333333333, 0.3098039215686275, 0.2313725490196078, 1.0)*1.35;
+		vDeltaMult=2.0;
+		vDeltaPow=1.5;
+  }else if( mc_Entity.x == 931 ){
+    vAvgColor=vec4(0.3882352941176471, 0.3098039215686275, 0.2431372549019608, 1.0)*1.5;
+		vDeltaMult=2.0;
+		vDeltaPow=1.5;
+  }else if( mc_Entity.x == 932 ){
+    vAvgColor=vec4(0.2666666666666667, 0.4392156862745098, 0.3058823529411765, 1.0)*1.5;
+		vDeltaMult=1.5;
+		vDeltaPow=1.5;
+  }else if( mc_Entity.x == 933 ){
+    vAvgColor=vec4(0.2352941176470588, 0.4745098039215686, 0.3882352941176471, 1.0)*1.;
+		vDeltaMult=1.5;
+		vDeltaPow=1.5;
+  }
 	
 	// -- -- --
 	
@@ -753,14 +794,15 @@ void main() {
 
 	// -- -- -- -- -- -- --
 
-	float rainStrengthInv = 1.0-rainStrength;
+	float rainStrengthVal = rainStrength*skyBrightnessMult.y;
+	float rainStrengthInv = 1.0-rainStrengthVal;
 
 	// -- -- -- -- -- -- --
 	
 	// vWorldPos.y = -64 to 320
 	// 1/255 = 0.003921568627451
 	// 1/384 = 0.002604166666666
-	float wYMult = (1.0+abs(screenSpace.x)*.03-rainStrength*0.01);
+	float wYMult = (1.0+abs(screenSpace.x)*.03-rainStrengthVal*0.01);
   #ifdef OVERWORLD
 	  float worldPosYFit = clamp(vWorldPos.y*(0.0075*wYMult*wYMult), 0.0, 1.0);
 	#else
@@ -921,7 +963,7 @@ void main() {
   float surfaceShading = 9.0-abs(toCamNormalDot);
 		
 	
-	float shadowRainStrength = rainStrength;
+	float shadowRainStrength = rainStrengthVal;
 
 
 
@@ -1051,7 +1093,7 @@ void main() {
 	
   // -- -- --
 	
-  diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf  ) * nightLightInfluence ;
+  diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrengthVal), shadowAvg, sunMoonShadowInf  ) * nightLightInfluence ;
 
 #endif
 // Shadow End
@@ -1064,7 +1106,7 @@ void main() {
 // -- -- -- -- -- -- -- -- -- --
 	
 // Mute Shadows during Rain
-	diffuseSun = mix( diffuseSun, 0.50, rainStrength)*skyBrightness;
+	diffuseSun = mix( diffuseSun, 0.50, rainStrengthVal)*skyBrightness;
 
 // The diffuse is the suns influence on the blocks
 //   Getting the max reduces hotspots,
@@ -1132,10 +1174,10 @@ void main() {
 	vec3 toSkyColor = skyColor;
 
 	// Fog-World Blending Influence
-	float fogColorBlend = mix( 0.0, rainStrength, diffuseSun );
+	float fogColorBlend = mix( 0.0, rainStrengthVal, diffuseSun );
   fogColorBlend = clamp( (depthBias*depthBias+.71)+fogColorBlend, 0.0, 1.0 ) * (1.0-nightVision);
 	
-	float invRainInf = rainStrengthInv*.2;
+	float invRainInf = rainStrengthInv * .2;
 	
 
 
@@ -1144,7 +1186,7 @@ void main() {
 	
   #ifdef OVERWORLD
 	  fogColorBlend = min( 1.0, (fogColorBlend*(fogColorBlend*.35+.65)+invRainInf) * min(1.0,depthBias*(depthBias+0.85)
-                    * (100.0-rainStrength*40.0*min(1.0,skyBrightness*4.0))*fogInf)
+                    * (100.0-rainStrengthVal*40.0*min(1.0,skyBrightness*4.0))*fogInf)
                     * (1.0-invRainInf) + invRainInf + glowInf + (fogInf-1.0));
     //toFogColor = mix( fogColor*.5, fogColor*.9+outCd.rgb*.1, depth*.85+.15);
     toFogColor = mix( outCd.rgb*(toFogColor*.65)+toFogColor , toFogColor, worldPosYFit*.5)*worldPosYFit;
@@ -1180,9 +1222,14 @@ void main() {
 // TODO : MOVE TO POST PROCESSING ... ya dingus
 #ifdef THE_END
 
-	float depthEnd = min(1.0, max(0.0, outDepth*2.25+lightLumaBase*.5-screenDewarp*.005-.005));
+  // TODO : Verify the lightLumaBase value in the End on Optifine, seems ambient of 7 in Iris
+  float endLightLuma = max( 0.0, 1.0-outDepth*15.5 );
+  endLightLuma = clamp( lightLumaBase*((1.0-endLightLuma*endLightLuma)), 0.0, 1.0 );
+
+	//float depthEnd = min(1.0, max(0.0, outDepth*2.25+lightLumaBase*.5-screenDewarp*.005-.005));
+	float depthEnd = min(1.0, max(0.0, endLightLuma+lightLumaBase*.15-screenDewarp*.005-.005));
 	depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
-	depthEnd = depthEnd*.7+.3;
+	//depthEnd = depthEnd*.7+.3;
 	
 // Fit lighting 0-1
 	float lightShift=.47441;
@@ -1205,7 +1252,7 @@ void main() {
 	//vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
 	
 	endFogCd = mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
-	outCd.rgb *= .5 + noiseX*.5;
+	outCd.rgb *= min(((noiseX*.5*depthEnd + depthEnd*depthEnd) * depthEnd), 1.0);
 	toSkyColor = skyColor;//outCd.rgb ;
 	fogColorBlend=depthEnd;//+lightLumaBase*.1;
 
@@ -1301,9 +1348,9 @@ float darknessOffset = 0.0;
 // Surface Normal Influence
 	float dotRainShift = 0.40 * rainStrengthInv;
 	
-  //vec3 cdRainBoost = max( lightCd, clamp( lightLumaCd.rgb*10.0-9.0, vec3(0.0), vec3(1.0) ))*rainStrength ;
-  //float cdRainBoost = clamp( lightLuma*10.0-9.0, 0.0, 1.0 ) * rainStrength * depthBias ;
-  float cdRainBoost = clamp( lightLuma*20.0-19.0, 0.0, 1.0 ) * rainStrength * depthBias ;
+  //vec3 cdRainBoost = max( lightCd, clamp( lightLumaCd.rgb*10.0-9.0, vec3(0.0), vec3(1.0) ))*rainStrengthVal ;
+  //float cdRainBoost = clamp( lightLuma*10.0-9.0, 0.0, 1.0 ) * rainStrengthVal * depthBias ;
+  float cdRainBoost = clamp( lightLuma*20.0-19.0, 0.0, 1.0 ) * rainStrengthVal * depthBias ;
   //outCd.rgb += cdRainBoost * (depthBias*.7+.3) ;
 
 // Block Surface Rolloff
@@ -1468,7 +1515,7 @@ float darknessOffset = 0.0;
 #endif
 
 // -- -- --
-
+  //tmpCd = vec4( skyBrightnessMult.yyy, 1.0 );
   //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);

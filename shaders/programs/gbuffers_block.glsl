@@ -60,6 +60,7 @@ varying float vDetailBlurringMult;
 varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
+varying float vBlendPerc;
 varying float vColorOnly;
 varying float vWorldTime;
 
@@ -243,6 +244,7 @@ texcoordmid=midcoord;
   #endif
   
   vAlphaMult=1.0;
+  vBlendPerc=1.0;
   vColorOnly=0.0;
 
 
@@ -251,13 +253,27 @@ texcoordmid=midcoord;
   vGlowMultiplier=1.0;
   vec2 prevTexcoord = texcoord.zw;
   texcoord.zw = texcoord.st;
-  if (mc_Entity.x == 901 || mc_Entity.x == 801){
-
+  if( mc_Entity.x == 901 || mc_Entity.x == 801 ){
     texcoord.zw = texcoord.st;
     vColorOnly=.001;
     //color.rgb=vec3(1.0);
     vAltTextureMap = 0.0;
-
+  }else if( blockEntityId == 910 ){
+    vColorOnly=0.5;
+    avgColor=vec4(0.5333333333333333, 0.3098039215686275, 0.2313725490196078, 1.0)*2.;
+    vBlendPerc=0.5;
+  }else if( blockEntityId == 911 ){
+    vColorOnly=0.5;
+    avgColor=vec4(0.3882352941176471, 0.3098039215686275, 0.2431372549019608, 1.0)*2.5;
+    vBlendPerc=0.5;
+  }else if( blockEntityId == 912 ){
+    vColorOnly=0.5;
+    avgColor=vec4(0.2666666666666667, 0.4392156862745098, 0.3058823529411765, 1.0)*2.5;
+    vBlendPerc=0.5;
+  }else if( blockEntityId == 913 ){
+    vColorOnly=0.5;
+    avgColor=vec4(0.2352941176470588, 0.4745098039215686, 0.3882352941176471, 1.0)*2.;
+    vBlendPerc=0.5;
   }
   
 }
@@ -357,6 +373,7 @@ varying float vAlphaMult;
 varying float vAltTextureMap;
 varying float vGlowMultiplier;
 
+varying float vBlendPerc;
 varying float vColorOnly;
 varying float vWorldTime;
 
@@ -403,7 +420,7 @@ void main() {
     
     vec4 txCd;
     if( DetailBlurring > 0 ){
-        txCd = diffuseSample( gcolor, tuv, vtexcoordam, texelSize, DetailBlurring*2.0 );
+        txCd = diffuseSample( gcolor, tuv, vtexcoordam, texelSize, DetailBlurring * 2.0 * vBlendPerc );
         //txCd = diffuseNoLimit( gcolor, tuv, texelSize*vec2(3.75,2.1)*DetailBlurring );
     }else{
       txCd = texture2D(gcolor, tuv);
@@ -425,7 +442,9 @@ void main() {
     vec3 lightCd = lightBaseCd.rgb; //(lightBaseCd.rgb*.7+.3);//*(fogColor*.5+.5);
     lightCd.rgb *= LightWhiteLevel;
     vec4 outCd = txCd * vec4(lightCd,1.0) * vec4(color.rgb,1.0);
-    
+    float avgBlender = vColorOnly * clamp(1.0-(1.0-dot(txCd.rgb, avgColor.rgb)*.75)*1.5, 0.0, 1.0);
+    outCd.rgb = mix( outCd.rgb, avgColor.rgb * color.rgb, avgBlender );
+
 #ifdef OVERWORLD
     vec4 blockLumVal =  vec4(lightCd,1.0);
 #endif
@@ -640,6 +659,7 @@ void main() {
     outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
   #endif
 	
+
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
