@@ -263,7 +263,7 @@ texcoordmid=midcoord;
   }else if( blockEntityId == 902 ){ // Chests / Trapped Chests
     vColorOnly = 1.0;
     avgColor.rgb = vec3(0.6235294117647059, 0.4352941176470588, 0.1372549019607843)*.9;
-    vChestBlender = 0.85;
+    vChestBlender = 0.75;
   }else if( blockEntityId == 910 ){ // Copper Chests
     vColorOnly = 0.5;
     avgColor = vec4(0.5333333333333333, 0.3098039215686275, 0.2313725490196078, 1.0)*2.;

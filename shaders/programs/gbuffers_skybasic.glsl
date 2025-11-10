@@ -146,7 +146,11 @@ void main() {
 
 
   float halfUpDot = upDot*.5;
-  float toSunMoonDot = dot( vSunPos, normalize(vWorldPos) ) * .3+.3 + (1.0-upDot)*.4;
+  //float toSunMoonDot = dot( vSunPos, normalize(vWorldPos) ) * .3+.3 + (1.0-upDot)*.4;
+  float toSunMoonDot = clamp( dot( vSunPos, normalize(vWorldPos) ) * .5 + .5, 0.0, 1.0);//   * .4+.15 + (1.0-upDot)*.4;
+  //toSunMoonDot = toSunMoonDot*toSunMoonDot*toSunMoonDot * .5 + .03
+  toSunMoonDot = toSunMoonDot*toSunMoonDot * .4 + .03
+                  + (1.0-upDot) * .4 * (toSunMoonDot*toSunMoonDot*.8+.2);
 
   // Set morning or evening base color
   vec3 morningFogColors = mix( skyColorAnitMorning, fogColorMorning, toSunMoonDot );
@@ -173,6 +177,8 @@ void main() {
     outCd.rgb = vec3(1.0,1.0,1.0);
     outCd.a = upDot*upDot*(1.0-vFogSkyBlends.x);
   }
+
+  //outCd.rgb = vec3( toSunMoonDot);
 
 
   gl_FragData[0] = outCd;
