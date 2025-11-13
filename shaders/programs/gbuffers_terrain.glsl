@@ -778,6 +778,8 @@ void main() {
 
 	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
 
+  float toNightVision = nightVision;//*.65;
+
   // Light map UVs --
 
 	vec2 luv = lmcoord;
@@ -1184,7 +1186,7 @@ void main() {
 
 	// Fog-World Blending Influence
 	float fogColorBlend = mix( 0.0, rainStrengthVal, diffuseSun );
-  fogColorBlend = clamp( (depthBias*depthBias+.71)+fogColorBlend, 0.0, 1.0 ) * (1.0-nightVision);
+  fogColorBlend = clamp( (depthBias*depthBias+.71)+fogColorBlend, 0.0, 1.0 ) * (1.0+toNightVision*3.);
 	
 	float invRainInf = rainStrengthInv * .2;
 	
@@ -1524,7 +1526,7 @@ float darknessOffset = 0.0;
 #endif
 
 // -- -- --
-  //tmpCd = vec4( skyBrightnessMult.yyy, 1.0 );
+  //tmpCd = vec4( vec3(toNightVision), 1.0 );
   //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);

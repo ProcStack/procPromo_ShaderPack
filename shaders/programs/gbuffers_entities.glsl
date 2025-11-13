@@ -468,7 +468,7 @@ void main() {
 
 #else
   // Nether and End
-  outCd.rgb *= lightBaseCd.rgb;
+  outCd.rgb *= lightBaseCd.rgb*.6+(outCd.rgb*.4+.2);
 #endif
 
 
