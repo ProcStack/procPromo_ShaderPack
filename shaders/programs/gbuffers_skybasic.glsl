@@ -190,6 +190,8 @@ void main() {
     //outCd.rgb=skyCd.xyz;
 
 
+#ifdef OVERWORLD
+
   float halfUpDot = upDot*.5;
   vec3 morningColors = mix( vMorningFogColors, vMorningSkyColors, upDot );
   vec3 eveningColors = mix( vEveningFogColors, vEveningSkyColors, upDot );
@@ -202,7 +204,8 @@ void main() {
   outCd.rgb = mix( outCd.rgb, dayColors, vFogSkyBlends.x );
   // Set night color
   outCd.rgb = mix( outCd.rgb, nightColors, vFogSkyBlends.z );
-  
+
+#endif
   
   // Get the stars back in
   if(renderStage == MC_RENDER_STAGE_STARS) {
