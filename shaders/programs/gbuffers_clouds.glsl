@@ -12,6 +12,7 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 
 uniform vec3 sunPosition;
+uniform float sunAngle;
 uniform vec3 upPosition;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
@@ -27,6 +28,9 @@ varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
 varying vec3 vSunWorldPos;
+varying vec3 vSunPos;
+varying vec3 vWorldPos;
+varying vec3 vFogSkyBlends;
 
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
@@ -34,7 +38,8 @@ varying float dayNight;
 
 varying vec4 shadowPos;
 
-
+#define PI 3.1415926535897932384626433832795
+#define TAU (2.0 * PI)
 
 void main() {
 
@@ -46,6 +51,7 @@ void main() {
 
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
   vLocalPos = position;
+  vWorldPos = gl_Vertex.xyz;
   gl_Position = gl_ProjectionMatrix * position;
   vPos = gl_Vertex;
 
@@ -56,6 +62,24 @@ void main() {
 	// -- -- --
 
 	vSunWorldPos = (gbufferModelView * vec4(sunPosition,1.0)).xyz;
+  vSunPos = normalize(vec3(cos(sunAngle*TAU), sin(sunAngle*TAU),0.0));
+
+	// -- -- --
+
+  float midDayCheck = step( abs(sunAngle - 0.5), .25); // Is it after midday / midnight ?
+  float sunSetRiseCheck = step( .5, sunAngle ); // Is it after sunset / sunrise ?
+  const float fadeScalar = 2.5;
+  float fadeIns = sunAngle*4.0+.5;
+  vFogSkyBlends = vec3( 0.0 );
+
+  float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
+
+
+  vFogSkyBlends.x = min( 1.0, max( 0.0, vSunPos.y ) * fadeScalar * fadeOutMorning );
+
+  vFogSkyBlends.y = min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning );
+  vFogSkyBlends.z = min( 1.0, max( 0.0, -vSunPos.y ) * fadeScalar * fadeOutMorning );
+
 
   // -- -- -- -- -- -- -- --
   
@@ -113,6 +137,9 @@ varying vec4 vPos;
 varying vec4 vLocalPos;
 varying vec3 vNormal;
 varying vec3 vSunWorldPos;
+varying vec3 vSunPos;
+varying vec3 vWorldPos;
+varying vec3 vFogSkyBlends;
 
 varying vec4 shadowPos;
 
@@ -125,6 +152,23 @@ const int GL_EXP = 2048;
 
 const float Fifteenth = 1.0/15.0;
 
+// Time of day Fog Colors
+const vec3 fogColorMorning = vec3(0.7647058823529411, 0.7372549019607844, 0.7176470588235294);
+const vec3 fogColorAnitMorning = vec3(0.34, 0.34215686274509803, 0.6511764705882353);
+const vec3 fogColorDay = vec3(0.7254901960784313, 0.8274509803921568, 1.0);
+//const vec3 fogColorEvening = vec3(0.7764705882352941, 0.5137254901960784, 0.34901960784313724);
+const vec3 fogColorEvening = vec3(0.892156862745098, 0.42823529411764707, 0.28137254901960785);
+const vec3 fogColorAntiEvening = vec3(0.4519607843137255, 0.37254901960784315, 0.7819607843137255);
+const vec3 fogColorNight = vec3(0.0392156862745098, 0.043137254901960784, 0.0784313725490196);
+
+// Time of day Sky Colors
+const vec3 skyColorMorning = vec3(0.7647058823529411, 0.7372549019607844, 0.7176470588235294);
+const vec3 skyColorAnitMorning = vec3(0.34, 0.34215686274509803, 0.6511764705882353);
+const vec3 skyColorDay = vec3(0.47058823529411764, 0.6549019607843137, 1.0);
+const vec3 skyColorEvening = vec3(0.3411764705882353, 0.47843137254901963, 0.7294117647058823);
+const vec3 skyColorAntiEvening = vec3(0.4519607843137255, 0.37254901960784315, 0.7819607843137255);
+const vec3 skyColorNight = vec3(0.0, 0.0, 0.0);
+
 void main() {
 
   float depth = min(1.0,gl_FragCoord.w*250.0);
@@ -133,6 +177,7 @@ void main() {
 
   float toUp = dot(vNormal, upVecNorm);
   float toUpFitted = toUp*.05+1.0;
+  float dayNightBlend = dayNight*.5+.5;
   float toSunMoon = dot(vNormal, sunVecNorm);
   float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
   
@@ -151,21 +196,54 @@ void main() {
   vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
   vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
-  vec4 baseCd = vec4( texture2D(gcolor, texcoord.st).rgb, color.a );
-  baseCd.rgb = vec3(1.0); // I have no clue, things keep acting odd
+  //vec4 baseCd = vec4( texture2D(gcolor, texcoord.st).rgb, color.a );
+  //baseCd.rgb = vec3(1.0); // I have no clue, things keep acting odd
+  vec4 baseCd = vec4( 1.0, 1.0, 1.0, color.a ); // I have no clue, things keep acting odd
   vec4 outCd = baseCd;
-  outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNight*.5+.5);
+  outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNightBlend);
   outCd.rgb *= vec3(toUpFitted);
   outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
   
+  
+	// -- -- --
+
+  float upDot = max(0.0, dot(normalize(vPos.xyz), gbufferModelView[1].xyz));
+  //upDot = 1.0-(1.0-upDot)*(1.0-upDot);
+
+  float halfUpDot = upDot*.5;
+  
+  float toSunMoonDot = clamp( dot( vSunPos, normalize(vWorldPos) ) * .5 + .5, 0.0, 1.0);
+
+  // Set morning or evening base color
+  vec3 morningFogColors = mix( skyColorAnitMorning, fogColorMorning, toSunMoonDot );
+  vec3 morningSkyColors = mix( skyColorAnitMorning, skyColorMorning, toSunMoonDot );
+  vec3 eveningFogColors = mix( skyColorAntiEvening, fogColorEvening, toSunMoonDot );
+  vec3 eveningSkyColors = mix( skyColorAntiEvening, skyColorEvening, toSunMoonDot );
+  vec3 morningColors = mix( morningFogColors, morningSkyColors, upDot );
+  vec3 eveningColors = mix( eveningFogColors, eveningSkyColors, upDot );
+  
+  vec3 timeOfDayTint =  mix( morningColors, eveningColors, vFogSkyBlends.y );
+
+	
+  // Set day color
+  vec3 dayColors = mix( fogColorDay, skyColorDay, halfUpDot );
+  timeOfDayTint = mix( timeOfDayTint, dayColors, vFogSkyBlends.x );
+
+  // Set night color
+  vec3 nightColors = mix( fogColorNight, skyColorNight, halfUpDot );
+  timeOfDayTint = mix( timeOfDayTint, nightColors, vFogSkyBlends.z );
+
+  outCd.rgb = mix( outCd.rgb, timeOfDayTint, dayNightBlend*.5 );
+
+
+	// -- -- --
+
   // Rain Darkening
   float rainStrFit = rainStrength;
   float rainStrFitInverse = 1.0-rainStrFit;
   float rainStrFitInverseFit = rainStrFitInverse*.7+.3;
   outCd.rgb = mix( outCd.rgb, length(color.rgb)*vec3(.5), rainStrFit);
   
-  
-	
 	// -- -- --
 
   // Distant fade out of horizon clouds
@@ -237,7 +315,7 @@ void main() {
   #endif
   outCd.a *= min( 1.0, color.a * max(0.0,1.0-distMix*distMix*30.0) * alphaDistFit * distantClouds + alphaOffset );
   
-  vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+toSun*.1)*rainStrFitInverseFit);
+  vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+toSun*.2 + toSun*toSun*toSun*.05)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*2.0+.2) * distantClouds;
   float glowReach = ((1.0-depth*.5)+.5)*.5;
 
