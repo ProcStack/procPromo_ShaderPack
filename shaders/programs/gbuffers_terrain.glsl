@@ -1234,11 +1234,13 @@ void main() {
 #ifdef THE_END
 
   // TODO : Verify the lightLumaBase value in the End on Optifine, seems ambient of 7 in Iris
-  float endLightLuma = max( 0.0, 1.0-outDepth*15.5 );
-  endLightLuma = clamp( lightLumaBase*((1.0-endLightLuma*endLightLuma)), 0.0, 1.0 );
+  float endLightLuma = max( 0.0, 1.0-min(1.0,outDepth*10.0) );
+  endLightLuma = clamp( lightLumaBase*((1.0-endLightLuma))*.7+.2, 0.0, 1.0 );
 
 	//float depthEnd = min(1.0, max(0.0, outDepth*2.25+lightLumaBase*.5-screenDewarp*.005-.005));
-	float depthEnd = min(1.0, max(0.0, endLightLuma+lightLumaBase*.15-screenDewarp*.005-.005));
+	//float depthEnd = min(1.0, max(0.0, endLightLuma+lightLumaBase*.15-screenDewarp*.005-.005));
+	//float depthEnd = min(1.0, max(0.0, endLightLuma+lightLumaBase*.15));
+	float depthEnd = min(1.0, max(0.0, endLightLuma));
 	depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
 	//depthEnd = depthEnd*.7+.3;
 	
@@ -1247,9 +1249,9 @@ void main() {
 	float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
 	float lightInf = clamp( (max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift)
 													*lightShiftMult
-													*min(depthEnd,1.0), 0.0, 1.0 );
+													*min(depthEnd*.9+.1,1.0), 0.0, 1.0 );
 												
-	vec3 endFogCd = skyColor;
+	vec3 endFogCd = fogColor*3.0;//skyColor*5.0;
 	
 	float timeOffset = (float(worldTime)*0.00004166666)*30.0;
 	timeOffset = vWorldTime*30.0;
@@ -1263,9 +1265,9 @@ void main() {
 	//vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
 	
 	endFogCd = mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
-	outCd.rgb *= min(((noiseX*.5*depthEnd + depthEnd*depthEnd) * depthEnd), 1.0);
-	toSkyColor = skyColor;//outCd.rgb ;
-	fogColorBlend=depthEnd;//+lightLumaBase*.1;
+	outCd.rgb *= min(((noiseX + depthEnd*depthEnd) * depthEnd), 1.0);
+	toSkyColor = fogColor*3.0;//skyColor;//outCd.rgb ;
+	fogColorBlend=depthEnd*.5+.5;//+lightLumaBase*.1;
 
 #endif
 
@@ -1354,10 +1356,10 @@ float darknessOffset = 0.0;
 	float cdNetherBlend = min( 1.0, lightInfNether * min( 1.0, fogColorDampen + LightBlackLevel ) );
 	outCd.rgb = mix( mix(fogColor, outCd.rgb, fogColorDampen), outCd.rgb*(0.85+LightBlackLevel) + outCd.rgb * cdLightBoost, cdNetherBlend );
 
-#else
+#elif defined(OVERWORLD)
 
 // Surface Normal Influence
-	float dotRainShift = 0.40 * rainStrengthInv;
+	float dotRainShift = 0.40 * rainStrengthInv+.2;
 	
   //vec3 cdRainBoost = max( lightCd, clamp( lightLumaCd.rgb*10.0-9.0, vec3(0.0), vec3(1.0) ))*rainStrengthVal ;
   //float cdRainBoost = clamp( lightLuma*10.0-9.0, 0.0, 1.0 ) * rainStrengthVal * depthBias ;
@@ -1528,6 +1530,7 @@ float darknessOffset = 0.0;
 // -- -- --
   //tmpCd = vec4( vec3(toNightVision), 1.0 );
   //outCd = tmpCd;
+  //outCd.rgb = noiseX.rgb;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

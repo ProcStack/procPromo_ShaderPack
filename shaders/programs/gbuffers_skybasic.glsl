@@ -121,6 +121,8 @@ void main() {
 /* RENDERTARGETS: 0,1,6 */
 
 #include "/shaders.settings"
+#include "utils/mathFuncs.glsl"
+#include "utils/stylization.glsl"
 
 uniform sampler2D gcolor;
 uniform sampler2D lightmap;
@@ -192,11 +194,12 @@ void main() {
 
 #ifdef OVERWORLD
 
+  float curRainStrength = min(1.0,rainStrength*2.0);
   float halfUpDot = upDot*.5;
   vec3 morningColors = mix( vMorningFogColors, vMorningSkyColors, upDot );
   vec3 eveningColors = mix( vEveningFogColors, vEveningSkyColors, upDot );
-  vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), rainStrength);
-  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, halfUpDot ), vec3(vSkyGrey), rainStrength);
+  vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), curRainStrength);
+  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, halfUpDot ), vec3(vSkyGrey), curRainStrength);
 
   outCd.rgb = mix( morningColors, eveningColors, vFogSkyBlends.y );
 
@@ -204,6 +207,8 @@ void main() {
   outCd.rgb = mix( outCd.rgb, dayColors, vFogSkyBlends.x );
   // Set night color
   outCd.rgb = mix( outCd.rgb, nightColors, vFogSkyBlends.z );
+
+  outCd.rgb = mix( outCd.rgb, vec3(luma(outCd.rgb*(skyColor*.5+.5))), curRainStrength );
 
 #endif
   
@@ -213,8 +218,9 @@ void main() {
     outCd.a = upDot*upDot*(1.0-vFogSkyBlends.x);
   }
 
-  //outCd.rgb = vec3( toSunMoonDot);
-
+  if(renderStage == MC_RENDER_STAGE_VOID) {
+    outCd.rgb = texture2D(gtexture, texcoord.st).rgb;
+  }
 
   gl_FragData[0] = outCd;
   //gl_FragData[1] = vec4(vec3( 0.0 ), 1.0);

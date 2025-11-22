@@ -184,6 +184,7 @@ void main() {
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
 
+  //outCd.rgb = vec3(1.0,0.0,1.0);
 //outCd.rgb = vec3(vWorldTime);
 //outCd.a=1.0;
 
