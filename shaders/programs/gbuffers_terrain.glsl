@@ -430,7 +430,7 @@ void main() {
   }else if( mc_Entity.x == 104 ){ // Stone Ores
 		vDeltaMult=1.5;
     vDeltaPow=1.80;
-		vAvgColor=vec4(0.5,0.5,0.5,1.0);
+		vAvgColor=vec4(0.425,0.425,0.425,1.0);
     vDepthAvgColorInf = .5;
   }else if( mc_Entity.x == 1041 ){ // Deepslate Ores
 		vDeltaMult=1.5;
