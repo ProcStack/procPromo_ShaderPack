@@ -173,45 +173,50 @@ void main() {
   
   vec4 outCd = vColor;
   
-  vec4 basePos = vec4(gl_FragCoord.xy / vec2(viewWidth, viewHeight)*2.0 - 1.0, 1.0, 1.0);
-  vec4 pos = gbufferProjectionInverse * basePos;
-  //pos = gbufferModelView * vPos;
-  
-  float upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
-  upDot = 1.0-(1.0-upDot)*(1.0-upDot);
+  float upDot = 0.0;
 
-  vec3 skyCd = mix( skyColor.rgb, vec3(vSkyGrey), rainStrength);
-  vec3 fogCd = mix( fogColor, vec3(vSkyGrey*.65), rainStrength);
+  if( BaseQuality >= 1 ){
+    vec3 basePos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight)*2.0 - 1.0, 1.0);
+    vec3 pos = mat3(gbufferProjectionInverse) * basePos;
+    //pos = gbufferModelView * vPos;
+    
+    upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
+    upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
-  outCd.rgb = mix(fogCd, skyCd, upDot);
-  
-  #if ( DebugView == 4 )
-    float debugBlender = step( .0, basePos.x);
-    outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
-  #endif
+    vec3 skyCd = mix( skyColor.rgb, vec3(vSkyGrey), rainStrength);
+    vec3 fogCd = mix( fogColor, vec3(vSkyGrey*.65), rainStrength);
+
+    outCd.rgb = mix(fogCd, skyCd, upDot);
+    
+    #if ( DebugView == 4 )
+      float debugBlender = step( .0, basePos.x);
+      outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
+    #endif
     //outCd.rgb=skyCd.xyz;
+  }
 
 
 #ifdef OVERWORLD
+  if( BaseQuality >= 2 ){
+    float curRainStrength = min(1.0,rainStrength*2.0);
+    float halfUpDot = upDot*.5;
+    vec3 morningColors = mix( vMorningFogColors, vMorningSkyColors, upDot );
+    vec3 eveningColors = mix( vEveningFogColors, vEveningSkyColors, upDot );
+    vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), curRainStrength);
+    vec3 nightColors = mix( mix( fogColorNight, skyColorNight, halfUpDot ), vec3(vSkyGrey), curRainStrength);
 
-  float curRainStrength = min(1.0,rainStrength*2.0);
-  float halfUpDot = upDot*.5;
-  vec3 morningColors = mix( vMorningFogColors, vMorningSkyColors, upDot );
-  vec3 eveningColors = mix( vEveningFogColors, vEveningSkyColors, upDot );
-  vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), curRainStrength);
-  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, halfUpDot ), vec3(vSkyGrey), curRainStrength);
+    outCd.rgb = mix( morningColors, eveningColors, vFogSkyBlends.y );
 
-  outCd.rgb = mix( morningColors, eveningColors, vFogSkyBlends.y );
+    // Set day color
+    outCd.rgb = mix( outCd.rgb, dayColors, vFogSkyBlends.x );
+    // Set night color
+    outCd.rgb = mix( outCd.rgb, nightColors, vFogSkyBlends.z );
 
-  // Set day color
-  outCd.rgb = mix( outCd.rgb, dayColors, vFogSkyBlends.x );
-  // Set night color
-  outCd.rgb = mix( outCd.rgb, nightColors, vFogSkyBlends.z );
-
-  outCd.rgb = mix( outCd.rgb, vec3(luma(outCd.rgb*(skyColor*.5+.5))), curRainStrength );
-
+    outCd.rgb = mix( outCd.rgb, vec3(luma(outCd.rgb*(skyColor*.5+.5))), curRainStrength );
+  }
 #endif
-  
+
+
   // Get the stars back in
   if(renderStage == MC_RENDER_STAGE_STARS) {
     outCd.rgb = vec3(1.0,1.0,1.0);

@@ -464,7 +464,8 @@ void main() {
     surfaceShading = max( surfaceShading, lightCd.r );
     surfaceShading = shiftBlackLevels( surfaceShading );
     
-    outCd.rgb *= max(vec3(0.0),lightCd.xyz-.335)*1.25; // -.2;
+    //outCd.rgb *= max(vec3(0.0),lightCd.xyz-.335)*1.25; // -.2;
+    outCd.rgb *= max(vec3(0.0),lightCd.xyz-.135)*1.25; // -.2;
 
 #else
   // Nether and End

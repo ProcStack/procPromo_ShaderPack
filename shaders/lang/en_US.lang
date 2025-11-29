@@ -1,7 +1,7 @@
 
-option.PROC_PROMO=[:
-value.PROC_PROMO.true=procPromo Shader Pack v0.4 ::]
-value.PROC_PROMO.false=§6§kgh§r §oprocPromo§r§6 §kij§r ::]
+option.PROC_PROMO=
+value.PROC_PROMO.true=[:: procPromo Shader Pack v0.6 ::]
+value.PROC_PROMO.false=[:: §6§kgh§r §oprocPromo§r§6 §kij§r ::]
 option.PROC_PROMO.comment=§fThanks for trying my shader pack. §oCreated By §r§6Kevin Edzenga§7§o, 2022-2024. §oGitHub: §r§6ProcStack. §7§o(This button does nothing)
 
 #General Quality Controls

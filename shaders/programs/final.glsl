@@ -408,6 +408,13 @@ void main() {
   outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   
 
+// -- -- -- -- -- -- -- --
+// -- World Color Modes -- -- --
+// -- -- -- -- -- -- -- -- -- --
+
+    if( WorldColor ){ // Greyscale
+      outCd.rgb = vec3( luma(baseCd.rgb) );
+    }
 
 
 // -- -- -- -- -- -- -- -- -- --

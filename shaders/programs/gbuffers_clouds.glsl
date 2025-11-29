@@ -171,70 +171,76 @@ const vec3 skyColorNight = vec3(0.0, 0.0, 0.0);
 
 void main() {
 
-  float depth = min(1.0,gl_FragCoord.w*250.0);
-	
-	float toSun = dot( sunVecNorm, normalize(vLocalPos.xyz) );
-
-  float toUp = dot(vNormal, upVecNorm);
-  float toUpFitted = toUp*.05+1.0;
-  float dayNightBlend = dayNight*.5+.5;
-  float toSunMoon = dot(vNormal, sunVecNorm);
-  float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
-  
-  float rainMix = rainStrength * Fifteenth;
-  float sunRainToneMult = mix( 1.5, .4, rainMix);
-  float moonRainToneMult = mix( 1.2, .4, rainMix);
-  
-  vec3 awayFromSunCd = vec3( .85, .9, .97 )*sunRainToneMult;
-  vec3 towardSunCd = vec3( 1.0, .93, .97 )*sunRainToneMult;
-  float toSunMoonBias = toSunMoon*.5+.5;
-  toSunMoonBias *= toSunMoonBias;
-  vec3 cloudDayTint = mix( awayFromSunCd, towardSunCd, toSunMoonBias);
-  
-  
-  vec3 awayFromMoonCd = vec3( .25, .3, .5 )*moonRainToneMult;
-  vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
-  vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
-
   //vec4 baseCd = vec4( texture2D(gcolor, texcoord.st).rgb, color.a );
   //baseCd.rgb = vec3(1.0); // I have no clue, things keep acting odd
   vec4 baseCd = vec4( 1.0, 1.0, 1.0, color.a ); // I have no clue, things keep acting odd
   vec4 outCd = baseCd;
-  outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNightBlend);
-  outCd.rgb *= vec3(toUpFitted);
-  outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
-  
+
+  float depth = min(1.0,gl_FragCoord.w*250.0);
+	
+	float toSun = dot( sunVecNorm, normalize(vLocalPos.xyz) );
+
+  float dayNightBlend = 0.0;
+
+  if( BaseQuality >= 1 ){
+    float toUp = dot(vNormal, upVecNorm);
+    float toUpFitted = toUp*.05+1.0;
+    dayNightBlend = dayNight*.5+.5;
+    float toSunMoon = dot(vNormal, sunVecNorm);
+    float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
+    
+    float rainMix = rainStrength * Fifteenth;
+    float sunRainToneMult = mix( 1.5, .4, rainMix);
+    float moonRainToneMult = mix( 1.2, .4, rainMix);
+    
+    vec3 awayFromSunCd = vec3( .85, .9, .97 )*sunRainToneMult;
+    vec3 towardSunCd = vec3( 1.0, .93, .97 )*sunRainToneMult;
+    float toSunMoonBias = toSunMoon*.5+.5;
+    toSunMoonBias *= toSunMoonBias;
+    vec3 cloudDayTint = mix( awayFromSunCd, towardSunCd, toSunMoonBias);
+    
+    
+    vec3 awayFromMoonCd = vec3( .25, .3, .5 )*moonRainToneMult;
+    vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
+    vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
+
+    outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNightBlend);
+    outCd.rgb *= vec3(toUpFitted);
+    outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
+  }
   
 	// -- -- --
+#ifdef OVERWORLD
+  if( BaseQuality >= 2 ){
+    float upDot = max(0.0, dot(normalize(vPos.xyz), gbufferModelView[1].xyz));
+    //upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
-  float upDot = max(0.0, dot(normalize(vPos.xyz), gbufferModelView[1].xyz));
-  //upDot = 1.0-(1.0-upDot)*(1.0-upDot);
+    float halfUpDot = upDot*.5;
+    
+    float toSunMoonDot = clamp( dot( vSunPos, normalize(vWorldPos) ) * .5 + .5, 0.0, 1.0);
 
-  float halfUpDot = upDot*.5;
-  
-  float toSunMoonDot = clamp( dot( vSunPos, normalize(vWorldPos) ) * .5 + .5, 0.0, 1.0);
+    // Set morning or evening base color
+    vec3 morningFogColors = mix( skyColorAnitMorning, fogColorMorning, toSunMoonDot );
+    vec3 morningSkyColors = mix( skyColorAnitMorning, skyColorMorning, toSunMoonDot );
+    vec3 eveningFogColors = mix( skyColorAntiEvening, fogColorEvening, toSunMoonDot );
+    vec3 eveningSkyColors = mix( skyColorAntiEvening, skyColorEvening, toSunMoonDot );
+    vec3 morningColors = mix( morningFogColors, morningSkyColors, upDot );
+    vec3 eveningColors = mix( eveningFogColors, eveningSkyColors, upDot );
+    
+    vec3 timeOfDayTint =  mix( morningColors, eveningColors, vFogSkyBlends.y );
 
-  // Set morning or evening base color
-  vec3 morningFogColors = mix( skyColorAnitMorning, fogColorMorning, toSunMoonDot );
-  vec3 morningSkyColors = mix( skyColorAnitMorning, skyColorMorning, toSunMoonDot );
-  vec3 eveningFogColors = mix( skyColorAntiEvening, fogColorEvening, toSunMoonDot );
-  vec3 eveningSkyColors = mix( skyColorAntiEvening, skyColorEvening, toSunMoonDot );
-  vec3 morningColors = mix( morningFogColors, morningSkyColors, upDot );
-  vec3 eveningColors = mix( eveningFogColors, eveningSkyColors, upDot );
-  
-  vec3 timeOfDayTint =  mix( morningColors, eveningColors, vFogSkyBlends.y );
+    
+    // Set day color
+    vec3 dayColors = mix( fogColorDay, skyColorDay, halfUpDot );
+    timeOfDayTint = mix( timeOfDayTint, dayColors, vFogSkyBlends.x );
 
-	
-  // Set day color
-  vec3 dayColors = mix( fogColorDay, skyColorDay, halfUpDot );
-  timeOfDayTint = mix( timeOfDayTint, dayColors, vFogSkyBlends.x );
+    // Set night color
+    vec3 nightColors = mix( fogColorNight, skyColorNight, halfUpDot );
+    timeOfDayTint = mix( timeOfDayTint, nightColors, vFogSkyBlends.z );
 
-  // Set night color
-  vec3 nightColors = mix( fogColorNight, skyColorNight, halfUpDot );
-  timeOfDayTint = mix( timeOfDayTint, nightColors, vFogSkyBlends.z );
-
-  outCd.rgb = mix( outCd.rgb, timeOfDayTint, dayNightBlend*.5 );
-
+    outCd.rgb = mix( outCd.rgb, timeOfDayTint, dayNightBlend*.5 );
+  }
+#endif
 
 	// -- -- --
 

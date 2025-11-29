@@ -1,4 +1,4 @@
-# ProcStack's procPromo v0.5
+# ProcStack's procPromo v0.6
 ### Optifine & Iris Shader Pack
 #### MC 1.21.10; Copper Golems
 

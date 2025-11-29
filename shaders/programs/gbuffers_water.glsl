@@ -495,9 +495,6 @@ void main() {
 #endif
 
 
-    if( WorldColor ){ // Greyscale
-      outCd.rgb = vec3( luma(color.rgb) * lightVal.xyz );
-    }
 		
 		
   #if ( DebugView == 4 )

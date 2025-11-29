@@ -427,15 +427,16 @@ void main() {
 	}else if( mc_Entity.x == 103 ){ // Most ores
 		vDeltaMult=5.0;
     vDeltaPow=0.80;
-  }else if( mc_Entity.x == 104 ){ // Diamonds
+  }else if( mc_Entity.x == 104 ){ // Stone Ores
 		vDeltaMult=1.5;
-    vDeltaPow=0.80;
+    vDeltaPow=1.80;
 		vAvgColor=vec4(0.5,0.5,0.5,1.0);
-    vDeltaPow=0.80;
-  }else if( mc_Entity.x == 1041 ){ // Ores
-		vDeltaMult=5.0;
-    vDeltaPow=0.80;
-    vDepthAvgColorInf = .8;
+    vDepthAvgColorInf = .5;
+  }else if( mc_Entity.x == 1041 ){ // Deepslate Ores
+		vDeltaMult=1.5;
+    vDeltaPow=1.80;
+		vAvgColor=vec4(0.335,0.33,0.325,1.0);
+    vDepthAvgColorInf = .65;
   }else if( mc_Entity.x == 105 ){ // Powdered Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
@@ -956,9 +957,9 @@ void main() {
 
 	float avgColorMix = depthDetailing*vDepthAvgColorInf;
 	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + isLava*(3.0+(1.0-depth)));
-	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly));
+	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly)*vDepthAvgColorInf );
 	// TODO : Optimize
-	vec3 glowBaseCd = mix( outCd.rgb, avgShading.rgb, min(1.0,avgColorMix+vColorOnly));
+	//vec3 glowBaseCd = mix( outCd.rgb, avgShading.rgb, min(1.0,avgColorMix+vColorOnly));
 	//glowCd = glowBaseCd;
 
 // -- -- -- -- -- -- -- --
@@ -1439,12 +1440,6 @@ float darknessOffset = 0.0;
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Texture Overides from Settings - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-	if( WorldColor ){ // Const; Greyscale colors
-		outCd.rgb = luma(vAvgColor.rgb) * vec3(mix(lightCd.r*.9, 1.0, shadowAvg));
-		glowHSV.y = 0.0;
-		glowHSV.z *= 0.80;
-	}
 	
 	float outEffectGlow = 0.0;
 	
