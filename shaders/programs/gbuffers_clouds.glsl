@@ -171,24 +171,24 @@ const vec3 skyColorNight = vec3(0.0, 0.0, 0.0);
 
 void main() {
 
-  //vec4 baseCd = vec4( texture2D(gcolor, texcoord.st).rgb, color.a );
-  //baseCd.rgb = vec3(1.0); // I have no clue, things keep acting odd
-  vec4 baseCd = vec4( 1.0, 1.0, 1.0, color.a ); // I have no clue, things keep acting odd
-  vec4 outCd = baseCd;
-
   float depth = min(1.0,gl_FragCoord.w*250.0);
 	
 	float toSun = dot( sunVecNorm, normalize(vLocalPos.xyz) );
 
-  float dayNightBlend = 0.0;
+  float toUp = dot(vNormal, upVecNorm);
+  float toUpFitted = toUp*.05+1.0;
+  float dayNightBlend = dayNight*.5+.5;
+  float toSunMoon = dot(vNormal, sunVecNorm);
+  float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
 
-  if( BaseQuality >= 1 ){
-    float toUp = dot(vNormal, upVecNorm);
-    float toUpFitted = toUp*.05+1.0;
-    dayNightBlend = dayNight*.5+.5;
-    float toSunMoon = dot(vNormal, sunVecNorm);
-    float toSunMoonFitted = abs(toSunMoon*.6+.4)*.4+.6;
-    
+	// -- -- --
+
+  vec4 baseCd = vec4( 1.0, 1.0, 1.0, color.a ); // I have no clue, things keep acting odd
+  vec4 outCd = baseCd;
+
+	// -- -- --
+
+  if( BaseQuality == 1 ){
     float rainMix = rainStrength * Fifteenth;
     float sunRainToneMult = mix( 1.5, .4, rainMix);
     float moonRainToneMult = mix( 1.2, .4, rainMix);
@@ -204,14 +204,17 @@ void main() {
     vec3 towardMoonCd = vec3( .5, .6, .85 )*moonRainToneMult;
     vec3 cloudNightTint = mix( towardMoonCd, awayFromMoonCd, toSunMoonBias);
 
+    //vec4 baseCd = vec4( texture2D(gcolor, texcoord.st).rgb, color.a );
+    //baseCd.rgb = vec3(1.0); // I have no clue, things keep acting odd
     outCd.rgb *= mix( cloudNightTint, cloudDayTint, dayNightBlend);
     outCd.rgb *= vec3(toUpFitted);
     outCd.rgb *= vec3(mix(.7, toSunMoonFitted, depth));
   }
   
 	// -- -- --
-#ifdef OVERWORLD
-  if( BaseQuality >= 2 ){
+
+  if( BaseQuality == 2 ){
+
     float upDot = max(0.0, dot(normalize(vPos.xyz), gbufferModelView[1].xyz));
     //upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
@@ -239,8 +242,8 @@ void main() {
     timeOfDayTint = mix( timeOfDayTint, nightColors, vFogSkyBlends.z );
 
     outCd.rgb = mix( outCd.rgb, timeOfDayTint, dayNightBlend*.5 );
+
   }
-#endif
 
 	// -- -- --
 
@@ -333,10 +336,11 @@ void main() {
   float shadowDist = 0.0;
   float diffuseSun = 1.0;
   float shadowAvg = 1.0;
-#ifdef OVERWORLD
 
-#if ShadowSampleCount > 0
 /*
+#ifdef OVERWORLD
+#if ShadowSampleCount > 0
+
   vec4 shadowProjPos = shadowPos;
   float distort = radialBias(shadowPos.xy);
   vec2 spCoord = shadowProjPos.xy / distort;
@@ -348,7 +352,7 @@ void main() {
   vec3 projectedShadowPosition = vec3(spCoord, shadowProjPos.z) * shadowPosMult + localShadowOffset;
   
   shadowAvg=shadow2D(shadow, projectedShadowPosition).x;
-  */
+  
   
 #if ShadowSampleCount > 1
 
@@ -373,10 +377,10 @@ void main() {
   #endif
     
   }
-  */
+  
 
 #endif
-  /*
+  
   float sunMoonShadowInf = clamp( (abs(dot(sunVecNorm, vNormal))-.04)*1.5, 0.0, 1.0 );
   //float sunMoonShadowInf = min(1.0, max(0.0, abs(dot(sunVecNorm, vNormal))+.50)*1.0);
   float shadowDepthInf = clamp( (depth*40.0), 0.0, 1.0 );
@@ -388,9 +392,10 @@ void main() {
   
   //diffuseSun *= mix( 1.0, shadowAvg, sunMoonShadowInf * shadowDepthInf );
   diffuseSun *= mix( 1.0, shadowAvg, shadowSurfaceInf * shadowDepthInf );
+
+#endif
+#endif
 */
-#endif
-#endif
   
   // -- -- --
 
