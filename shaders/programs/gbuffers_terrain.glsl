@@ -148,7 +148,7 @@ void main() {
   
 	// Fit 'worldTime' from 0-24000 -> 0-1; Scale x30
 	//   worldTime * 0.00004166666 * 30.0 == worldTime * 0.00125
-	vWorldTime = float(worldTime)*0.00125;
+	//vWorldTime = float(worldTime)*0.00125;
 	vWorldTime = frameTimeCounter*0.00125;
 	
   //texcoord = vaUV0;
@@ -777,7 +777,9 @@ void main() {
 	vec4 txCd=vec4(1.0,1.0,0.0,1.0);
 	vec4 tmpCd=vec4(1.0,1.0,0.0,1.0);
 
-	vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
+	//vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
+	vec2 screenSpace = (vPos.xy/vPos.z)*.85;//  * vec2(aspectRatio);
+  screenSpace *= screenSpace;
 
   float toNightVision = nightVision;//*.65;
 
@@ -1236,21 +1238,23 @@ void main() {
 
   // TODO : Verify the lightLumaBase value in the End on Optifine, seems ambient of 7 in Iris
   float endLightLuma = max( 0.0, 1.0-min(1.0,outDepth*10.0) );
-  endLightLuma = clamp( lightLumaBase*((1.0-endLightLuma))*.7+.2, 0.0, 1.0 );
+  endLightLuma = clamp( lightLumaBase*((1.0-endLightLuma)*.8+.2), 0.0, 1.0 );
 
 	//float depthEnd = min(1.0, max(0.0, outDepth*2.25+lightLumaBase*.5-screenDewarp*.005-.005));
 	//float depthEnd = min(1.0, max(0.0, endLightLuma+lightLumaBase*.15-screenDewarp*.005-.005));
 	//float depthEnd = min(1.0, max(0.0, endLightLuma+lightLumaBase*.15));
 	float depthEnd = min(1.0, max(0.0, endLightLuma));
 	depthEnd = 1.0-(1.0-depthEnd)*(1.0-depthEnd);
+  float deDepthEnd = depthEnd*depthEnd*(depthEnd*2.0);
+  deDepthEnd = min(1.0, deDepthEnd*deDepthEnd);
 	//depthEnd = depthEnd*.7+.3;
 	
 // Fit lighting 0-1
 	float lightShift=.47441;
 	float lightShiftMult=1.9026237181072698; // 1.0/(1.0-lightShift)
-	float lightInf = clamp( (max((lightCd.r-.2)*1.0,lightLumaBase)-lightShift)
+	float lightInf = clamp( (max((lightCd.r-.2)*1.2,lightLumaBase)-lightShift)
 													*lightShiftMult
-													*min(depthEnd*.9+.1,1.0), 0.0, 1.0 );
+													*min(depthEnd*.7+.3,1.0), 0.0, 1.0 );
 												
 	vec3 endFogCd = fogColor*3.0;//skyColor*5.0;
 	
@@ -1262,13 +1266,18 @@ void main() {
 
 	
 // RGB Depth Based Noise for final influence
-	vec3 noiseX = texture( noisetex, fract(worldPos.xy*depthEnd*2.5 + (timeOffset*vec2(.25,.75)))).rgb;
+	vec3 noiseX = texture( noisetex, fract(worldPos.xy + (timeOffset*vec2(.25,.75)))).rgb;
+  noiseX = clamp( (noiseX-.5)*1.5+.5, vec3(0.0), vec3(1.0));
+  noiseX.rg *= mix( vec2(1.1, noiseX.g), vec2(noiseX.r,1.1), clamp(noiseX.g-noiseX.r, 0.0,1.0) );
 	//vec3 noiseZ = texture( noisetex, fract(worldPos.yz+noiseX.rg*.1 + vec2(timeOffset) )).rgb;
 	
-	endFogCd = mix( noiseX*endFogCd * (1.0-depthEnd)+depthEnd, vec3(lightLumaBase), lightInf );
-	outCd.rgb *= min(((noiseX + depthEnd*depthEnd) * depthEnd), 1.0);
+	endFogCd = mix( noiseX*endFogCd * (1.0-depthEnd*.5) * 2.0 * (lightInf*deDepthEnd+(1.0-deDepthEnd)), vec3(min(1.0,lightLumaBase*lightLumaBase*1.2)), lightInf );
+	//outCd.rgb *= min(((noiseX + deDepthEnd*.5) * lightInf), 1.0);
+	//outCd.rgb *= min(((noiseX ) * lightInf), 1.0);
+	outCd.rgb *= vec3( endFogCd );
 	toSkyColor = fogColor*3.0;//skyColor;//outCd.rgb ;
 	fogColorBlend=depthEnd*.5+.5;//+lightLumaBase*.1;
+
 
 #endif
 
@@ -1523,9 +1532,8 @@ float darknessOffset = 0.0;
 #endif
 
 // -- -- --
-  //tmpCd = vec4( vec3(toNightVision), 1.0 );
+  //tmpCd = vec4( vec3(screenDewarp), 1.0 );
   //outCd = tmpCd;
-  //outCd.rgb = noiseX.rgb;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

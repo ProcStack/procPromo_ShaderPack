@@ -1,6 +1,6 @@
-# ProcStack's procPromo v0.6
+# ProcStack's procPromo v0.6.1
 ### Optifine & Iris Shader Pack
-#### MC 1.21.10; Copper Golems
+#### MC 1.21.11; Mounts of Mayhem
 
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes

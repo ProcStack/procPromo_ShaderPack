@@ -19,15 +19,16 @@
 //  I'll remove Radial's when I make a 'glsl-bootstrap' repo
 
 const bool waterShadowEnabled = true;
-const bool generateShadowMipmap = true;
-const bool generateShadowColorMipmap = true;
-const bool shadowHardwareFiltering = true;
+//const bool generateShadowMipmap = true;
+//const bool generateShadowColorMipmap = true;
+//const bool shadowHardwareFiltering = false;
 //const bool shadowtexNearest = true;
 //const bool shadowtex0Nearest = true;
 //const bool shadow0MinMagNearest = true;
 
 const int shadowMapResolution = 4096; // [512 1024 2048 4096 8192 16384]
 const float shadowMapTexelSize = 1.0/float(shadowMapResolution);
+/* #define MC_SHADOW_QUALITY 0.5 */
 
 // FOV + Distance alters the edge of the shadow
 //   Which in turn changes luminance of blocks that should be in shadow
@@ -35,7 +36,7 @@ const float shadowMapTexelSize = 1.0/float(shadowMapResolution);
 //       The color borders at 16 chunks should roughly touch the edges
 //         Picture-in-Picture baby!
 const float shadowMapFov = 90.0; 
-const float shadowDistance = 320.0; //256.0; // 224.0; // 128.0;
+const float shadowDistance = 360.0; //256.0; // 224.0; // 128.0;
 
 
 const float sunPathRotation = 0.0;
@@ -64,7 +65,7 @@ const float shadowThreshold = shadowDistance/(shadowMapFov*.5);
 const float shadowThreshold_Entity = shadowThreshold*.45;
 
 // Shadow Biases; Scalping Reduction
-const float shadowThreshBase = 0.00003; // Bias near to Camera
+const float shadowThreshBase = 0.000045; // Bias near to Camera
 const float shadowThreshBase_Entity = 0.00003; // gbuffers_entities.glsl
 const float shadowThreshDist = 0.000026; // Bias far from Camera
 
