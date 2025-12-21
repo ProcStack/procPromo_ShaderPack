@@ -21,7 +21,6 @@ varying vec4 vTexcoord;
 varying vec4 vColor;
 varying vec4 vPos;
 varying vec3 vGlowEdgeCd;
-varying vec2 vFittedUV;
 varying float vDfLenMult;
 varying float vWorldTime;
 varying float isSun;
@@ -61,7 +60,7 @@ void main() {
   //     I should add a toggle button in settings...
 
 
-  vFittedUV = vTexcoord.st;
+  //vFittedUV = vTexcoord.st;
   /*if (renderStage == MC_RENDER_STAGE_SUN) {
     vGlowEdgeCd = texture2D(gtexture, vec2(0.59375)).rgb; // .5+.0625+.03125
     vDfLenMult = .45;
@@ -74,11 +73,11 @@ void main() {
   
   // Iris is having some issues with MC_RENDER_STAGEs SUN and MOON
   if( isSun>.5 ){
-    vFittedUV = vTexcoord.st;
+    //vFittedUV = vTexcoord.st;
     vGlowEdgeCd = texture2D(gtexture, vec2(0.59375)).rgb; // .5+.0625+.03125
     vDfLenMult = .45;
   }else{
-    vFittedUV = vTexcoord.st*vec2(4.0,2.0) ;
+    //vFittedUV = vTexcoord.st*vec2(4.0,2.0) ;
     vGlowEdgeCd = fogtexture*moonPhaseMult;
     vDfLenMult = .3;
   }
@@ -105,7 +104,6 @@ varying vec4 vPos;
 varying vec4 vColor;
 varying vec4 vTexcoord;
 varying vec3 vGlowEdgeCd;
-varying vec2 vFittedUV;
 varying float vDfLenMult;
 varying float vWorldTime;
 varying float isSun;
@@ -126,7 +124,7 @@ void main() {
   float rainMix = rainStrength ;
   
 #ifdef OVERWORLD
-  vec2 fituv = fract(vFittedUV);
+  vec2 fituv = uv;
 
   vec4 baseCd = texture2D(gtexture, uv) * vColor;
   outCd = baseCd;
@@ -142,7 +140,7 @@ void main() {
 
   float dfLen = 1.0-min(1.0, length(max(vec2(0.0),uvshift)*dfMult)); // 0-1 dist to center
 
-  dfLen = (dfLen*dfLen)*vDfLenMult;
+  //dfLen = (dfLen*dfLen)*vDfLenMult;
   vec3 sunCd = mix( outCd.rgb, vGlowEdgeCd * dfLen, sunBody);
   
   outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
@@ -169,12 +167,8 @@ void main() {
   vec4 baseCd = texture2D(gtexture, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
   uv += noiseX.xy + vTexcoord.st*.1;
   vec4 mixCd = texture2D(gtexture, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
-  outCd = mix( baseCd, mixCd, noiseX.x);
+  //outCd = mix( baseCd, mixCd, noiseX.x);
   outCd.rgb *= 1.0-outCd.rgb*.5;
-  //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
-#else
-  vec4 baseCd = texture2D(gtexture, uv) * vColor;
-  outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #endif
 
@@ -188,6 +182,8 @@ void main() {
 //outCd.rgb = vec3(vWorldTime);
 //outCd.a=1.0;
 
+  //outCd.rgb = vec3(uvshift.xy,0.);
+  //outCd.a =1.0;//skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun;
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3(0.0),1.0);
 

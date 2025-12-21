@@ -24,8 +24,6 @@ varying vec3 vFogSkyBlends;
 varying vec3 vNormal;
 
 varying float vSkyGrey;
-varying vec3 vDayColors;
-varying vec3 vNightColors;
 varying vec3 vMorningFogColors;
 varying vec3 vMorningSkyColors;
 varying vec3 vEveningFogColors;
@@ -130,6 +128,8 @@ uniform float rainStrength;
 uniform float dayNight;
 uniform int renderStage;
 
+uniform float sunAngle;
+
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 fogColor;
@@ -147,8 +147,6 @@ varying vec3 vFogSkyBlends;
 varying vec3 vNormal;
 
 varying float vSkyGrey;
-varying vec3 vDayColors;
-varying vec3 vNightColors;
 varying vec3 vMorningFogColors;
 varying vec3 vMorningSkyColors;
 varying vec3 vEveningFogColors;
@@ -222,6 +220,18 @@ if( BaseQuality > 0 ){
   if(renderStage == MC_RENDER_STAGE_VOID) {
     outCd.rgb = texture2D(gtexture, texcoord.st).rgb;
   }
+
+
+
+
+  const float fadeScalar = 2.5;
+  float fadeIns = sunAngle*4.0+.5;
+
+  float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
+
+
+
+  //outCd.rgb = vec3( min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning ) );
 
   gl_FragData[0] = outCd;
   //gl_FragData[1] = vec4(vec3( 0.0 ), 1.0);

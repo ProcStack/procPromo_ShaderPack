@@ -17,10 +17,10 @@ option.BaseQuality.comment=Reduce the ammount of texture blurring samples, heavi
 #Color Values & Gamma
 
 option.LightBlackLevel=Black Color Levels
-option.LightBlackLevel.comment=Set how dark lighting can get; This offsets black color values to brighten the entire environment. Lower values are moodier, higher values are better for streaming or video recording. 0.0, blacks = §8black. 0.5, blacks = §7grey. 1.0, blacks = white 
+option.LightBlackLevel.comment=Set how dark lighting can get; This offsets darker color values to brighten the entire environment. Lower values are moodier, higher values are better for streaming or video recording. 0.0, blacks = §8black. 0.5, blacks = §7grey. 1.0, blacks = white 
 
 option.LightWhiteLevel=White Color Levels
-option.LightWhiteLevel.comment=Set how bright block lighting can get. As light emitting blocks also appear to glow, this will also affect how much glow is visible.  0.0, white = §7grey. 1.0, white = white. 2.0, white = §l§oWHITE
+option.LightWhiteLevel.comment=Set how bright block lighting can get. As light emitting blocks also appear to glow, this will also affect how much glow is visible.  0.0, white = §7grey. 1.0, white = white. 2.0, white = §l§oBLINDING
 
 option.FogAmount=Fog Amount
 option.FogAmount.comment=Set how much the fog influences the world.

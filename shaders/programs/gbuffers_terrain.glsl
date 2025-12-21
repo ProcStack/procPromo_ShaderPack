@@ -20,7 +20,7 @@ const float eyeBrightnessHalflife = 4.0f;
 #include "/shaders.settings"
 
 uniform sampler2D gcolor;
-uniform int moonPhase;
+uniform float moonPhaseMultTerrain;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferProjection;
@@ -70,7 +70,6 @@ out vec4 vtexcoordam; // .st for add, .pq for mul
 
 
 #ifdef OVERWORLD
-  out vec2 skyBrightnessMult;
   out float dayNightMult;
   out float sunPhaseMult;
   out float moonShadowToggle;
@@ -84,6 +83,7 @@ out vec4 vWorldPos;
 out vec3 vNormal;
 out float vNormalSunDot;
 out float vNormalSunInf;
+out float vToCamNormalDot;
 
 out vec4 vColor;
 out vec4 vAvgColor;
@@ -135,6 +135,9 @@ void main() {
   vNormal = normalize(normal);
   vNormalSunDot = dot(normalize(shadowLightPosition), vNormal)*1.5-.5;
   
+  // Block shading based on normal to camera direction; rough value
+  vToCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal)*.6;
+
   float posLen = length(position);
   vNormalSunInf = step( EPSLION, vNormalSunDot)*max(0.0, 1.0-posLen * Normal_InfFalloffRate );
   vAnimFogNormal = normalMatrix*vec3(1.0,0.0,0.0);
@@ -231,14 +234,8 @@ void main() {
 
 
 	// Sun Moon Influence
-	skyBrightnessMult = vec2(1.0);
 	dayNightMult = 0.0;
 	sunPhaseMult = 1.0;
-
-	// Sky Influence
-	//   TODO : Move to 
-	skyBrightnessMult = vec2(eyeBrightnessSmooth) * 0.004166666666666666666666; //  1.0/240.0
-	//skyBrightnessMult=eyeBrightnessFit;
 	
 	// Sun Influence
 	sunPhaseMult = step(sunAngle, .5);//1.0-max(0.0,sunAngle*2.0-1.0);
@@ -247,12 +244,9 @@ void main() {
 	
 	
 	// Moon Influence
-	float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
-  moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
-	moonPhaseMult = moonPhaseMult*.28 + .075; // Moon's shadowing multiplier
 	moonShadowToggle = sunMoonShadowInf * step(0.5, sunAngle);
 
-	dayNightMult = mix( 1.0, moonPhaseMult, (1.0-sunPhaseMult) * skyBrightnessMult.y );
+	dayNightMult = mix( 1.0, moonPhaseMultTerrain, (1.0-sunPhaseMult) * eyeBrightnessFit );
   
 #endif
   
@@ -675,7 +669,9 @@ uniform vec3 skyColor;
 uniform vec3 cameraPosition;
 uniform int isEyeInWater;
 uniform float BiomeTemp;
+uniform float FrozenGlowMult;
 uniform float nightVision;
+uniform float moonPhaseMultTerrain;
 
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
@@ -730,7 +726,6 @@ in vec4 vtexcoordam; // .st for add, .pq for mul
 
 
 #ifdef OVERWORLD
-  in vec2 skyBrightnessMult;
   in float dayNightMult;
   in float sunPhaseMult;
   in float moonShadowToggle;
@@ -740,6 +735,7 @@ in vec4 vtexcoordam; // .st for add, .pq for mul
 uniform vec3 shadowLightPosition;
 uniform float dayNight;
 uniform float sunMoonShadowInf;
+uniform float eyeBrightnessFit;
 uniform int worldTime;
 
 in float vAlphaMult;
@@ -751,6 +747,7 @@ in vec4 vPos;
 in vec3 vLocalPos;
 in vec4 vWorldPos;
 in vec3 vNormal;
+in float vToCamNormalDot;
 in vec3 vWorldNormal;
 in float vNormalSunDot;
 in float vNormalSunInf;
@@ -807,7 +804,7 @@ void main() {
 
 	float rainStrengthVal = rainStrength;
   #ifdef OVERWORLD
-    rainStrengthVal *= skyBrightnessMult.y;
+    rainStrengthVal *= eyeBrightnessFit;
   #endif
 	float rainStrengthInv = 1.0-rainStrengthVal;
 
@@ -834,7 +831,7 @@ void main() {
 	
 	
 	// Alpha Test
-	baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
+	baseTxCd.a = max(baseTxCd.a * vColor.a, vAlphaRemove)  ;
 
 	#if( DebugView == 4 )
 		baseTxCd.a = mix(baseTxCd.a, 1.0, step(screenSpace.x,.0)*vAlphaRemove);
@@ -842,7 +839,7 @@ void main() {
 		baseTxCd.a = mix(baseTxCd.a, 1.0, vAlphaRemove) * vAlphaMult;
 	#endif
 
-	if ( baseTxCd.a  < .02 ){
+	if ( baseTxCd.a  < .2 ){
 		discard;
 	}
 	
@@ -898,17 +895,8 @@ void main() {
 	
 // Default Minecraft Lighting
 	vec4 lightLumaCd = texture(lightmap, luv);//*1.1;
-  //lightLumaCd.rgb = vec3(vColor.a);
   
-  //lightLumaCd.rgb = mix(lightLumaCd.rgb, max( lightLumaCd.rgb, vec3(vColor.a*(vColor.a*.5+.5) * depthBias +  (1.0-depthBias))), step(vColor.a, 0.9999));
-  //lightLumaCd.rgb = mix(lightLumaCd.rgb, max( lightLumaCd.rgb, vec3(vColor.a*(vColor.a*.5+.5) * depthBias +  (1.0-depthBias))), step(vColor.a, 0.9999));
-
 	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.26-.13,0.0,1.0);
-  //float aoLightLumaInf = min(1.0, vColor.a+lightLumaBase);
-  //lightLumaCd.rgb *= aoLightLumaInf;
-  //lightLumaBase *= aoLightLumaInf;
-  //lightLumaCd.rgb = vColor.aaa;
-  //lightLumaBase = vColor.a;
 	
 	txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
 	txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
@@ -933,19 +921,17 @@ void main() {
 	float lightLuma = shiftBlackLevels( biasToOne(lightLumaBase) ); // lightCd.r;
 
 	vec3 lightCd = vec3(lightLuma);//vec3(max(lightLumaBase,lightLuma));
+  float lightShadowBlend = max(0.0, clamp( (lightLumaCd.r-.4)*2., 0.0, 1.0 ) - rainStrengthVal*(1.0-depthBias)*.2*moonPhaseMultTerrain);
+  //lightShadowBlend = biasToOne( lightShadowBlend );
 	
 
 // -- -- -- -- -- -- -- --
 
+	outCd = vec4( txCd.rgb, 1.0 ) * vec4( vColor.rgb, 1.0 );
 
-	outCd = vec4(txCd.rgb,1.0) * vec4(vColor.rgb,1.0);
 
 	vec3 outCdAvgRef = outCd.rgb;
-	//vec3 cdToAvgDelta = outCdAvgRef.rgb - txCd.rgb; // Strong color changes, ie birch black bark markings
-	//float cdToAvgBlender = min(1.0, addComponents( cdToAvgDelta ));
-	//outCd.rgb = mix( outCd.rgb, txCd.rgb, max(0.0,cdToAvgBlender-depthBias*.5)*vFinalCompare );
-	
-	//float avgColorBlender = min(1.0, pow(length(txCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma*.75)*vDeltaMult*depthBias);
+
 	float avgColorBlender = min(1.0, pow(length(outCd.rgb-vAvgColor.rgb),vDeltaPow+lightLuma)*vDeltaMult*depthBias);
 	outCd.rgb =  mix( vAvgColor.rgb, outCd.rgb, avgColorBlender );
 	//glowCd = outCd.rgb*vCdGlow;// * max(0.0, luma(txCd.rgb));
@@ -959,7 +945,7 @@ void main() {
 
 	float avgColorMix = depthDetailing*vDepthAvgColorInf;
 	avgColorMix = min(1.0, avgColorMix + vAlphaRemove + isLava*(3.0+(1.0-depth)));
-	outCd = mix( vec4(outCd.rgb,1.0),  vec4(avgShading.rgb,1.0), min(1.0,avgColorMix+vColorOnly)*vDepthAvgColorInf );
+	outCd.rgb = mix( outCd.rgb,  avgShading.rgb, min(1.0,avgColorMix+vColorOnly)*vDepthAvgColorInf );
 	// TODO : Optimize
 	//vec3 glowBaseCd = mix( outCd.rgb, avgShading.rgb, min(1.0,avgColorMix+vColorOnly));
 	//glowCd = glowBaseCd;
@@ -973,13 +959,11 @@ void main() {
   vec4 shadowCd = vec4(0.0);
   float reachMult = 0.0;
   
-  float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal);
+  float toCamNormalDot = vToCamNormalDot;
   float surfaceShading = 9.0-abs(toCamNormalDot);
 		
 	
 	float shadowRainStrength = rainStrengthVal;
-
-
 
 
 // -- -- -- -- -- -- -- -- -- -- -- --
@@ -988,7 +972,7 @@ void main() {
 
 #ifdef OVERWORLD
 	
-	skyBrightness = skyBrightnessMult.y;
+	skyBrightness = eyeBrightnessFit;
 
 #if ShadowSampleCount > 0
 
@@ -1021,9 +1005,9 @@ void main() {
   float shadowFade = clamp( (1.0-max(abs(shadowPosLocal.x),abs(shadowPosLocal.y))) * shadowEdgeFade, 0.0, 1.0) ;
 
 // Get base shadow value
-  //float shadowBase=shadow2D(shadowtex0, projectedShadowPosition + localShadowOffset).x; 
+  //float shadowtex1=shadow2D(shadowtex0, projectedShadowPosition + localShadowOffset).x; 
   float shadowBase = texture(shadowtex0, projectedShadowPosition + localShadowOffset);
-	shadowAvg = shadowBase ;
+  float waterShadowBase = texture(shadowtex1, projectedShadowPosition + localShadowOffset);
 	
 // Get base shadow source block color
 	projectedShadowPosition = projectedShadowPosition + localShadowOffset;
@@ -1043,11 +1027,14 @@ void main() {
 
   reachMult = max(0.0, reachMult - (min(1.0,outDepth*20.0)*.5));
 
+  // Delay shadowAvg to let shadowBase return
+	shadowAvg = shadowBase ;
+
 #if ShadowSampleCount == 2
   vec2 posOffset;
   
   for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightness;
+    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize;//*skyBrightness;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
   
@@ -1103,7 +1090,8 @@ void main() {
 //  Distance influence of surface shading --
 //  TODO : !! Cleans up shadow crawl with better values
   shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid)
-                    * skyBrightness * rainStrengthInv * dayNightMult * nightLightInfluence;
+                    * skyBrightness * rainStrengthInv * nightLightInfluence;
+                    //* skyBrightness * rainStrengthInv * moonPhaseMultTerrain * nightLightInfluence;
 	
   // -- -- --
 	
@@ -1120,35 +1108,50 @@ void main() {
 // -- -- -- -- -- -- -- -- -- --
 	
 // Mute Shadows during Rain
-	diffuseSun = mix( diffuseSun, 0.50, rainStrengthVal)*skyBrightness;
+	diffuseSun = mix( diffuseSun, 0.50, rainStrengthVal);
 
 // The diffuse is the suns influence on the blocks
 //   Getting the max reduces hotspots,
 //     But that reduces the style I'm going for
 //       Work-in-Progress
-	lightCd = max( lightCd, diffuseSun);
+	//lightCd = max( lightCd, diffuseSun);
+
+  // Updates testing --
+  lightCd = mix(  lightCd, mix( lightCd * 2.0 * diffuseSun, lightCd*(diffuseSun*.5+.5), lightShadowBlend ), eyeBrightnessFit );
+
 	
 // Mix translucent color
 	float lColorMix = clamp( shadowData.r*(1.0-shadowBase)
 														* clamp( shadowDepthInf*2.0-1.0, 0.0, 1.0)
 														- shadowData.b*.5, 0.0, 1.0 ) * vNormalSunInf ;
 	//lightCd = mix( lightCd, lightCd*(fogColor*(1.0-worldPosYFit)+(shadowCd.rgb*.5+.15)*worldPosYFit), lColorMix );
-	lightCd = mix( lightCd, (shadowCd.rgb*2.0+.5), lColorMix );
+	//lightCd = mix( lightCd, (shadowCd.rgb*2.0+.5), lColorMix );
+
 
 // Strength of final shadow
-	outCd.rgb *= mix(max( vec3(min(1.0,shadowAvg+lightLuma*shadowLightInf)), lightCd*shadowMaxSaturation), vec3(1.0),shadowAvg);
+  float lightColorMixer = moonPhaseMultTerrain * skyBrightness * rainStrengthInv;
+	//outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg)*moonPhaseMultTerrain;
+	//outCd.rgb = shadowAvg+lightCd*shadowLightInf;
+
+  float lightDepthRainMixer = mix( depthBias*depthBias, (depthBias*.5+.5), rainStrengthInv );
+
+	outCd.rgb *=  mix(  vec3(min(  1.0,lightShadowBlend*lightDepthRainMixer+moonPhaseMultTerrain)), vec3(1.0), sunPhaseMult) ;
 
 
-	lightLuma = min( maxComponent(lightCd), lightLuma );
+
+
+	lightLuma = min( maxComponent(lightCd), lightLuma )*1.1;
 
 
 // Kill off shadows on sun far side; prevents artifacts
 	//lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg))*lightLuma, clamp(shadowAvg*vNormalSunInf,0.0,1.0)) ;
-	lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg))*lightLuma, shadowAvg*vNormalSunInf) ;
-
+	//lightCd = mix( lightCd, max(lightCd, vec3(shadowAvg)), shadowAvg*vNormalSunInf) ;
+  //lightCd = mix( lightCd, mix( lightCd * 2.0 * diffuseSun, lightCd, lightShadowBlend ), shadowAvg*vNormalSunInf) ;
+	//lightCd = vec3( diffuseSun) ;
+  
 
 // Add day/night & to sun normal; w/ Sky Brightness limits
-	surfaceShading *= mix( dayNightMult, vNormalSunDot, sunMoonShadowInf*.5+.5 );
+	//surfaceShading *= mix( moonPhaseMultTerrain, vNormalSunDot, sunMoonShadowInf*.5+.5 );
 	
 // WARNING - I could see not knowing why I'm doing this in the future
 //             Even reading the code.
@@ -1179,7 +1182,6 @@ void main() {
 	surfaceShading = ( surfaceShading * lightCd.r );
 	surfaceShading = shiftBlackLevels( surfaceShading );
 	
-
 
 // -- -- -- -- -- -- --
 // -- Fog Coloring - -- --
@@ -1220,6 +1222,7 @@ void main() {
 // -- Distance Based Color Boost -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 
+  // TODO : Test and adjust values
 	depthDetailing = max(0.0, min(1.0,(1.0-(depthBias+(vCdGlow*0.8)))*Distance_Vibrance) ); 
 	//surfaceShading = 1.0-(1.0-surfaceShading)*.4;
 	
@@ -1288,7 +1291,6 @@ void main() {
 
 vec3 skyGreyCd = outCd.rgb;
 float skyGreyInf = 0.0;
-float darknessOffset = 0.0;
 	
 // Fog when Player in Water 
 	if( isEyeInWater == 1 ){ 
@@ -1297,7 +1299,7 @@ float darknessOffset = 0.0;
 			
 		outCd.rgb *=  smoothDepth+lightLuma*.35+glowInf*.5-max(0.0,.15-glowInf);
 		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.93)+(smoothDepth*.35+.25);
-		darknessOffset = .2;
+
 // -- -- --
 
 // Fog when Player in Lava 
@@ -1326,7 +1328,7 @@ float darknessOffset = 0.0;
 		//skyGreyCd = mix( skyGreyCd, ((toSkyColor+outCd.rgb*(fogColorBlend*.5+.5))*.5+.5)*toFogColor, skyGreyInf );
     
     #ifdef OVERWORLD
-		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depthBias-screenDewarp*.045*(1.0-skyBrightnessMult.y))+.25)*1.75+.35,0.0,1.0));
+		  vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd+clamp(worldPosYFit*.5+max(0.0,(depthBias-screenDewarp*.045*(1.0-eyeBrightnessFit))+.25)*1.75+.35,0.0,1.0));
       skyGreyCd = skyGreyCd*.35+toSkyColor*.3+fogColor*.35;
 		#else
       vec3 blockBasinCd = outCd.rgb* min(vec3(1.0),glowCd*fogColor+clamp(
@@ -1355,14 +1357,8 @@ float darknessOffset = 0.0;
 	float lightInfNether = clamp( max((lightCd.r),biasToOne((lightLumaBase)*1.5))
 										       - (min(1.0,(0.8-depth*.5)+.1))*0.85, 0.0, 1.0 );
 	lightInfNether += min(1.0, cdLightBoost*(depth*.05 +.25+toCamNormalDot*.85));
-	//lightInfNether = mix( (depthBias*.45+.5+fogColorDampen*1.85), lightInfNether, fogColorDampen*2.);
-	//lightInfNether = clamp( mix( lightInfNether, (depthBias*.45+.5+fogColorDampen*.85), fogColorDampen), 0.0, 1.0 );
-	//lightInfNether = mix( lightInfNether, (depthBias*.13+fogColorDampen*.87), fogColorDampen);
 	
-	//lightCd = (lightCd*min(1.0,depth*90.0)+.25*lightLuma);
- //tmpCd.rgb = vec3(lightInfNether);
-	//outCd.rgb *= mix(vec3(1.0), (fogColor*.25+outCd.rgb*.05)*(toCamNormalDot*.25+.35), clamp( (1.0-depth)*.5*toCamNormalDot - toCamNormalDot*.65 - fogColorDampen*.5, 0.0, 1.0));
-	//float cdNetherBlend = min( 1.0, lightLumaBase * min( 1.0, depthBias*10.+.25 + fogColorDampen + cdLightBoost  ) );
+  // Optional - depthBias toCamNormalDot fogColorDampen
 	float cdNetherBlend = min( 1.0, lightInfNether * min( 1.0, fogColorDampen + LightBlackLevel ) );
 	outCd.rgb = mix( mix(fogColor, outCd.rgb, fogColorDampen), outCd.rgb*(0.85+LightBlackLevel) + outCd.rgb * cdLightBoost, cdNetherBlend );
 
@@ -1371,20 +1367,27 @@ float darknessOffset = 0.0;
 // Surface Normal Influence
 	float dotRainShift = 0.40 * rainStrengthInv+.2;
 	
-  //vec3 cdRainBoost = max( lightCd, clamp( lightLumaCd.rgb*10.0-9.0, vec3(0.0), vec3(1.0) ))*rainStrengthVal ;
-  //float cdRainBoost = clamp( lightLuma*10.0-9.0, 0.0, 1.0 ) * rainStrengthVal * depthBias ;
-  float cdRainBoost = clamp( lightLuma*20.0-19.0, 0.0, 1.0 ) * rainStrengthVal * depthBias ;
-  //outCd.rgb += cdRainBoost * (depthBias*.7+.3) ;
+  // Added color offset while raining
+  float cdRainBoost = clamp( lightLuma*20.0-19.0, 0.0, 1.0 ) * .5 * rainStrengthVal * depthBias ;
 
 // Block Surface Rolloff
 //   Helps with block visibility in the dark
   // Grey out all blocks when raining
-	outCd.rgb *= mix(vec3(1.0), vec3(toCamNormalDot*dotRainShift+(.55+dotRainShift)), min(1.0,depth*.5+min(.5,lightCd.r*.5)));
+	outCd.rgb *= vec3(mix(1.0, min(1.25,toCamNormalDot*dotRainShift+(.55+dotRainShift)), min(1.0,depth*.5+min(.5,lightCd.r*.5)))+cdRainBoost);
+  //outCd.rgb *= lightCd.rgb;
 
   // Bring back more color when raining
- 	outCd.rgb *= mix( toFogColor.rgb+lightCd,
+  // TODO : Fix while not raining and optimization
+  //          Does too little to warrent leaving in for now
+ 	/*outCd.rgb = mix( toFogColor.rgb+lightCd,
         vec3(min(1.0,toCamNormalDot*dotRainShift+dotRainShift))+cdRainBoost,
-        min(1.0,depth*1.5+max(lightLuma*depthBias,cdRainBoost)*.15)) + darknessOffset;
+        min(1.0,depth*1.5+max(lightLuma*depthBias,cdRainBoost)*.15)) ;*/
+  
+ 	float greyCdRain = float( lightShadowBlend*clamp( min(1.0,depthBias+(1.0-rainStrengthVal)+lightShadowBlend)-rainStrengthVal*.5+depthBias, 0.0, 1.0)+.2 );
+ 	outCd.rgb = mix( vec3(luma(outCd.rgb)), outCd.rgb, min(1.0, greyCdRain+(1.0-rainStrengthVal)) );
+
+  //outCd.rgb = vec3( depthBias);
+
 
 #endif
 
@@ -1404,10 +1407,9 @@ float darknessOffset = 0.0;
 
 // Giving icy biomes a little bit of that ring'ting'dingle'bum
 
-	float frozenSnowGlow = 1.0+(1.0-BiomeTemp)*.3;
-	glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.5*(1.0-sunPhaseMult)*max(0.06,-sunMoonShadowInf)*max(0.0,(1.0-depth*3.0)));
+	glowCd = addToGlowPass(glowCd, outCd.rgb*FrozenGlowMult*.5*(1.0-sunPhaseMult)*max(0.06,-sunMoonShadowInf)*max(0.0,(1.0-depth*3.0)));
 
-	outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-sunMoonShadowInf*.1)*rainStrengthInv;//;
+	outCd.rgb *= 1.0+FrozenGlowMult*max(0.06,-sunMoonShadowInf*.1)*rainStrengthInv;//;
     
     
 // -- -- -- -- -- -- -- -- -- -- -- 
@@ -1416,10 +1418,11 @@ float darknessOffset = 0.0;
 
 // Brighten blocks when going spelunking
 // TODO: Promote control to Shader Options
-	float skyBrightMultFit = min(1.0, 1.0-skyBrightness*.1*(1.0-frozenSnowGlow) );
+	float skyBrightMultFit = min(1.0, 1.0-skyBrightness*.1*(1.0-FrozenGlowMult) );
 	outCd.rgb *= skyBrightMultFit;
 		
 	outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightness));
+	//outCd.rgb*=clamp(lightCd.rgb, 0.0, 1.0);
 	
 
   // I just can't get this looking good on Iris
@@ -1429,7 +1432,6 @@ float darknessOffset = 0.0;
 #endif
 
 	glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
-
 	glowCd = mix(glowCd, vColor.rgb, isLava );
 
 	vec3 glowHSV = rgb2hsv(glowCd);
@@ -1452,9 +1454,6 @@ float darknessOffset = 0.0;
 	
 	float outEffectGlow = 0.0;
 	
-	
-	// TODO : Dupelicate? Or actually doing something?
-	outCd.a*=vAlphaMult;
 	
 	// Blend Average color with Smart Blur color through plasticity value
 	vec3 outCdHSV = rgb2hsv(outCd.rgb);
@@ -1528,11 +1527,13 @@ float darknessOffset = 0.0;
 
 	//debugCd = debugCd * debugLightCd * vec4(vColor.rgb*(1.0-debugBlender)+(debugBlender),1.0) * vColor.aaaa;
 	debugCd = debugCd * debugLightCd * vColor * vColor.aaaa;
-	outCd = mix( outCd, debugCd, debugBlender);
+	outCd.rgb = mix( outCd.rgb, debugCd.rgb, debugBlender);
 #endif
 
 // -- -- --
-  //tmpCd = vec4( vec3(screenDewarp), 1.0 );
+
+	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
+  //tmpCd = vec4( vec3(lightCd), 1.0 );
   //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
@@ -1540,6 +1541,7 @@ float darknessOffset = 0.0;
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
 	outLighting = vec4( lightLumaBase, lightLumaBase, 0.0, 1.0);
 	outGlow = vec4( glowHSV, 1.0 );
+	//outGlow = vec4( vec3(0.0), 1.0 );
 
 //}
 }
