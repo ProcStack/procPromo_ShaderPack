@@ -412,10 +412,65 @@ void main() {
 // -- World Color Modes -- -- --
 // -- -- -- -- -- -- -- -- -- --
 
-    if( WorldColor ){ // Greyscale
-      outCd.rgb = vec3( luma(baseCd.rgb) );
-    }
 
+  // Matricies would be overkill for this...
+  //   Precomputed values from transformation matrices
+  //   Sources: https://ixora.io/projects/colorblindness/color-blindness-simulation-research/
+  //            https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
+  // Data gathering and assistance from Claude Sonnet
+
+  #if ( BaseQuality == 2 )
+    #if ( WorldColor == 1 ) // Protanopia (red-blind)
+        // Transformation matrix for protanopia simulation
+        mat3 protanopia = mat3(
+            0.567, 0.433, 0.0,
+            0.558, 0.442, 0.0,
+            0.0,   0.242, 0.758
+        );
+        outCd.rgb = protanopia * baseCd.rgb;
+    #elif ( WorldColor == 2 ) // Deuteranopia (green-blind)
+        // Transformation matrix for deuteranopia simulation
+        mat3 deuteranopia = mat3(
+            0.625, 0.375, 0.0,
+            0.7,   0.3,   0.0,
+            0.0,   0.3,   0.7
+        );
+        outCd.rgb = deuteranopia * baseCd.rgb;
+    #elif ( WorldColor == 3 ) // Tritanopia (blue-blind)
+        // Transformation matrix for tritanopia simulation
+        mat3 tritanopia = mat3(
+            0.95,  0.05,  0.0,
+            0.0,   0.433, 0.567,
+            0.0,   0.475, 0.525
+        );
+        outCd.rgb = tritanopia * baseCd.rgb; 
+    #elif ( WorldColor == 4 ) // Greyscale
+        outCd.rgb = vec3( luma(baseCd.rgb) );
+    #endif
+    
+  #else
+    
+    #if ( WorldColor == 1 ) // Protanopia (red-blind)
+      // Derived from matrix: outR = 0.567*R + 0.433*G; outG = 0.558*R + 0.442*G; outB = 0.758*B + 0.242*G
+      outCd.r = mix( baseCd.r, baseCd.g, 0.433 ) * 1.2; // Boost purely to keep brightness
+      outCd.g = mix( baseCd.r, baseCd.g, 0.442 ) * 1.2; // Boost purely to keep brightness
+      outCd.b = mix( baseCd.b, baseCd.g, 0.242 );
+    #elif ( WorldColor == 2 ) // Deuteranopia (green-blind)
+      // Derived from matrix: outR = 0.625*R + 0.375*G; outG = 0.7*R + 0.3*G; outB = 0.7*B + 0.3*G
+      outCd.r = mix( baseCd.r, baseCd.g, 0.375 );
+      outCd.g = mix( baseCd.r, baseCd.g, 0.3 );
+      outCd.b = mix( baseCd.b, baseCd.g, 0.3 );
+    #elif ( WorldColor == 3 ) // Tritanopia (blue-blind)
+      // Derived from matrix: outR = 0.95*R + 0.05*G; outG = 0.433*G + 0.567*B; outB = 0.525*B + 0.475*G
+      outCd.r = mix( baseCd.r, baseCd.g, 0.05 );
+      outCd.g = mix( baseCd.g, baseCd.b, 0.567 );
+      outCd.b = mix( baseCd.b, baseCd.g, 0.475 );
+    #elif ( WorldColor == 4 ) // Greyscale
+      outCd.rgb = vec3( luma(baseCd.rgb) );
+    #endif
+
+  #endif
+    
 
 // -- -- -- -- -- -- -- -- -- --
 // -- Debugging Visualization -- --

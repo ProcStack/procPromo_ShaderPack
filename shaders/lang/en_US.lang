@@ -2,7 +2,7 @@
 option.PROC_PROMO=
 value.PROC_PROMO.true=[:: procPromo Shader Pack v0.6 ::]
 value.PROC_PROMO.false=[:: §6§kgh§r §oprocPromo§r§6 §kij§r ::]
-option.PROC_PROMO.comment=§fThanks for trying my shader pack. §oCreated By §r§6Kevin Edzenga§7§o, 2022-2024. §oGitHub: §r§6ProcStack. §7§o(This button does nothing)
+option.PROC_PROMO.comment=§fThanks for trying my shader pack. §oCreated By §r§6Kevin Edzenga§7§o, 2022-2025. §oGitHub: §r§6ProcStack. §7§o(This button does nothing)
 
 #General Quality Controls
 
@@ -78,6 +78,9 @@ option.DebugView.comment=Toggle Debugging Colors & Effects; used in development 
 # -- -- --
 
 option.WorldColor=World Colors
-value.WorldColor.false=§1C§ao§3l§bo§6r§ei§5z§de§4d
-value.WorldColor.true=§fG§7r§8e§7y§fs§7c§8a§7l§fe
-option.WorldColor.comment=Toggle full color or greyscale. When greyscale, everything appears black & white, except for glowing colors, for funsies. §7§o(Color Blind options to come).
+value.WorldColor.0=§bC§ao§3l§1o§6r§ei§5z§de§4d
+value.WorldColor.1=§aProtanopia
+value.WorldColor.2=§cDeuteranopia
+value.WorldColor.3=§cTritanopia
+value.WorldColor.4=§fG§7r§8e§7y§fs§7c§8a§7l§fe
+option.WorldColor.comment=Toggle full color or greyscale. Colorblind options available: Protanopia (red-blind), Deuteranopia (green-blind), and Tritanopia (blue-blind). These filters help distinguish colors better for those with color vision deficiencies.

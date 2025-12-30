@@ -831,7 +831,8 @@ void main() {
 	
 	
 	// Alpha Test
-	baseTxCd.a = max(baseTxCd.a * vColor.a, vAlphaRemove)  ;
+	//baseTxCd.a = max(baseTxCd.a * vColor.a, vAlphaRemove)  ;
+	baseTxCd.a = max(baseTxCd.a, vAlphaRemove)  ;
 
 	#if( DebugView == 4 )
 		baseTxCd.a = mix(baseTxCd.a, 1.0, step(screenSpace.x,.0)*vAlphaRemove);
@@ -839,7 +840,7 @@ void main() {
 		baseTxCd.a = mix(baseTxCd.a, 1.0, vAlphaRemove) * vAlphaMult;
 	#endif
 
-	if ( baseTxCd.a  < .2 ){
+	if ( baseTxCd.a  < .1 ){
 		discard;
 	}
 	
@@ -1089,6 +1090,7 @@ void main() {
 
 //  Distance influence of surface shading --
 //  TODO : !! Cleans up shadow crawl with better values
+
   shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid)
                     * skyBrightness * rainStrengthInv * nightLightInfluence;
                     //* skyBrightness * rainStrengthInv * moonPhaseMultTerrain * nightLightInfluence;
@@ -1117,25 +1119,26 @@ void main() {
 	//lightCd = max( lightCd, diffuseSun);
 
   // Updates testing --
+  //lightCd = mix(  lightCd, mix( lightCd * 2.0 * diffuseSun, lightCd*(diffuseSun*.5+.5), lightShadowBlend ), eyeBrightnessFit );
   lightCd = mix(  lightCd, mix( lightCd * 2.0 * diffuseSun, lightCd*(diffuseSun*.5+.5), lightShadowBlend ), eyeBrightnessFit );
 
 	
 // Mix translucent color
-	float lColorMix = clamp( shadowData.r*(1.0-shadowBase)
-														* clamp( shadowDepthInf*2.0-1.0, 0.0, 1.0)
-														- shadowData.b*.5, 0.0, 1.0 ) * vNormalSunInf ;
+	//float lColorMix = clamp( shadowData.r*(1.0-shadowBase)
+	//													* clamp( shadowDepthInf*2.0-1.0, 0.0, 1.0)
+	//													- shadowData.b*.5, 0.0, 1.0 ) * vNormalSunInf ;
 	//lightCd = mix( lightCd, lightCd*(fogColor*(1.0-worldPosYFit)+(shadowCd.rgb*.5+.15)*worldPosYFit), lColorMix );
 	//lightCd = mix( lightCd, (shadowCd.rgb*2.0+.5), lColorMix );
 
 
 // Strength of final shadow
-  float lightColorMixer = moonPhaseMultTerrain * skyBrightness * rainStrengthInv;
+  //float lightColorMixer = moonPhaseMultTerrain * skyBrightness * rainStrengthInv;
 	//outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg)*moonPhaseMultTerrain;
 	//outCd.rgb = shadowAvg+lightCd*shadowLightInf;
 
   float lightDepthRainMixer = mix( depthBias*depthBias, (depthBias*.5+.5), rainStrengthInv );
 
-	outCd.rgb *=  mix(  vec3(min(  1.0,lightShadowBlend*lightDepthRainMixer+moonPhaseMultTerrain)), vec3(1.0), sunPhaseMult) ;
+	outCd.rgb *=  mix( vec3(1.0),  vec3(min(  1.0,lightShadowBlend*lightDepthRainMixer+moonPhaseMultTerrain)), (1.0-sunPhaseMult)*skyBrightness  );
 
 
 
@@ -1297,8 +1300,13 @@ float skyGreyInf = 0.0;
 		float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
 		// General brightness under water
 			
-		outCd.rgb *=  smoothDepth+lightLuma*.35+glowInf*.5-max(0.0,.15-glowInf);
-		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.93)+(smoothDepth*.35+.25);
+    // Darker --
+		//outCd.rgb *=  smoothDepth+lightLuma*.35+glowInf*.5-max(0.0,.15-glowInf);
+		//outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma*.93)+(smoothDepth*.35+.25);
+		
+    // Lighter --
+    outCd.rgb *=  smoothDepth+lightLuma*.5+glowInf*.5-max(0.0,.15-glowInf);
+		outCd.rgb *=  toFogColor*(1.0+lightLuma*lightLuma)+(smoothDepth*.25+.35);
 
 // -- -- --
 
@@ -1419,10 +1427,12 @@ float skyGreyInf = 0.0;
 // Brighten blocks when going spelunking
 // TODO: Promote control to Shader Options
 	float skyBrightMultFit = min(1.0, 1.0-skyBrightness*.1*(1.0-FrozenGlowMult) );
-	outCd.rgb *= skyBrightMultFit;
+	//outCd.rgb *= skyBrightMultFit;
 		
-	outCd.rgb*=mix(vec3(1.0), lightCd.rgb, min(1.0,  sunPhaseMult*skyBrightness));
-	//outCd.rgb*=clamp(lightCd.rgb, 0.0, 1.0);
+	//outCd.rgb*=mix( vec3(1.0), lightCd.rgb*skyBrightMultFit, min(1.0,  sunPhaseMult*skyBrightness) );
+    
+	outCd.rgb*= lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonShadowInf*skyBrightness) );
+    
 	
 
   // I just can't get this looking good on Iris
@@ -1461,6 +1471,7 @@ float skyGreyInf = 0.0;
 
 #ifdef NETHER
   // Boost reds in lit areas of the nether
+  // TODO : Clean up formatting
   float netherRedBoost = clamp(lightLumaBase*1.5-0.50,0.0,1.0);
   outCdHSV.g = clamp( outCdHSV.g + netherRedBoost * netherRedBoost * .05,
                .0, min(1.0,min(outCdHSV.g*1.35,depthBias*depthBias*.45+.65+outCdHSV.g)));
