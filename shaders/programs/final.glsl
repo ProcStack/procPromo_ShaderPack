@@ -414,12 +414,12 @@ void main() {
 
 
   // Matricies would be overkill for this...
-  //   Precomputed values from transformation matrices
   //   Sources: https://ixora.io/projects/colorblindness/color-blindness-simulation-research/
   //            https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
   // Data gathering and assistance from Claude Sonnet
 
-  #if ( BaseQuality == 2 )
+  #if ( BaseQuality == 2 ) // High Quality Mode
+
     #if ( WorldColor == 1 ) // Protanopia (red-blind)
         // Transformation matrix for protanopia simulation
         mat3 protanopia = mat3(
@@ -448,26 +448,38 @@ void main() {
         outCd.rgb = vec3( luma(baseCd.rgb) );
     #endif
     
-  #else
+  #else // Everything Else Mode, Low - Mid
     
+    // Precomputed `mix()` values from transformation matrices
     #if ( WorldColor == 1 ) // Protanopia (red-blind)
       // Derived from matrix: outR = 0.567*R + 0.433*G; outG = 0.558*R + 0.442*G; outB = 0.758*B + 0.242*G
-      outCd.r = mix( baseCd.r, baseCd.g, 0.433 ) * 1.2; // Boost purely to keep brightness
+      outCd.r = mix( baseCd.r, baseCd.g, 0.433 ) * 1.2; // Boost purely to keep brightness; Magic Numbers are bad, but ... look dev
       outCd.g = mix( baseCd.r, baseCd.g, 0.442 ) * 1.2; // Boost purely to keep brightness
-      outCd.b = mix( baseCd.b, baseCd.g, 0.242 );
+      outCd.b = mix( baseCd.b, baseCd.g, 0.242 ) * 0.9 ; // Boost purely to keep brightness
     #elif ( WorldColor == 2 ) // Deuteranopia (green-blind)
       // Derived from matrix: outR = 0.625*R + 0.375*G; outG = 0.7*R + 0.3*G; outB = 0.7*B + 0.3*G
-      outCd.r = mix( baseCd.r, baseCd.g, 0.375 );
-      outCd.g = mix( baseCd.r, baseCd.g, 0.3 );
-      outCd.b = mix( baseCd.b, baseCd.g, 0.3 );
+      outCd.r = mix( baseCd.r, baseCd.g, 0.375 ) * 1.5 ; // Same dip as above
+      outCd.g = mix( baseCd.r, baseCd.g, 0.3 ) * 1.1;
+      outCd.b = mix( baseCd.b, baseCd.g, 0.3 ) * 0.8 ;
     #elif ( WorldColor == 3 ) // Tritanopia (blue-blind)
       // Derived from matrix: outR = 0.95*R + 0.05*G; outG = 0.433*G + 0.567*B; outB = 0.525*B + 0.475*G
-      outCd.r = mix( baseCd.r, baseCd.g, 0.05 );
-      outCd.g = mix( baseCd.g, baseCd.b, 0.567 );
+      outCd.r = mix( baseCd.r, baseCd.g, 0.05 ); // Same dip as above
+      outCd.g = mix( baseCd.g, baseCd.b, 0.567 ) * 0.9 ;
       outCd.b = mix( baseCd.b, baseCd.g, 0.475 );
     #elif ( WorldColor == 4 ) // Greyscale
       outCd.rgb = vec3( luma(baseCd.rgb) );
     #endif
+
+    // If curious about the magic-number boost values --
+    //   Matrix multiplication rotates the vector around the color space,
+    //     Keeping magnitude / brightness the same vector length.
+    //   Using a Mix is like taking a linear blend between two colors,
+    //     Try linearly blending two vectors / matrices together and see what happens-
+    //       Volume collapse
+    //         The difference between Lerp & Slerp
+    //   So you are losing magnitude in certain areas of the blended color,
+    //     The boost magic numbers are set by-eye to help things look better,
+    //       Look dev
 
   #endif
     

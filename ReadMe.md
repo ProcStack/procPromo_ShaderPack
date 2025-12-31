@@ -1,4 +1,4 @@
-# ProcStack's procPromo v0.6.1
+# ProcStack's procPromo v0.6.2
 ### Optifine & Iris Shader Pack
 #### MC 1.21.11; Mounts of Mayhem
 
@@ -31,17 +31,42 @@ As of **June 15th 2025**, **Iris** for **Fabric** *( Sodium Renderer )* is now w
 <br/> - Edge highlights to make the environment pop that little bit more.
 <br/>&nbsp;      <sub>( Minihud's Shapes and Overlays are supported, yeee )</sub>
 
-#### Video Settings > Shaders > Shader Options
-<null/> - `DetailBluring` - How much block bluring is killing your game's vibe
-<br/> - `LightingBrightness` - Master slider for that final, whole kitten kaboodle, last touch of brightness multiplication
-<br/> - `EdgeShading` - Edge highlightings influence percent
-<br/> - `GlowBrightness` - Change how much snow blindess you get while playing the game
+---
 
-<br/> - `SolidLeaves` - Don't like the solid leaves? Turn off those bubblicious bubble gum blocks 
-<br/> - `UnderWaterBlur` - Ever open your eyes under water? Yeah, its all blur and wobbly.  Get your Water vision Here!
-<br/> - `GreyWorld` - To heck with block colors!
+#### Video Settings -> Shaders / Shader Packs -> Shader Options / Settings
+<null/> - `Base Quality` - Reduce the ammount of texture blurring samples, heavier math functions, and performance slow downs.
+<br/>&nbsp;&nbsp; The other options denote fidelity, this option is how that fidelity is utilized.
+<br/>&nbsp;&nbsp; Note - Color blindness math in `World Colors` is an estimate on Low & Mid `Base Quality` settings for performance; if it's an issue, please contact me.
+<br/><br/> - `Dark Color Levels` - How dark any colors can get.
+<br/>&nbsp;&nbsp; Set this higher if you are a streamer or recording video.
+<br/><br/> - `Bright Color Levels` - How bright any colors can get.
+<br/>&nbsp;&nbsp; Set this lower if things are too bright.
+<br/>&nbsp;&nbsp; Set this higher if you want to see the light!
+<br/><br/> - `Glow Amount` - How blinded the glow makes you
+<br/><br/> - `Fog Amount` - Is the fog limiting your vision? Heck with it!
+<br/>&nbsp;&nbsp; Or if you want to be playing Silent Hill
+<br/><br/> - `Detail Bluring` - How much block bluring is killing your game's vibe
+<br/><br/> - `Edge Outlines` - Want some of those thick lines on your blocks?
+<br/>&nbsp;&nbsp; Or maybe it's too thick
+
+<br/><br/> - `Under Water Effects` - Ever open your eyes under water?
+<br/>&nbsp;&nbsp; Yeah, its all blur and wobbly.
+<br/>&nbsp;&nbsp;&nbsp;&nbsp; Get your Water vision Here!
+<br/>&nbsp;&nbsp; If you are getting sick underwater, turn this off
+<br/><br/> - `Solid Leaves` - Don't like the solid leaves? Turn off those bubblicious bubble gum blocks 
+
+<br/><br/> - `Shadow Quality` - How good does that shadow look?
+<br/><br/> - `Shadow Resolution` - Shadow look too blocky? Set it higher! 4096-8192
+<br/>&nbsp;&nbsp; Your computer fans sound like jet engines? Set this lower, 1024-2048
+<br/><br/> - `Debug Vision` - This one's mostly for me, while developing the shader.
+<br/>&nbsp;&nbsp; Set the `Shadow Cam` to see what the sun/moon is seeing
+<br/><br/> - `World Colors` - For the major color blindness types of `Protanopia`, `Deuteranopia`, & `Tritanopia`
+<br/>&nbsp;&nbsp; And Greyscale for fun!
+<br/>&nbsp;&nbsp;&nbsp;&nbsp; See if you can beat the dragon in greyscale!
 <br/>
 
+
+---
 ---
 ---
 
@@ -97,6 +122,6 @@ Mojang's Promotional Art style'n'vibe!
 
 #### Optifine's Shader Environment Learning Models
 *[Capt Tatsu's BSL Shaders v8](https://bitslablab.com)*
-<br>*[Sildur's Vibrant shaders](https://www.curseforge.com/minecraft/customization/sildurs-vibrant-shaders)*
+<br/>*[Sildur's Vibrant shaders](https://www.curseforge.com/minecraft/customization/sildurs-vibrant-shaders)*
 
 

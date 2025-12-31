@@ -10,16 +10,16 @@ option.BaseQuality=Base Quality
 value.BaseQuality.0 = Low
 value.BaseQuality.1 = Mid
 value.BaseQuality.2 = High
-option.BaseQuality.comment=Reduce the ammount of texture blurring samples, heavier math functions, and performance slow downs.  Below options denote fidelity, this option is how that fidelity is utilized.
+option.BaseQuality.comment=Reduce the ammount of texture blurring samples, heavier math functions, and performance slow downs.  Below options denote fidelity, this option is how that fidelity is utilized.  Note - Color blindness math is estimated on Low & Mid levels for performance, if an issue, contact me.
 
 # -- -- --
 
 #Color Values & Gamma
 
-option.LightBlackLevel=Black Color Levels
+option.LightBlackLevel=Dark Color Levels
 option.LightBlackLevel.comment=Set how dark lighting can get; This offsets darker color values to brighten the entire environment. Lower values are moodier, higher values are better for streaming or video recording. 0.0, blacks = §8black. 0.5, blacks = §7grey. 1.0, blacks = white 
 
-option.LightWhiteLevel=White Color Levels
+option.LightWhiteLevel=Bright Color Levels
 option.LightWhiteLevel.comment=Set how bright block lighting can get. As light emitting blocks also appear to glow, this will also affect how much glow is visible.  0.0, white = §7grey. 1.0, white = white. 2.0, white = §l§oBLINDING
 
 option.FogAmount=Fog Amount
@@ -29,7 +29,7 @@ option.FogAmount.comment=Set how much the fog influences the world.
 
 #Screen Style Effects
 
-option.GlowBrightness=Glow Ammount
+option.GlowBrightness=Glow Amount
 option.GlowBrightness.comment=Set how bright glow appears. Glow from light emitting blocks, along with brighter colored blocks in direct sunlight / near lighting (torches, lanterns, etc), and particles. 0.0, no glow. 1.0, default glow. 2.0, blown out glow colors.
 
 option.DetailBlurring=Detail Blurring
@@ -83,4 +83,4 @@ value.WorldColor.1=§aProtanopia
 value.WorldColor.2=§cDeuteranopia
 value.WorldColor.3=§cTritanopia
 value.WorldColor.4=§fG§7r§8e§7y§fs§7c§8a§7l§fe
-option.WorldColor.comment=Toggle full color or greyscale. Colorblind options available: Protanopia (red-blind), Deuteranopia (green-blind), and Tritanopia (blue-blind). These filters help distinguish colors better for those with color vision deficiencies.
+option.WorldColor.comment=Assistive needs; Change how your colors look on screen.  Fully Colorized.  Protanopia (red-blind).  Deuteranopia (green-blind).  Tritanopia (blue-blind).  Greyscale
