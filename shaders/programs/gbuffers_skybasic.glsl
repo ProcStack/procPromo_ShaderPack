@@ -24,6 +24,7 @@ varying vec3 vFogSkyBlends;
 varying vec3 vNormal;
 
 varying float vSkyGrey;
+varying float vSkyGreyInfo;
 varying vec3 vMorningFogColors;
 varying vec3 vMorningSkyColors;
 varying vec3 vEveningFogColors;
@@ -46,6 +47,7 @@ const vec3 skyColorMorning = vec3(0.7647058823529411, 0.7372549019607844, 0.7176
 const vec3 skyColorAntiMorning = vec3(0.34, 0.34215686274509803, 0.6511764705882353);
 const vec3 skyColorEvening = vec3(0.3411764705882353, 0.47843137254901963, 0.7294117647058823);
 const vec3 skyColorAntiEvening = vec3(0.4519607843137255, 0.37254901960784315, 0.7819607843137255);
+
 
 
 
@@ -91,6 +93,12 @@ void main() {
   vFogSkyBlends.z = min( 1.0, max( 0.0, -sunPosSinu.y ) * fadeScalar * fadeOutMorning );
 
 
+  // -- -- -- -- -- -- -- --
+
+  float greyInf = (skyColor.b-skyColor.r) / skyColor.b;
+  greyInf = max( 0.0, 1.0-greyInf*5.0 );
+
+  vSkyGreyInfo = max( greyInf, rainStrength );
 
   // -- -- -- -- -- -- -- --
 
@@ -147,6 +155,7 @@ varying vec3 vFogSkyBlends;
 varying vec3 vNormal;
 
 varying float vSkyGrey;
+varying float vSkyGreyInfo;
 varying vec3 vMorningFogColors;
 varying vec3 vMorningSkyColors;
 varying vec3 vEveningFogColors;
@@ -163,7 +172,10 @@ const vec3 fogColorDay = vec3(0.7254901960784313, 0.8274509803921568, 1.0);
 const vec3 fogColorNight = vec3(0.0392156862745098, 0.043137254901960784, 0.0784313725490196);
 
 // Time of day Sky Colors
+// pxlNav Day Sky Color
 const vec3 skyColorDay = vec3(0.47058823529411764, 0.6549019607843137, 1.0);
+// Default Minecraft Day Sky Color
+const vec3 defaultSkyColorDay = vec3(0.4862745098039216, 0.6392156862745098, 1.0);
 const vec3 skyColorNight = vec3(0.0, 0.0, 0.0);
 
 
@@ -179,8 +191,8 @@ void main() {
   upDot = 1.0-(1.0-upDot)*(1.0-upDot);
 
 if( BaseQuality > 0 ){
-  vec3 skyCd = mix( skyColor.rgb, vec3(vSkyGrey), rainStrength);
-  vec3 fogCd = mix( fogColor, vec3(vSkyGrey*.65), rainStrength);
+  vec3 skyCd = mix( skyColor.rgb, vec3(vSkyGrey), vSkyGreyInfo);
+  vec3 fogCd = mix( fogColor, vec3(vSkyGrey*.65), vSkyGreyInfo);
 
   outCd.rgb = mix(fogCd, skyCd, upDot);
   
@@ -193,12 +205,13 @@ if( BaseQuality > 0 ){
 
 #ifdef OVERWORLD
 
-  float curRainStrength = min(1.0,rainStrength*2.0);
-  float halfUpDot = upDot*.5;
+  float curRainStrength = min(1.0,vSkyGreyInfo*2.0);
+  float semiUpDot = biasToOne(upDot*.75);
   vec3 morningColors = mix( vMorningFogColors, vMorningSkyColors, upDot );
   vec3 eveningColors = mix( vEveningFogColors, vEveningSkyColors, upDot );
-  vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), curRainStrength);
-  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, halfUpDot ), vec3(vSkyGrey), curRainStrength);
+  //vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), curRainStrength);
+  vec3 dayColors = mix( mix( fogColorDay, defaultSkyColorDay, semiUpDot ), vec3(vSkyGrey), curRainStrength);
+  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, semiUpDot ), vec3(vSkyGrey), curRainStrength);
 
   outCd.rgb = mix( morningColors, eveningColors, vFogSkyBlends.y );
 
@@ -229,7 +242,7 @@ if( BaseQuality > 0 ){
 
   float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
 
-
+  //outCd.rgb = vec3(vSkyGreyInfo);
 
   //outCd.rgb = vec3( min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning ) );
 

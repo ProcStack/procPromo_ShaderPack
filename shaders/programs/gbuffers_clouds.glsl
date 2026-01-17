@@ -316,13 +316,13 @@ void main() {
 	
   // Opacity Logic
   #ifdef IS_IRIS
-    float alphaDistFit = .75;
+    float alphaDistFit = 1.0;
     float alphaOffset = 0.5;
   #else
     float alphaDistFit = .375;
     float alphaOffset = 0.25;
   #endif
-  outCd.a *= min( 1.0, color.a * max(0.0,1.0-distMix*distMix*30.0) * alphaDistFit * distantClouds + alphaOffset );
+  outCd.a *= min( 1.0, color.a * max(0.0,1.0-distMix*distMix*15.0) * alphaDistFit * distantClouds + alphaOffset );
   
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+toSun*.2 + toSun*toSun*toSun*.05)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*2.0+.2) * distantClouds;

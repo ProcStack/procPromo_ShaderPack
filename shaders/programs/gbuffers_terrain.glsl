@@ -31,6 +31,8 @@ uniform mat4 shadowProjection;
 uniform vec3 upPosition;
 uniform vec3 cameraPosition;
 uniform float far;
+uniform float rainStrength;
+uniform vec3 skyColor;
 
 uniform mat3 normalMatrix;
 
@@ -109,13 +111,14 @@ out float vColorOnly;
 out float vDeltaPow;
 out float vDeltaMult;
 out float vShadowValid;
+out float vBiomeColorInf;
 
 
 // Having some issues with Iris
 //   Putting light texture matrix for compatability
 const mat4 LIGHT_TEXTURE_MATRIX = mat4(vec4(0.00390625, 0.0, 0.0, 0.0), vec4(0.0, 0.00390625, 0.0, 0.0), vec4(0.0, 0.0, 0.00390625, 0.0), vec4(0.03125, 0.03125, 0.03125, 1.0));
 
-const float EPSLION = 0.0001;
+const float EPSILON = 0.0001;
 
 void main() {
   //vec3 normal = normalMatrix * vaNormal;
@@ -139,7 +142,7 @@ void main() {
   vToCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal)*.6;
 
   float posLen = length(position);
-  vNormalSunInf = step( EPSLION, vNormalSunDot)*max(0.0, 1.0-posLen * Normal_InfFalloffRate );
+  vNormalSunInf = step( EPSILON, vNormalSunDot)*max(0.0, 1.0-posLen * Normal_InfFalloffRate );
   vAnimFogNormal = normalMatrix*vec3(1.0,0.0,0.0);
   
   //vCamViewVec =  normalize((mat3(gbufferModelView) * normalize(vec3(-1.0,0.0,.0)))*vec3(1.0,0.0,1.0));
@@ -184,14 +187,10 @@ void main() {
   //mixColor = mix( vec3(length(vColor.rgb)), mixColor, step(.1, length(mixColor)) );
   mixColor = mix( vec3(vColor.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
 
-  vAvgColor = vec4( mixColor, vColor.a); // 1.0);
+  vAvgColor = vec4( mixColor, vColor.a);
 
-
-  //lmcoord = vaUV0;//vec2(vaUV2);
-  //lmcoord = vec2(vaUV2);
+  // Lightmap coords
   lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
-
-  //lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
   // Get atlas shift & limits for detail blurring
   vec2 texcoordminusmid = texcoord.xy-midcoord;
@@ -209,13 +208,15 @@ void main() {
 	// Invert vert  modelVert positions 
   float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-  float shadowPushAmmount =  (depth*.2 + .00030 ) ;
+  //float shadowPushAmmount =  (depth*.2 + .00030 ) ;
+  float shadowPushAmmount =  ( .0000001 ) ;
 	
-  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;//vaNormal;
-	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
+  vec3 shadowNormal = normalMatrix*gl_Normal;//mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;//vaNormal;
+	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.y) );
 	
 	// `+ (0.75-depth*.55)` is scalping fixes
-	sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.55	) );
+	//sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.15	) );
+	sNormRef = max( -shadowNormal.y*depth, sNormRef );
   shadowPushAmmount *= sNormRef;
   vec3 shadowPush = shadowNormal*shadowPushAmmount ;
   
@@ -248,6 +249,14 @@ void main() {
 
 	dayNightMult = mix( 1.0, moonPhaseMultTerrain, (1.0-sunPhaseMult) * eyeBrightnessFit );
   
+
+  // Block Tinting
+  //   Specifically the Pale Garden biome
+  //     I'd like to expand this to more biomes later
+  //       Like Lush Caves with a hint of green would be delightful
+  float greyInf = (skyColor.b-skyColor.r) / skyColor.b;
+  vBiomeColorInf =  (min(1.0,greyInf*5.0) * .8 + .2) * step( rainStrength, EPSILON );
+
 #endif
   
   
@@ -765,6 +774,7 @@ in float vFinalCompare;
 in float vDeltaPow;
 in float vDeltaMult;
 in float vShadowValid;
+in float vBiomeColorInf;
 
 void main() {
 
@@ -1019,8 +1029,8 @@ void main() {
 	vec3 shadowData = texture(shadowcolor1, projectedShadowPosition.xy).rgg;
 	shadowData.b = max(0.0, shadowData.g - length(shadowPosLocal.xy) ) * shadowDistBiasMult;
 	
-	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowFade ); 
-	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowData.r*shadowFade ); 
+	// //shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowFade ); 
+	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowData.r*shadowFade ); 
 
 // Higher the value, the softer the shadow
 //   ...well "softer", distance of multi-sample
@@ -1039,7 +1049,8 @@ void main() {
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
   
-    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), axisSamplesFit);
+    //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), axisSamplesFit);
+    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
   }
 #elif ShadowSampleCount == 3
   vec2 posOffset;
@@ -1048,7 +1059,8 @@ void main() {
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
+    //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
+    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
   }
 #elif ShadowSampleCount > 3
   vec2 posOffset;
@@ -1057,7 +1069,8 @@ void main() {
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
     projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 																	* shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
+    //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
+    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
   }
 #endif
   
@@ -1085,6 +1098,7 @@ void main() {
   float nightLightInfluence = (1.0-lightLumaBase);
   nightLightInfluence = clamp( nightLightInfluence*nightLightInfluence * 6.0, 0.1,1.0);
   nightLightInfluence = mix( 1.0, nightLightInfluence, moonShadowToggle );
+
 
 // -- -- --
 
@@ -1120,7 +1134,8 @@ void main() {
 
   // Updates testing --
   //lightCd = mix(  lightCd, mix( lightCd * 2.0 * diffuseSun, lightCd*(diffuseSun*.5+.5), lightShadowBlend ), eyeBrightnessFit );
-  lightCd = mix(  lightCd, mix( lightCd * 2.0 * diffuseSun, lightCd*(diffuseSun*.5+.5), lightShadowBlend ), eyeBrightnessFit );
+  //lightCd = mix(  lightCd, mix( lightCd * diffuseSun, lightCd*(diffuseSun*.5+.5), lightShadowBlend ), eyeBrightnessFit );
+  lightCd =  max( lightCd, lightCd * (diffuseSun*.5*eyeBrightnessFit+.5*(1.0-eyeBrightnessFit))) ;
 
 	
 // Mix translucent color
@@ -1181,9 +1196,7 @@ void main() {
 	//   Felt I'd need to store too many values to buffers for a post process to work well
 	//     It didn't make sense to do, for me
 	lightCd = shiftBlackLevels( lightCd );
-	surfaceShading = max( surfaceShading, lightCd.r );
-	surfaceShading = ( surfaceShading * lightCd.r );
-	surfaceShading = shiftBlackLevels( surfaceShading );
+	surfaceShading = shiftBlackLevels( max( surfaceShading, lightCd.r ) * lightCd.r );
 	
 
 // -- -- -- -- -- -- --
@@ -1433,7 +1446,7 @@ float skyGreyInf = 0.0;
     
 	outCd.rgb*= lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonShadowInf*skyBrightness) );
     
-	
+	//outCd.rgb = lightLumaCd.rgb;
 
   // I just can't get this looking good on Iris
   //   So now no gets block occlusion!!
@@ -1482,7 +1495,7 @@ float skyGreyInf = 0.0;
   glowHSV.b = glowHSV.b * (fogColorDampen*.75 + depthBias*.25);
 #endif
 
-  
+  outCdHSV.g *= vBiomeColorInf;
 	outCd.rgb = hsv2rgb( vec3(mix(avgCdHSV.r,outCdHSV.r,vFinalCompare*step(.25,luma(vAvgColor.rgb))), outCdHSV.gb) );// *vec3(1.1) ;
 	
 // Boost bright colors morso
@@ -1544,7 +1557,10 @@ float skyGreyInf = 0.0;
 // -- -- --
 
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
-  //tmpCd = vec4( vec3(lightCd), 1.0 );
+  //tmpCd = vec4( vec3( mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonShadowInf*skyBrightness) ) ), 1.0 );
+  //tmpCd = vec4( vec3( sunMoonShadowInf ), 1.0 );
+  //tmpCd = vec4( vec3( skyBrightness ), 1.0 );
+  //tmpCd = vec4( vec3( vBiomeColorInf ), 1.0 );
   //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);

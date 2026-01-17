@@ -130,7 +130,7 @@ void main() {
   outCd = baseCd;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 
-  float bodyThresh = .125;
+  float bodyThresh = .2;
   float uvbase = max( abs(fituv.x-.5), abs(fituv.y-.5) );
   float sunBody = step(bodyThresh,uvbase);
   
@@ -143,7 +143,7 @@ void main() {
   //dfLen = (dfLen*dfLen)*vDfLenMult;
   vec3 sunCd = mix( outCd.rgb, vGlowEdgeCd * dfLen, sunBody);
   
-  outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
+  //outCd.rgb = sunCd;//mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
 
 
 
@@ -178,9 +178,9 @@ void main() {
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
 
-  //outCd.rgb = vec3(1.0,0.0,1.0);
-//outCd.rgb = vec3(vWorldTime);
-//outCd.a=1.0;
+  //outCd.rgb = vec3(1.0,0.0,1.0)
+  outCd.rgb = vec3(baseCd.rgb);
+  outCd.a=1.0;
 
   //outCd.rgb = vec3(uvshift.xy,0.);
   //outCd.a =1.0;//skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun;

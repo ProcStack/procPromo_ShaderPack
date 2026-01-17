@@ -77,6 +77,7 @@ Ayo, I'm Kevin
 
 This is my first shader pack for Optifine, (now with Iris support!)
 <br/>&nbsp; It's been quite a journey so far.
+<br>&nbsp;&nbsp;&nbsp; *(Nearly 4 years later now, end 2025; legacy-code creep is now a thing, hahah)*
 
 I wanted to build the backbone for a general purpose shader pack.
 <br/>&nbsp; A short term project to rip appart for future shader packs.

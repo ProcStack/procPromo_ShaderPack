@@ -68,7 +68,7 @@ const float shadowThreshold_Entity = shadowThreshold*.05;
 
 //const float shadowThreshBase = 0.000045; // Bias near to Camera
 //const float shadowThreshBase_Entity = 0.00003; // gbuffers_entities.glsl
-const float shadowThreshBase = 0.00003; // Bias near to Camera
+const float shadowThreshBase = 0.000045; // Bias near to Camera
 const float shadowThreshBase_Entity = 0.001; // gbuffers_entities.glsl
 const float shadowThreshDist = 0.000026; // Bias far from Camera
 
