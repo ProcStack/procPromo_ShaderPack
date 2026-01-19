@@ -201,6 +201,7 @@ void main() {
 
   // -- -- -- -- -- -- -- --
 	
+  vBiomeColorInf = 1.0;
 
 #ifdef OVERWORLD
   
@@ -255,7 +256,7 @@ void main() {
   //     I'd like to expand this to more biomes later
   //       Like Lush Caves with a hint of green would be delightful
   float greyInf = (skyColor.b-skyColor.r) / skyColor.b;
-  vBiomeColorInf =  (min(1.0,greyInf*5.0) * .8 + .2) * step( rainStrength, EPSILON );
+  vBiomeColorInf =  min( 1.0, (min(1.0,greyInf*5.0) * .8 + .2) + rainStrength );
 
 #endif
   
