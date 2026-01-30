@@ -11,6 +11,7 @@ uniform float frameTimeCounter;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 
+uniform vec3 cameraPosition;
 uniform vec3 sunPosition;
 uniform float sunAngle;
 uniform vec3 upPosition;
@@ -35,6 +36,7 @@ varying vec3 vFogSkyBlends;
 varying vec3 sunVecNorm;
 varying vec3 upVecNorm;
 varying float dayNight;
+varying float vToCam;
 
 varying vec4 shadowPos;
 
@@ -58,6 +60,9 @@ void main() {
   color = gl_Color;
 
   shadowPos = position;
+
+  vec3 toCam = normalize( -position.xyz );
+  vToCam = min( 1.0, dot( toCam, vNormal )*.25+.75+min( 1.0, length(position.xyz)*.0015)*.25 );
 	
 	// -- -- --
 
@@ -140,6 +145,7 @@ varying vec3 vSunWorldPos;
 varying vec3 vSunPos;
 varying vec3 vWorldPos;
 varying vec3 vFogSkyBlends;
+varying float vToCam;
 
 varying vec4 shadowPos;
 
@@ -213,7 +219,7 @@ void main() {
   
 	// -- -- --
 
-  if( BaseQuality == 2 ){
+  else if( BaseQuality == 2 ){
 
     float upDot = max(0.0, dot(normalize(vPos.xyz), gbufferModelView[1].xyz));
     //upDot = 1.0-(1.0-upDot)*(1.0-upDot);
@@ -400,6 +406,7 @@ void main() {
   // -- -- --
 
   outCd.rgb = mix( outCd.rgb, vec3( luma(color.rgb) ), rainStrFit);
+  outCd.rgb *= vToCam;
   
 
   #if ( DebugView == 4 )

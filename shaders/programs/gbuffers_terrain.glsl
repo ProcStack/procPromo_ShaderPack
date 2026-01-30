@@ -1150,6 +1150,7 @@ void main() {
 // Strength of final shadow
   //float lightColorMixer = moonPhaseMultTerrain * skyBrightness * rainStrengthInv;
 	//outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg)*moonPhaseMultTerrain;
+	outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg);
 	//outCd.rgb = shadowAvg+lightCd*shadowLightInf;
 
   float lightDepthRainMixer = mix( depthBias*depthBias, (depthBias*.5+.5), rainStrengthInv );
@@ -1445,7 +1446,8 @@ float skyGreyInf = 0.0;
 		
 	//outCd.rgb*=mix( vec3(1.0), lightCd.rgb*skyBrightMultFit, min(1.0,  sunPhaseMult*skyBrightness) );
     
-	outCd.rgb*= lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonShadowInf*skyBrightness) );
+	outCd.rgb*= min( vec3(1.0), lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonShadowInf*skyBrightness) ) + skyBrightMultFit);
+	//outCd.rgb = vec3( skyBrightMultFit );
     
 	//outCd.rgb = lightLumaCd.rgb;
 
@@ -1558,10 +1560,7 @@ float skyGreyInf = 0.0;
 // -- -- --
 
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
-  //tmpCd = vec4( vec3( mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonShadowInf*skyBrightness) ) ), 1.0 );
-  //tmpCd = vec4( vec3( sunMoonShadowInf ), 1.0 );
-  //tmpCd = vec4( vec3( skyBrightness ), 1.0 );
-  //tmpCd = vec4( vec3( vBiomeColorInf ), 1.0 );
+  //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
   //outCd = tmpCd;
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);

@@ -4,6 +4,8 @@
 
 #ifdef VSH
 
+#include "utils/mathFuncs.glsl"
+
 uniform sampler2D gtexture;
 uniform mat4 gbufferModelView;
 uniform int renderStage;
@@ -13,6 +15,7 @@ uniform vec3 moonPosition;
 uniform int moonPhase;
 uniform int worldTime;
 uniform float frameTimeCounter;
+uniform float rainStrength;
 
 uniform vec3 fogtexture;
 uniform vec3 skyColor;
@@ -29,7 +32,7 @@ varying float isSun;
 varying vec3 vSkyUV;
 varying vec2 vTexCoord;
 
-const vec3 sunInnerCd = vec3( 1.0, 1.0, 0.99607843137 );
+#define sunOuterCd vec3( 0.9, 0.9, 0.1 )
 
 void main() {
 
@@ -51,7 +54,14 @@ void main() {
 
   vec3 modelPos = gbufferModelView[3].xyz;
   
-  isSun = step( .5, dot( normalize(sunPosition), normalize(position.xyz) ) );
+  // Set sun variable
+  isSun = 0.0;
+  if (renderStage == MC_RENDER_STAGE_SUN) {
+    isSun = 1.0;
+  }
+  
+  // Legacy, no if
+  //isSun = step( .5, dot( normalize(sunPosition), normalize(position.xyz) ) );
 
   vTexCoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
@@ -81,13 +91,15 @@ void main() {
     //vFittedUV = vTexCoord.st;
     //vGlowEdgeCd = texture2D(gtexture, vec2(0.49375)).rgb; // .5+.0625+.03125
     //vGlowEdgeCd = texture2D(gtexture, vec2(vMidCoord)).rgb; // .5+.0625+.03125
-    vGlowEdgeCd = sunInnerCd; // .5+.0625+.03125
+    vGlowEdgeCd = sunOuterCd; // .5+.0625+.03125
     vDfLenMult = .45;
   }else{
     //vFittedUV = vTexCoord.st*vec2(4.0,2.0) ;
     vGlowEdgeCd = fogtexture*moonPhaseMult;
     vDfLenMult = .3;
   }
+
+  vGlowEdgeCd = mix( vGlowEdgeCd, vec3(luma(vGlowEdgeCd)), rainStrength);
   
   gl_FogFragCoord = gl_Position.z;
 }
@@ -125,8 +137,8 @@ uniform vec3 fogtexture;
 #define sunOuterCd vec3( 0.9, 0.9, 0.1 )
 
 // Sun settings -
-#define bodyThresh 0.02 // Step(bodyThresh, deltaUVs)
-#define outlineThresh 0.016 // Step(outlineThresh, deltaUVs)
+#define bodyThresh 0.018 // Step(bodyThresh, deltaUVs)
+#define outlineThresh 0.0138 // Step(outlineThresh, deltaUVs)
 #define dfMult 22.5 // Sun Aura Mutliplier
 
 // -- -- --
@@ -174,8 +186,10 @@ void main() {
   // Clear sky Blue = 0xFF = 255/255 = 1.0
   // Rain sky Blue = 0x88 = 136/255 = 0.53333333333
   // Thunder sky Blue = 0x33 = 51/255 = 0.2 = 1.0/(1.0-.2) = 1.25
-  float skyGreyInf =  (skyColor.b-.2)*1.25;
-  outCd.a = mix( 1.0, skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun, rainMix );
+  //   Note - Since this is copied from Terrain, those are the default values
+  //            Stylistically for the Sun in Rain, picked 10.0
+  float skyGreyInf =  clamp( (skyColor.b-.2)*0.75, 0.0, 1.0 );
+  outCd.a = mix( 1.0, skyGreyInf * skyGreyInf * isSun, rainMix  );
 
 #elif defined(NETHER)
   outCd = texture2D(gtexture, uv) * vColor;
@@ -209,7 +223,7 @@ void main() {
   //  //outCd.rgb = vec3( vColor.rgb*.1 );
   //outCd.rgb = vec3( isSun, 1.0-isSun, 0.0 );
   //outCd.rgb = vec3( vGlowEdgeCd * dfLen );
-  outCd.a=1.0;
+  //outCd.a=1.0;
 
   //outCd.rgb = vec3(uvshift.xy,0.);
   //outCd.a =1.0;//skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun;

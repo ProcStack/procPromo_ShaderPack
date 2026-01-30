@@ -9,9 +9,12 @@
 
 uniform int renderStage;
 uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferProjectionInverse;
 uniform float sunAngle;
 uniform float rainStrength;
 uniform vec3 skyColor;
+uniform vec3 sunPosition;
 
 attribute vec4 mc_Entity;
 
@@ -30,6 +33,8 @@ varying vec3 vMorningSkyColors;
 varying vec3 vEveningFogColors;
 varying vec3 vEveningSkyColors;
 
+varying vec3 vSunVec;
+varying float toSunMoonDot;
 
 #define PI 3.1415926535897932384626433832795
 #define TAU (2.0 * PI)
@@ -85,12 +90,10 @@ void main() {
 
   float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
 
-  vec3 sunPosSinu = normalize(vec3(cos(sunAngle*TAU), sin(sunAngle*TAU),0.0));
-
-  vFogSkyBlends.x = min( 1.0, max( 0.0, sunPosSinu.y ) * fadeScalar * fadeOutMorning );
+  vFogSkyBlends.x = min( 1.0, max( 0.0, vSunPos.y ) * fadeScalar * fadeOutMorning );
 
   vFogSkyBlends.y = min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning );
-  vFogSkyBlends.z = min( 1.0, max( 0.0, -sunPosSinu.y ) * fadeScalar * fadeOutMorning );
+  vFogSkyBlends.z = min( 1.0, max( 0.0, -vSunPos.y ) * fadeScalar * fadeOutMorning );
 
 
   // -- -- -- -- -- -- -- --
@@ -103,7 +106,7 @@ void main() {
   // -- -- -- -- -- -- -- --
 
 
-  float toSunMoonDot = clamp( dot( sunPosSinu, normalize(vWorldPos) ) * .5 + .5, 0.0, 1.0);
+  toSunMoonDot = clamp( dot( vSunPos, normalize(vWorldPos) ) * .5 + .5, 0.0, 1.0);
 
 
   // Set morning or evening base color
@@ -114,6 +117,7 @@ void main() {
 
   // -- -- -- -- -- -- -- --
 
+  vSunVec = normalize( (gbufferModelViewInverse * vec4(sunPosition,0.0)).xyz );
 
   //vFogSkyBlends.x = vFogSkyBlends.x * vFogSkyBlends.x;
   //vFogSkyBlends.y = 1.0 - (1.0-vFogSkyBlends.y)*(1.0-vFogSkyBlends.y);
@@ -166,6 +170,8 @@ const int GL_EXP = 2048;
 
 uniform int fogMode;
 
+varying float vSunVec;
+varying float toSunMoonDot;
 
 // Time of day Fog Colors
 const vec3 fogColorDay = vec3(0.7254901960784313, 0.8274509803921568, 1.0);
@@ -242,7 +248,8 @@ if( BaseQuality > 0 ){
 
   float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
 
-  //outCd.rgb = vec3(vSkyGreyInfo);
+  //outCd.rgb = vec3( toSunMoonDot );
+  //outCd.rgb = vec3( length(vSunVec-vWorldPos)*.01 );
 
   //outCd.rgb = vec3( min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning ) );
 
