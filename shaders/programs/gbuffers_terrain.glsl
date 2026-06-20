@@ -456,6 +456,10 @@ void main() {
 		vDeltaMult=2.5;
 		vDeltaPow=.5;
     vCdGlow *= .0;
+  }else if( mc_Entity.x == 181 ){ // Sulfer & Cinnabar
+		vDeltaMult=3.5;
+		vDeltaPow=.35;
+    vCdGlow *= .0;
   }else if( mc_Entity.x == 303 ){ // Nether Quartz Ore
 		vAvgColor = vec4( 0.29, 0.107, 0.107, 1.0 );
 		vDeltaMult=4.0;
