@@ -1,6 +1,6 @@
-# ProcStack's procPromo v0.6.2
+# ProcStack's procPromo v0.7.0
 ### Optifine & Iris Shader Pack
-#### MC 1.21.11; Mounts of Mayhem
+#### MC 1.26.3; Wilderness Bound
 
 *Inpired by Mojang's [promo art style](https://www.minecraft.net/content/dam/games/minecraft/key-art/nether-header.jpg) for Minecraft
 <br/> Those [Cartoonized](https://www.minecraft.net/content/dam/games/minecraft/key-art/CC-Part%20I-Announce-Header.jpg) Vibes
