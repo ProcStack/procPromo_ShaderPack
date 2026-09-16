@@ -226,6 +226,8 @@ void main() {
   shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);
   shadowPos.w = 1.0;
 
+  // Match shadow.glsl: warp per vertex before rasterization and interpolation.
+  shadowPos = distortShadowShift(shadowPos);
   vShadowValid=step(abs(shadowPos.x),1.0)*step(abs(shadowPos.y),1.0);
 	
   #if ( DebugView == 3 ) // Debug Vision : Shadow Debug
@@ -872,16 +874,19 @@ void main() {
 			float debugDetailBlurring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
 			//debugDetailBlurring *= debugDetailBlurring;
 			debugDetailBlurring = mix( DetailBlurring, debugDetailBlurring, step(screenSpace.x,0.75));
-			diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, debugDetailBlurring, baseCd, txCd, avgDelta );
+			//diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, debugDetailBlurring, baseCd, txCd, avgDelta );
+			diffuseSampleLiteXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, debugDetailBlurring, baseCd, txCd, avgDelta );
 		#else
 			vec2 uvLimitPerc = vec2( 1.0, 1.0 ); // Vertical half slab limits is X, Horizontal is Y
 			//diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, uvLimitPerc, vShiftUVs, DetailBlurring, baseCd, txCd, avgDelta);
 			//diffuseSampleXYZFetch( gcolor, tuv, texcoordmid, texelSize, screenSpace.x, baseCd, txCd, avgDelta);
-			diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, DetailBlurring, baseCd, txCd, avgDelta );
+			//diffuseSampleXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, DetailBlurring, baseCd, txCd, avgDelta );
+			diffuseSampleLiteXYZ( gcolor, tuv, vtexcoordam, texelSize, vShiftUVs, DetailBlurring, baseCd, txCd, avgDelta );
 		#endif
 	}else{
 		txCd = texture(gcolor, tuv);
 	}
+
 
 	
 	vec4 baseBlurColor = txCd;
@@ -969,7 +974,7 @@ void main() {
 // -- -- -- -- -- -- -- --
 // Based on shadow lookup from Chocapic13's HighPerformance Toaster
 //
-  float shadowDist = 0.0;
+  //float shadowDist = 0.0;
   float diffuseSun = 1.0;
   float shadowAvg = 1.0;
   vec4 shadowCd = vec4(0.0);
@@ -979,7 +984,7 @@ void main() {
   float surfaceShading = 9.0-abs(toCamNormalDot);
 		
 	
-	float shadowRainStrength = rainStrengthVal;
+	//float shadowRainStrength = rainStrengthVal;
 
 
 // -- -- -- -- -- -- -- -- -- -- -- --
@@ -993,9 +998,6 @@ void main() {
 #if ShadowSampleCount > 0
 
   vec3 localShadowOffset = shadowPosOffset;
-  //localShadowOffset.z *= (skyBrightness*.5+.5);
-  //localShadowOffset.z *= min(1.0,outDepth*20.0+.7)*.1+.9;
-  //localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias)) * shadowThreshold );
   localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
   
   vec4 shadowPosLocal = shadowPos;
@@ -1004,35 +1006,24 @@ void main() {
 // Implement --	
 //  vWorldNormal.y*(1.0-shadowData.b)
 
-  shadowPosLocal = distortShadowShift( shadowPosLocal );
+  // shadowPos was warped per vertex to match the shadow caster coordinates.
+  vec3 baseShadowLookup = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
 
-/*
-  vec2 outUV=shadowPosLocal.xy;
-  outUV.xy = abs(outUV.xy);
-  //
-  float pLen = outUV.x*.5;
-  outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
-  pLen = outUV.y*.5;
-  outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
-  shadowPosLocal.xy /= outUV;
-*/
 
-  vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult;
-  float shadowFade = clamp( (1.0-max(abs(shadowPosLocal.x),abs(shadowPosLocal.y))) * shadowEdgeFade, 0.0, 1.0) ;
+  vec3 projectedShadowPosition = baseShadowLookup;
+  //float shadowFade = clamp( (1.0-max(abs(shadowPosLocal.x),abs(shadowPosLocal.y))) * shadowEdgeFade, 0.0, 1.0) ;
 
 // Get base shadow value
-  //float shadowtex1=shadow2D(shadowtex0, projectedShadowPosition + localShadowOffset).x; 
-  float shadowBase = texture(shadowtex0, projectedShadowPosition + localShadowOffset);
-  float waterShadowBase = texture(shadowtex1, projectedShadowPosition + localShadowOffset);
+  float shadowBase = texture(shadowtex0, baseShadowLookup);
+  //float waterShadowBase = texture(shadowtex1, projectedShadowPosition + localShadowOffset);
 	
 // Get base shadow source block color
-	projectedShadowPosition = projectedShadowPosition + localShadowOffset;
-  shadowCd=texture(shadowcolor0, projectedShadowPosition.xy); 
+  shadowCd=texture(shadowcolor0, baseShadowLookup.xy); 
 	
 // Get shadow source distance
 // Delta of frag shadow distance * shadowDistBiasMult
-	vec3 shadowData = texture(shadowcolor1, projectedShadowPosition.xy).rgg;
-	shadowData.b = max(0.0, shadowData.g - length(shadowPosLocal.xy) ) * shadowDistBiasMult;
+	vec3 shadowData = texture(shadowcolor1, baseShadowLookup.xy).rgg;
+	shadowData.b = max(0.0, shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
 	
 	// //shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowFade ); 
 	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowData.r*shadowFade ); 
@@ -1041,7 +1032,8 @@ void main() {
 //   ...well "softer", distance of multi-sample
   reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
 
-  reachMult = max(0.0, reachMult - (min(1.0,outDepth*20.0)*.5));
+  reachMult = max(0.0, reachMult - (min(1.0,outDepth*1000.0)*.5));
+  //reachMult = 0.0;
 
   // Delay shadowAvg to let shadowBase return
 	shadowAvg = shadowBase ;
@@ -1051,29 +1043,21 @@ void main() {
   
   for( int x=0; x<axisSamplesCount; ++x){
     posOffset = axisSamples[x]*reachMult*shadowMapTexelSize;//*skyBrightness;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
-																	* shadowPosMult + localShadowOffset;
+    //projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
+		//															* shadowPosMult + localShadowOffset;
+    projectedShadowPosition = baseShadowLookup + vec3( posOffset, 0.0 );
   
     //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), axisSamplesFit);
-    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
+    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition) );
   }
-#elif ShadowSampleCount == 3
+#elif ShadowSampleCount >= 3
   vec2 posOffset;
   
   for( int x=0; x<boxSamplesCount; ++x){
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
-																	* shadowPosMult + localShadowOffset;
-    //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
-    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
-  }
-#elif ShadowSampleCount > 3
-  vec2 posOffset;
-  
-  for( int x=0; x<boxSamplesCount; ++x){
-    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
-																	* shadowPosMult + localShadowOffset;
+    //projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
+		//															* shadowPosMult + localShadowOffset;
+    projectedShadowPosition = baseShadowLookup + vec3( posOffset, 0.0 );
     //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
     shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
   }
@@ -1088,7 +1072,8 @@ void main() {
 	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb*vNormalSunInf, vNormalSunInf);
 
 // Distance Rolloff
-  shadowAvg = shadowAvg + min(1.0, (length(projectedShadowPosition.xy)*.0025)*1.5);//
+  //shadowAvg = shadowAvg + min(1.0, (length(projectedShadowPosition.xy)*.0025)*1.5);//
+  shadowAvg = clamp(shadowAvg + min(1.0, length(baseShadowLookup.xy) * 0.00375), 0.0, 1.0);
   
   float shadowInfFit = 0.025;
   float shadowInfFitInv = 40.0; // 1.0/shadowInfFit;
@@ -1099,7 +1084,7 @@ void main() {
   
 // -- -- --
 
-	shadowRainStrength *= shadowData.b;
+	//shadowRainStrength *= shadowData.b;
   float nightLightInfluence = (1.0-lightLumaBase);
   nightLightInfluence = clamp( nightLightInfluence*nightLightInfluence * 6.0, 0.1,1.0);
   nightLightInfluence = mix( 1.0, nightLightInfluence, moonShadowToggle );

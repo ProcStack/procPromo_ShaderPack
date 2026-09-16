@@ -36,7 +36,7 @@ void main() {
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 0,6 */
+/* RENDERTARGETS: 0 */
 
 #include "/shaders.settings"
 
@@ -68,9 +68,6 @@ void main() {
   outCd=txCd*color;
 	
   gl_FragData[0] = outCd;
-    gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
-  //gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
-  gl_FragData[1] = vec4(vec3(0.0),1.0);
 
 }
 #endif

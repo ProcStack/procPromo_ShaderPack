@@ -78,6 +78,8 @@ const vec3 shadowPosOffset = vec3(0.5,0.5,shadowThreshold);
 const vec3 shadowPosOffset_Entity = vec3(0.5,0.5,shadowThreshold_Entity);
 const vec3 shadowPosMult = vec3(.5);
 
+const float shdEpsilon = 0.00001;
+
 // -- -- -- -- -- -- -- --
 
 
@@ -158,10 +160,10 @@ vec2 axisBias(vec2 shadowSpaceUV, float offset, float mult){
 }
 vec2 perAxisBias(vec2 shadowSpaceUV, float offset, float mult){
   vec2 outUV=shadowSpaceUV;
-  float pLen = abs(outUV.x)*.5;
-  outUV.x = pow(pLen+offset,(.65)-pLen*(mult));
-  pLen = abs(outUV.y)*.5;
-  outUV.y = pow(pLen+offset,(.65)-pLen*(mult));
+  float pLen = abs(outUV.x)*.5*mult;
+  outUV.x = pow(pLen+offset,(.65)-pLen);
+  pLen = abs(outUV.y)*.5*mult;
+  outUV.y = pow(pLen+offset,(.65)-pLen);
   return outUV;
 }
 vec2 axisBias(vec2 shadowSpaceUV){
@@ -183,9 +185,9 @@ vec4 distortShadowShift(vec4 shadowSpacePos) {
   outUV.xy = abs(outUV.xy);
   //
   float pLen = outUV.x*.5;
-  outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  outUV.x = pow(pLen+shadowAxisBiasPosOffset, max(shdEpsilon,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
   pLen = outUV.y*.5;
-  outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  outUV.y = pow(pLen+shadowAxisBiasPosOffset, max(shdEpsilon,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
   shadowSpacePos.xy /= outUV;
   //
 
@@ -197,9 +199,9 @@ vec4 distortShadowShift(vec4 shadowSpacePos, float scalar) {
   outUV.xy = abs(outUV.xy);
   //
   float pLen = outUV.x*.5;
-  outUV.x = pow(pLen+shadowAxisBiasPosOffset*scalar, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  outUV.x = pow(pLen+shadowAxisBiasPosOffset*scalar,  max(shdEpsilon,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
   pLen = outUV.y*.5;
-  outUV.y = pow(pLen+shadowAxisBiasPosOffset*scalar, max(0.0,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
+  outUV.y = pow(pLen+shadowAxisBiasPosOffset*scalar,  max(shdEpsilon,shadowAxisBiasOffset-pLen*shadowAxisBiasMult));
   shadowSpacePos.xy /= outUV;
   //
   

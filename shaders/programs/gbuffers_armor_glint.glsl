@@ -122,7 +122,7 @@ void main() {
   #endif
 
   gl_FragData[0] = outCd;
-  //gl_FragData[1] = vec4(vec3(gl_FragCoord.w), 1.0);
+  gl_FragData[1] = vec4(vec3(gl_FragCoord.w), 1.0);
   gl_FragData[2] = vec4( vNormal*.5+.5, 1.0 );
   gl_FragData[3] = vec4( glowHSV, 1.0 );
     

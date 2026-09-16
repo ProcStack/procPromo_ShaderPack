@@ -46,7 +46,8 @@
     #ifdef IS_IRIS
       // Well how about that `chunkOffset` was breaking Entity locations
       //   Removing the modelView and ChunkOffset fixes the issue in Iris
-      vec4 position = shadowProjection  * vec4(vaPosition,1.0);
+      //vec4 position = shadowProjection  * vec4(vaPosition,1.0);
+      vec4 position = shadowProjection * gl_Vertex;
     #else
       vec4 position = ftransform();
     #endif
@@ -171,7 +172,7 @@ const int shadowcolor1Format = RG16;
     
 		shadowCd.a*=1.0-vIsTranslucent;
     outCd = shadowCd;
-    outCd = outAlpha;
+    //outCd = outAlpha;
     //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
     outData = vec4( shadowDist/far, shadowDist, shadowCd.aa );
     //outData = vec4( vIsTranslucent, vShadowDist, 0.0, 0.0 );

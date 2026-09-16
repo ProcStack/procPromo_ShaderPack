@@ -19,14 +19,14 @@ void main() {
 //   Rewrite gbuffer originated shadow buffer
 
 varying vec2 texcoord;
-uniform sampler2D colortex6;
+//uniform sampler2D colortex6;
 uniform sampler2D colortex7;
 uniform sampler2D shadowtex0;
 uniform sampler2D shadowtex1;
 
 void main() {
   // Shadow Buffer; Water if enabled, Shadow otherwise
-  vec4 waterShadowCd = texture2D(shadowtex0, texcoord);
+  //vec4 waterShadowCd = texture2D(shadowtex0, texcoord);
   // Shadow Buffer; Shadow
   vec4 shadowCd = texture2D(shadowtex1, texcoord);
   

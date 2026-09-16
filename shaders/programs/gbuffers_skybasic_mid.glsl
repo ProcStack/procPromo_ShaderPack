@@ -1,0 +1,244 @@
+// GBuffer - Sky Basic GLSL
+// Written by Kevin Edzenga, ProcStack; 2022-2023
+//
+
+
+#include "utils/mathFuncs.glsl"
+#include "utils/stylization.glsl"
+
+#ifdef VSH
+
+uniform int renderStage;
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferProjectionInverse;
+uniform float sunAngle;
+uniform float rainStrength;
+uniform vec3 skyColor;
+uniform vec3 sunPosition;
+
+attribute vec4 mc_Entity;
+
+varying vec4 texcoord;
+varying vec4 vPos;
+varying vec3 vSunPos;
+varying vec3 vWorldPos;
+varying vec4 vColor;
+varying vec3 vFogSkyBlends;
+varying vec3 vNormal;
+
+varying float vSkyGrey;
+varying float vSkyGreyInfo;
+varying vec3 vMorningFogColors;
+varying vec3 vMorningSkyColors;
+varying vec3 vEveningFogColors;
+varying vec3 vEveningSkyColors;
+
+varying vec3 vSunVec;
+varying float toSunMoonDot;
+
+#define PI 3.1415926535897932384626433832795
+#define TAU (2.0 * PI)
+
+// Time of day Fog Colors
+const vec3 fogColorMorning = vec3(0.7647058823529411, 0.7372549019607844, 0.7176470588235294);
+const vec3 fogColorAntiMorning = vec3(0.34, 0.34215686274509803, 0.6511764705882353);
+//const vec3 fogColorEvening = vec3(0.7764705882352941, 0.5137254901960784, 0.34901960784313724);
+const vec3 fogColorEvening = vec3(0.892156862745098, 0.42823529411764707, 0.28137254901960785);
+const vec3 fogColorAntiEvening = vec3(0.4519607843137255, 0.37254901960784315, 0.7819607843137255);
+
+
+// Time of day Sky Colors
+const vec3 skyColorMorning = vec3(0.7647058823529411, 0.7372549019607844, 0.7176470588235294);
+const vec3 skyColorAntiMorning = vec3(0.34, 0.34215686274509803, 0.6511764705882353);
+const vec3 skyColorEvening = vec3(0.3411764705882353, 0.47843137254901963, 0.7294117647058823);
+const vec3 skyColorAntiEvening = vec3(0.4519607843137255, 0.37254901960784315, 0.7819607843137255);
+
+
+
+
+void main() {
+
+  // Star Fading Logic
+  //   Shift `sunAngle` from worldTime 0 at 6:00 to worldTime 0 at 12:00
+  //     World Time 12000 would be 18:00
+  //   Add .75 instead of subtracting .25 for positive fract morning hours
+  float dayNight = 1.0-abs(fract(sunAngle+.75)-.5) * 2.0;
+  dayNight = min(1.0, max(0.0,dayNight-.4) * 5.0);
+
+  vNormal = normalize(gl_NormalMatrix * gl_Normal);
+  
+  vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  vPos = position;
+
+  gl_Position = gl_ProjectionMatrix * position;
+
+  vWorldPos = gl_Vertex.xyz;
+  vColor = gl_Color;
+
+  texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+  
+
+  vSkyGrey = getSkyGrey(skyColor.rgb);
+
+  vSunPos = normalize(vec3(cos(sunAngle*TAU), sin(sunAngle*TAU),0.0));
+
+  float midDayCheck = step( abs(sunAngle - 0.5), .25); // Is it after midday / midnight ?
+  float sunSetRiseCheck = step( .5, sunAngle ); // Is it after sunset / sunrise ?
+  const float fadeScalar = 2.5;
+  float fadeIns = sunAngle*4.0+.5;
+  vFogSkyBlends = vec3( 0.0 );
+
+  float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
+
+  vFogSkyBlends.x = min( 1.0, max( 0.0, vSunPos.y ) * fadeScalar * fadeOutMorning );
+
+  vFogSkyBlends.y = min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning );
+  vFogSkyBlends.z = min( 1.0, max( 0.0, -vSunPos.y ) * fadeScalar * fadeOutMorning );
+
+  // -- -- -- -- -- -- -- --
+
+  float greyInf = (skyColor.b-skyColor.r) / skyColor.b;
+  greyInf = max( 0.0, 1.0-greyInf*5.0 );
+
+  vSkyGreyInfo = max( greyInf, rainStrength );
+
+  // -- -- -- -- -- -- -- --
+
+  // Set morning or evening base color
+  vMorningFogColors = fogColorMorning;
+  vMorningSkyColors = skyColorMorning;
+  vEveningFogColors = fogColorEvening;
+  vEveningSkyColors = skyColorEvening;
+
+  // -- -- -- -- -- -- -- --
+
+  //vFogSkyBlends.x = vFogSkyBlends.x * vFogSkyBlends.x;
+  //vFogSkyBlends.y = 1.0 - (1.0-vFogSkyBlends.y)*(1.0-vFogSkyBlends.y);
+  //vFogSkyBlends.z = vFogSkyBlends.z * vFogSkyBlends.z;
+  
+  gl_FogFragCoord = gl_Position.z;
+}
+#endif
+
+#ifdef FSH
+/* RENDERTARGETS: 0,1 */
+
+uniform sampler2D gcolor;
+uniform sampler2D lightmap;
+uniform float rainStrength;
+uniform float dayNight;
+uniform int renderStage;
+
+uniform float sunAngle;
+
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferProjectionInverse;
+uniform vec3 fogColor;
+uniform vec3 skyColor;
+
+uniform float viewHeight;
+uniform float viewWidth;
+
+varying vec4 texcoord;
+varying vec4 vPos;
+varying vec3 vSunPos;
+varying vec3 vWorldPos;
+varying vec4 vColor;
+varying vec3 vFogSkyBlends;
+varying vec3 vNormal;
+
+varying float vSkyGrey;
+varying float vSkyGreyInfo;
+varying vec3 vMorningFogColors;
+varying vec3 vMorningSkyColors;
+varying vec3 vEveningFogColors;
+varying vec3 vEveningSkyColors;
+
+const int GL_LINEAR = 9729;
+const int GL_EXP = 2048;
+
+uniform int fogMode;
+
+varying float vSunVec;
+varying float toSunMoonDot;
+
+// Time of day Fog Colors
+const vec3 fogColorDay = vec3(0.7254901960784313, 0.8274509803921568, 1.0);
+const vec3 fogColorNight = vec3(0.0392156862745098, 0.043137254901960784, 0.0784313725490196);
+
+// Time of day Sky Colors
+// pxlNav Day Sky Color
+const vec3 skyColorDay = vec3(0.47058823529411764, 0.6549019607843137, 1.0);
+// Default Minecraft Day Sky Color
+const vec3 defaultSkyColorDay = vec3(0.4862745098039216, 0.6392156862745098, 1.0);
+const vec3 skyColorNight = vec3(0.0, 0.0, 0.0);
+
+
+void main() {
+  
+  vec4 outCd = vColor;
+  
+  vec4 basePos = vec4(gl_FragCoord.xy / vec2(viewWidth, viewHeight)*2.0 - 1.0, 1.0, 1.0);
+  vec4 pos = gbufferProjectionInverse * basePos;
+  //pos = gbufferModelView * vPos;
+  
+  float upDot = max(0.0, dot(normalize(pos.xyz), gbufferModelView[1].xyz));
+  upDot = 1.0-(1.0-upDot)*(1.0-upDot);
+
+if( BaseQuality > 0 ){
+  vec3 skyCd = mix( skyColor.rgb, vec3(vSkyGrey), vSkyGreyInfo);
+  vec3 fogCd = mix( fogColor, vec3(vSkyGrey*.65), vSkyGreyInfo);
+
+  outCd.rgb = mix(fogCd, skyCd, upDot);
+  
+  #if ( DebugView == 4 )
+    float debugBlender = step( .0, basePos.x);
+    outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
+  #endif
+    //outCd.rgb=skyCd.xyz;
+}
+
+#ifdef OVERWORLD
+
+  float curRainStrength = min(1.0,vSkyGreyInfo*2.0);
+  float semiUpDot = biasToOne(upDot*.75);
+  vec3 morningColors = mix( vMorningFogColors, vMorningSkyColors, upDot );
+  vec3 eveningColors = mix( vEveningFogColors, vEveningSkyColors, upDot );
+  //vec3 dayColors = mix( mix( fogColorDay, skyColorDay, halfUpDot ), vec3(vSkyGrey), curRainStrength);
+  vec3 dayColors = mix( mix( fogColorDay, defaultSkyColorDay, semiUpDot ), vec3(vSkyGrey), curRainStrength);
+  vec3 nightColors = mix( mix( fogColorNight, skyColorNight, semiUpDot ), vec3(vSkyGrey), curRainStrength);
+
+  outCd.rgb = mix( morningColors, eveningColors, vFogSkyBlends.y );
+
+  // Set day color
+  outCd.rgb = mix( outCd.rgb, dayColors, vFogSkyBlends.x );
+  // Set night color
+  outCd.rgb = mix( outCd.rgb, nightColors, vFogSkyBlends.z );
+
+  outCd.rgb = mix( outCd.rgb, vec3(luma(outCd.rgb*(skyColor*.5+.5))), curRainStrength );
+
+#endif
+  
+  // Get the stars back in
+  if(renderStage == MC_RENDER_STAGE_STARS) {
+    outCd.rgb = vec3(1.0,1.0,1.0);
+    outCd.a = upDot*upDot*(1.0-vFogSkyBlends.x);
+  }
+
+  if(renderStage == MC_RENDER_STAGE_VOID) {
+    outCd.rgb = texture2D(gtexture, texcoord.st).rgb;
+  }
+
+
+  const float fadeScalar = 2.5;
+  float fadeIns = sunAngle*4.0+.5;
+
+  float fadeOutMorning =  max( 0.0, 1.0 - max(0.0,fadeIns-4.0) * fadeScalar);// * step( 3.0, fadeIns );
+
+
+  gl_FragData[0] = outCd;
+  gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);
+
+}
+#endif

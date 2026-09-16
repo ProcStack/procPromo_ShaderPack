@@ -16,6 +16,7 @@
 
 #define ShadowSampleCount 2 // [0 1 2 3]
 
+#define SkyQuality 1    //[0 1 2]
 #define UnderWaterBlur true    //[true false]
 #define SolidLeaves true    //[true false]
 #define DebugView 0    //[0 1 2 3 4]

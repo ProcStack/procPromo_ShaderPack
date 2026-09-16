@@ -38,7 +38,7 @@ void main() {
 #endif
 
 #ifdef FSH
-/* RENDERTARGETS: 0,6 */
+/* RENDERTARGETS: 0 */
 
 /* --
 const int gcolorFormat = RGBA16;
@@ -79,9 +79,6 @@ void main() {
   
   
   gl_FragData[0] = outCd;
-  //gl_FragData[1] = vec4(vec3( gl_FragCoord.w ), 1.0);
-  //gl_FragData[2] = vec4(vNormal.xyz*.5+.5, 1.0);
-  gl_FragData[2] = vec4(vec3(0.0), 1.0);
 }
 #endif
 

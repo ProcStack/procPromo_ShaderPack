@@ -48,6 +48,12 @@ option.UnderWaterBlur.comment=Toggle Blurring & Warping while under water. If yo
 option.SolidLeaves=Solid Leaves
 option.SolidLeaves.comment=Toggle Solid Leaf Colors.  True, to match Mojang's promo/key art style. False, leaves will appear as default, see through leaves.
 
+option.SkyQuality=Sky Quality
+value.SkyQuality.0=Low
+value.SkyQuality.1=Mid
+value.SkyQuality.2=High
+option.SkyQuality.comment=Reduces sky color math.  Horizon colors, sunset/sunrize colors, etc. §oDoesn't affect Cloud Quality.
+
 # -- -- --
 
 #Shadow Options

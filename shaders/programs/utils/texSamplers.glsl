@@ -148,8 +148,45 @@ vec4 diffuseSample( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float r
 }
 
 
+// Used for Entities, they don't need a full 9 samplieses
+void diffuseSampleLiteXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float shiftUVs, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+  baseCd = texture2D(tx, uv);
+  sampleCd = baseCd ;
 
-void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float resScalar, float shiftUVs, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+  // Flatten Black/White to 0; -1 to 1
+  vec3 bwFlatten = vec3(1.200,0.930,1.20);
+  vec3 sampleXYZ = linearToXYZ( sampleCd.rgb ) * bwFlatten;
+  
+  vec2 res = texelRes * resScalar;
+  
+  vec2 curUV;
+  vec4 curCd;
+  vec3 curXYZ;
+  float delta=0.0;
+  float maxDelta = 0.0;
+  for( int x=0; x<crossSamplesCount; ++x){
+    curUV =  uv + crossSamples[x]*res - texelRes * shiftUVs ;
+    
+    curUV = fract(curUV)*uvLimits.pq+uvLimits.st;
+    
+    curCd = texture2D(tx, curUV);
+    curXYZ = linearToXYZ( curCd.rgb ) * bwFlatten ;
+    
+    delta = clamp( dot(sampleXYZ, curXYZ.rgb), -1.0, 1.0 );
+    delta = clamp( delta, 0.0, sampleCd.a * curCd.a );
+    delta = smoothstep( .25, .85, delta )*.5;
+    
+    sampleCd.rgb = mix(  sampleCd.rgb, curCd.rgb,  delta);
+    maxDelta = max( maxDelta, delta );
+    avgDelta += delta;
+  }
+
+  avgDelta = min(1.0, maxDelta*crossSamplesFit);
+  
+}
+
+
+void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, float shiftUVs, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
   baseCd = texture2D(tx, uv);
   sampleCd = baseCd ;
 
@@ -195,7 +232,7 @@ void diffuseSampleXYZ( sampler2D tx, vec2 uv, vec4 uvLimits, vec2 texelRes, floa
 
 
 
-void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, vec2 uvLimitPercent, float shiftUVs, float resScalar, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
+void diffuseSampleXYZFetch( sampler2D tx, vec2 uv, vec2 uvmid, vec2 texelRes, vec2 uvLimitPercent, float resScalar, float shiftUVs, inout vec4 baseCd, inout vec4 sampleCd, inout float avgDelta ){
   sampleCd = baseCd ;
   
   // Flatten Black/White to 0; -1 to 1
