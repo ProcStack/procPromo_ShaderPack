@@ -1475,13 +1475,22 @@ float skyGreyInf = 0.0;
 	//outCd.rgb*=1.0+glowHSV.z;
 
 
-	// -- -- -- -- -- -- -- -- -- -- 
-	// -- Lava & Powda Snow Fog - -- --
-	// -- -- -- -- -- -- -- -- -- -- -- --
+// -- -- -- -- -- -- -- -- -- -- 
+// -- Lava & Powda Snow Fog - -- --
+// -- -- -- -- -- -- -- -- -- -- -- --
 	float lavaSnowFogInf = 1.0-min(1.0, max(0.0,float(isEyeInWater)-1.0) );
 	glowHSV.z *= lavaSnowFogInf;
 	outCd.rgb = mix( fogColor.rgb, outCd.rgb, lavaSnowFogInf);
 
+
+// -- -- -- -- -- 
+// -- Haize -- -- --
+// -- -- -- -- -- -- --
+#ifdef OVERWORLD
+  float haizeBlender = clamp((1.0-(depthBias+.25)*1.25), 0.0, 1.0);
+  haizeBlender *= haizeBlender*(haizeBlender*.5+.5);
+  //outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
+#endif
 
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Texture Overides from Settings - -- --
@@ -1570,9 +1579,6 @@ float skyGreyInf = 0.0;
 
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
   //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
-  float haizeBlender = clamp((1.0-(depthBias+.25)*1.25), 0.0, 1.0);
-  haizeBlender *= haizeBlender*(haizeBlender*.5+.5);
-  outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

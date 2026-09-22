@@ -494,7 +494,20 @@ void main() {
 	float fogLuma = luma(fogColor);
 	outCd.rgb = mix( outCd.rgb*(max(vec3(fogColor*ambBrightness), fogColor.rgb)*.5+.5), outCd.rgb, depthFog );
 
-	
+
+// -- -- -- -- -- 
+// -- Haize -- -- --
+// -- -- -- -- -- -- --
+#ifdef OVERWORLD
+  float haizeBlender = clamp((1.0-(depthBias+.25)*1.25), 0.0, 1.0);
+  haizeBlender *= haizeBlender*(haizeBlender*.5+.5);
+  outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
+#endif
+
+// -- -- -- -- --
+// -- Debug -- -- --
+// -- -- -- -- -- -- --
+
   #if ( DebugView == 4 )
     float debugBlender = step( .0, vPos.x );
     outCd = mix( baseCd, outCd, debugBlender);
