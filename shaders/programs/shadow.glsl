@@ -52,13 +52,14 @@
     //texcoord = vaUV0;
     vec2 midcoord=mc_midTexCoord;
 
-    vec4 outCd = gl_Color;//vaColor;
+    vec4 outCd = vaColor;//vaColor;
+    outCd = texture(gtexture, midcoord);
 
     float avgBlend = .5;
 
+    /*
     ivec2 txlOffset = ivec2(2);
     vec3 mixColor;
-    outCd = vaColor*texture(gtexture, midcoord);
     vec4 tmpCd = outCd;
     mixColor = tmpCd.rgb;
     #if (BaseQuality > 0)
@@ -77,6 +78,7 @@
     mixColor = mix( vec3(outCd.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
 
     outCd = vec4( mixColor, outCd.a); // 1.0);
+    */
 
     //outCd = vec4( mixColor, 1.0);
 
@@ -171,7 +173,7 @@ const int shadowcolor1Format = RG16;
 
     //shadowDist = step( .05, shadowDist );
 		
-		//shadowCd.a*=1.0-vIsTranslucent;
+		shadowCd.a*=1.0-vIsTranslucent;
     outCd = shadowCd;
     //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );
     outData = vec4( shadowDist/far, shadowDist, shadowCd.aa );

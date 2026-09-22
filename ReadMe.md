@@ -1,4 +1,4 @@
-# ProcStack's procPromo v0.7.0
+# ProcStack's procPromo v0.8
 ### Optifine & Iris Shader Pack
 #### MC 1.26.3; Wilderness Bound
 
@@ -13,14 +13,6 @@
 
 
 *(More screenshots in [/show](/show/ReadMe.md))*
-
----
-
-### Some Iris Love
-As of **June 15th 2025**, **Iris** for **Fabric** *( Sodium Renderer )* is now working!
-<br/>&nbsp; It took me some time to work out the Shadow matrix issues,
-<br/>&nbsp; Among lighting and general differences between Optifine & Iris.
-<br/>&nbsp;&nbsp;&nbsp; Fun times!
 
 ---
 

@@ -52,12 +52,12 @@ const float shadowLightInf = 0.85; // 0.0-1.0; Lower is darker
 
 // Distance from base of shadow to blend in a blurry shadow
 //   Close to shadow is sharp, further is blurred
-const float shadowDistBiasMult = 5.0;
+const float shadowDistBiasMult = 1.0;
 
 const float shadowRadialBiasMult = 1.33;
 const float shadowRadialBiasOffset = .02;
 const float shadowAxisBiasMult = 1.13;
-const float shadowAxisBiasOffset = .65;
+const float shadowAxisBiasOffset = .75;
 const float shadowAxisBiasPosOffset = 0.01;
 
 // Peter-Pan'ing / Shadow Surface Offset
@@ -68,7 +68,7 @@ const float shadowThreshold_Entity = shadowThreshold*.05;
 
 //const float shadowThreshBase = 0.000045; // Bias near to Camera
 //const float shadowThreshBase_Entity = 0.00003; // gbuffers_entities.glsl
-const float shadowThreshBase = 0.000045; // Bias near to Camera
+const float shadowThreshBase = 0.0000035; // Bias near to Camera
 const float shadowThreshBase_Entity = 0.001; // gbuffers_entities.glsl
 const float shadowThreshDist = 0.000026; // Bias far from Camera
 

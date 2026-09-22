@@ -111,6 +111,7 @@ out float vColorOnly;
 out float vDeltaPow;
 out float vDeltaMult;
 out float vShadowValid;
+out float vShadowPush;
 out float vBiomeColorInf;
 
 
@@ -229,6 +230,8 @@ void main() {
   // Match shadow.glsl: warp per vertex before rasterization and interpolation.
   shadowPos = distortShadowShift(shadowPos);
   vShadowValid=step(abs(shadowPos.x),1.0)*step(abs(shadowPos.y),1.0);
+  vShadowPush = 1.0-abs(gl_Normal.y);//step( 0.000001, shadowNormal.y );
+
 	
   #if ( DebugView == 3 ) // Debug Vision : Shadow Debug
 		// Verts push out on the left side of the screen
@@ -570,6 +573,16 @@ void main() {
 	//                               This will save further calcs in frag
 
 
+  // Beds
+  if( mc_Entity.x == 904 ){
+		vDeltaPow = 0.0250;
+		vDeltaMult = 100.5;
+    //vColor.rgb *= vec3(.85);
+    //vAvgColor.rgb *= vec3(.85);
+    vColor.rgb = textureOffset(gcolor, midcoord, ivec2(2.0, 6.0) ).rgb;
+    vAvgColor.rgb = vColor.rgb;
+  }
+
   // Bedrock
   if( mc_Entity.x == 68 ){
 		vDeltaPow = 2.250;
@@ -781,6 +794,7 @@ in float vFinalCompare;
 in float vDeltaPow;
 in float vDeltaMult;
 in float vShadowValid;
+in float vShadowPush;
 in float vBiomeColorInf;
 
 void main() {
@@ -868,7 +882,8 @@ void main() {
 	
 	// TODO : There's gotta be a better way to do this...
 	//          - There is, just gotta change it over
-	if ( DetailBlurring > 0.0 ){
+	/*
+  if ( DetailBlurring > 0.0 ){
 		// Split Screen "Blur Comparison" Debug View
 		#if ( DebugView == 1 )
 			float debugDetailBlurring = clamp((screenSpace.y/(aspectRatio*.8))*.5+.5,0.0,1.0)*2.0;
@@ -885,8 +900,9 @@ void main() {
 		#endif
 	}else{
 		txCd = texture(gcolor, tuv);
-	}
+	}*/
 
+		txCd = texture(gcolor, tuv);
 
 	
 	vec4 baseBlurColor = txCd;
@@ -998,7 +1014,11 @@ void main() {
 #if ShadowSampleCount > 0
 
   vec3 localShadowOffset = shadowPosOffset;
-  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
+  //localShadowOffset.z = screenSpace.x*.5;// 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
+  //localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
+  
+  // depthBias was causing side block flicker; removed for now
+  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist) * shadowThreshold );
   
   vec4 shadowPosLocal = shadowPos;
   //shadowPosLocal.xy += vCamViewVec.xz;
@@ -1032,7 +1052,7 @@ void main() {
 //   ...well "softer", distance of multi-sample
   reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
 
-  reachMult = max(0.0, reachMult - (min(1.0,outDepth*1000.0)*.5));
+  reachMult = max(0.0, reachMult - (min(1.0,outDepth*1000.0)*.5)) ;//* vShadowPush;
   //reachMult = 0.0;
 
   // Delay shadowAvg to let shadowBase return
@@ -1047,8 +1067,8 @@ void main() {
 		//															* shadowPosMult + localShadowOffset;
     projectedShadowPosition = baseShadowLookup + vec3( posOffset, 0.0 );
   
-    //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), axisSamplesFit);
-    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition) );
+    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), axisSamplesFit);
+    //shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition) );
   }
 #elif ShadowSampleCount >= 3
   vec2 posOffset;
@@ -1058,8 +1078,8 @@ void main() {
     //projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 		//															* shadowPosMult + localShadowOffset;
     projectedShadowPosition = baseShadowLookup + vec3( posOffset, 0.0 );
-    //shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
-    shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
+    shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
+    //shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
   }
 #endif
   
@@ -1550,7 +1570,9 @@ float skyGreyInf = 0.0;
 
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
   //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
-  //outCd = tmpCd;
+  float haizeBlender = clamp((1.0-(depthBias+.25)*1.25), 0.0, 1.0);
+  haizeBlender *= haizeBlender*(haizeBlender*.5+.5);
+  outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

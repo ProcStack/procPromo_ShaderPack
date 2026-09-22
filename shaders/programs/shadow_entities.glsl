@@ -56,10 +56,11 @@
     //texcoord = vaUV0;
     vec2 midcoord=mc_midTexCoord;
 
-    vec4 outCd = vaColor;
+    //vec4 outCd = vaColor;
+    vec4 outCd = texture(gtexture, midcoord);
     //vec4 outCd = gl_Color;
 
-    float avgBlend = .5;
+    /*float avgBlend = .5;
 
     ivec2 txlOffset = ivec2(2);
     vec3 mixColor;
@@ -83,6 +84,7 @@
     mixColor = mix( vec3(outCd.rgb), mixColor, step(.1, mixColor.r+mixColor.g+mixColor.b) );
 
     outCd = vec4( mixColor, outCd.a); // 1.0);
+    */
 
     //outCd = vec4( mixColor, 1.0);
 
