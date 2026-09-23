@@ -1489,7 +1489,7 @@ float skyGreyInf = 0.0;
 #ifdef OVERWORLD
   float haizeBlender = clamp((1.0-(depthBias+.25)*1.25), 0.0, 1.0);
   haizeBlender *= haizeBlender*(haizeBlender*.5+.5);
-  //outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
+  outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
 #endif
 
 // -- -- -- -- -- -- -- -- -- -- -- -- --

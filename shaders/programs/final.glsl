@@ -319,11 +319,13 @@ void main() {
 // -- -- -- -- -- -- -- --
 // -- Edge Detection -- -- --
 // -- -- -- -- -- -- -- -- -- --
-  float edgeDistanceThresh = .003;
+  float edgeDistanceThresh = .01;
   // Edge detect width shift, based on rain or being in water/lava/snow
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
+  // Edge depth boost
+  float edgeDepthInf = biasToOne( (depthCos*.8+.02)*(1.85-dataCd.r*.5) );
   // Edge detect width
-  float reachMult = mix(2.75-dataCd.r*1.55, .6-skyBrightnessMult*.15+reachOffset, depth );//1.0;//depthBase*.5+.5 ;
+  float reachMult = mix(2.75-dataCd.r*1.55, .6-skyBrightnessMult*.15+reachOffset, edgeDepthInf );//1.0;//depthBase*.5+.5 ;
 
   // Final Edge Value Multipliers
   float innerMult = 1.0;
@@ -347,7 +349,7 @@ void main() {
   float innerEdgePerc = 0.0;
   float outerEdgePerc = 0.0;
   findEdges( colortex0, colortex1, colortex2,
-             uv, res*(1.5)*reachMult*EdgeShading,
+             uv, res*(2.2)*reachMult*EdgeShading,
              depthBase, normalCd.rgb, edgeDistanceThresh, avgNormal,
              innerEdgePerc,outerEdgePerc );
 
@@ -356,8 +358,6 @@ void main() {
   
   // Screen edges influence
   float screenEdgeMult = max(0.0, 1.0-maxComponent(uvShifted) * 2.5); // Higher the #, darker the edges
-  // Edge depth boost
-  float edgeDepthInf = (depthCos*.8+.02)*(1.85-dataCd.r*.5);
   
   float outerEdgeInf =  1.0 - max( 0.0, (edgeDepthInf-.825)*4.0 ); 
 
@@ -551,7 +551,7 @@ void main() {
 #endif
 
 //outCd.rgb = vec3( step(.99999, edgeDepthInf));
-//outCd.rgb = vec3( outerEdgeInf  );
+//outCd.rgb = vec3( biasToOne(edgeDepthInf) );
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
