@@ -1206,7 +1206,7 @@ void main() {
 	// Level Shifting here first, instead of strictly a composite pass to retain more color detail
 	//   Felt I'd need to store too many values to buffers for a post process to work well
 	//     It didn't make sense to do, for me
-	lightCd = shiftBlackLevels( lightCd );
+	//lightCd = shiftBlackLevels( lightCd );
 	surfaceShading = shiftBlackLevels( max( surfaceShading, lightCd.r ) * lightCd.r );
 	
 
@@ -1489,7 +1489,8 @@ float skyGreyInf = 0.0;
 #ifdef OVERWORLD
   float haizeBlender = clamp((1.0-(depthBias+.25)*1.25), 0.0, 1.0);
   haizeBlender *= haizeBlender*(haizeBlender*.5+.5);
-  outCd.rgb = mix(outCd.rgb, fogColor, haizeBlender);
+  vec3 haizeColor = mix( fogColor.rgb*vAvgColor.rgb*vec3(0.8, 0.73, 0.6), fogColor.rgb, skyBrightness);
+  outCd.rgb = mix(outCd.rgb, haizeColor, haizeBlender);
 #endif
 
 // -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -1579,6 +1580,7 @@ float skyGreyInf = 0.0;
 
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
   //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
+  //outCd.rgb = vec3(haizeColor);
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
