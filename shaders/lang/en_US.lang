@@ -38,6 +38,9 @@ option.DetailBlurring.comment=Set ammount of texture blending of blocks, entitie
 option.EdgeShading=Edge Outlines
 option.EdgeShading.comment=Visibility of Edges in game, appearing lighter Overworld, darker in the Nether.  0.0, no visible edges. 1.0, default edges (slightly transparent, ~2px wide). 2.0, overdrive edges (100% visible, ~4px wide)
 
+option.HandPosScalar=Hand Position
+option.HandPosScalar.comment=Placement of hand on screen, for portrait mode screens
+
 # -- -- --
 
 #Environment Effects

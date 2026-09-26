@@ -5,6 +5,7 @@
 
 #extension GL_ARB_explicit_attrib_location : enable
 
+// Start of Vertex Stage
 #ifdef VSH
 
 #include "utils/shadowCommon.glsl"
@@ -248,7 +249,6 @@ void main() {
 	sunPhaseMult = step(sunAngle, .5);//1.0-max(0.0,sunAngle*2.0-1.0);
   
 	//sunPhaseMult = 1.0-(sunPhaseMult*sunPhaseMult*sunPhaseMult);
-	
 	
 	// Moon Influence
 	moonShadowToggle = sunMoonShadowInf * step(0.5, sunAngle);
@@ -663,7 +663,7 @@ void main() {
 
 
 
-
+// Start of Fragment Stage
 #ifdef FSH
 
 #define gbuffers_terrain
@@ -1014,19 +1014,13 @@ void main() {
 #if ShadowSampleCount > 0
 
   vec3 localShadowOffset = shadowPosOffset;
-  //localShadowOffset.z = screenSpace.x*.5;// 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
-  //localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(1.0-depthBias*depthBias)) * shadowThreshold );
-  
-  // depthBias was causing side block flicker; removed for now
   localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist) * shadowThreshold );
   
   vec4 shadowPosLocal = shadowPos;
-  //shadowPosLocal.xy += vCamViewVec.xz;
   
 // Implement --	
 //  vWorldNormal.y*(1.0-shadowData.b)
 
-  // shadowPos was warped per vertex to match the shadow caster coordinates.
   vec3 baseShadowLookup = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
 
 
@@ -1038,7 +1032,7 @@ void main() {
   //float waterShadowBase = texture(shadowtex1, projectedShadowPosition + localShadowOffset);
 	
 // Get base shadow source block color
-  shadowCd=texture(shadowcolor0, baseShadowLookup.xy); 
+  //shadowCd=texture(shadowcolor0, baseShadowLookup.xy); 
 	
 // Get shadow source distance
 // Delta of frag shadow distance * shadowDistBiasMult
@@ -1052,47 +1046,45 @@ void main() {
 //   ...well "softer", distance of multi-sample
   reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
 
-  reachMult = max(0.0, reachMult - (min(1.0,outDepth*1000.0)*.5)) ;//* vShadowPush;
-  //reachMult = 0.0;
+  reachMult = max(0.0, reachMult - (min(1.0,outDepth*1000.0)*.5)) ;
 
   // Delay shadowAvg to let shadowBase return
 	shadowAvg = shadowBase ;
 
+// Shadow Multisampling based on quality level
 #if ShadowSampleCount == 2
   vec2 posOffset;
-  
+
   for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize;//*skyBrightness;
+    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize;
     //projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
 		//															* shadowPosMult + localShadowOffset;
     projectedShadowPosition = baseShadowLookup + vec3( posOffset, 0.0 );
   
     shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), axisSamplesFit);
-    //shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition) );
   }
 #elif ShadowSampleCount >= 3
   vec2 posOffset;
-  
+
   for( int x=0; x<boxSamplesCount; ++x){
     posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
-    //projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z)
-		//															* shadowPosMult + localShadowOffset;
+    
     projectedShadowPosition = baseShadowLookup + vec3( posOffset, 0.0 );
     shadowAvg = mix( shadowAvg, texture(shadowtex0, projectedShadowPosition), boxSampleFit);
-    //shadowAvg = max( shadowAvg, texture(shadowtex0, projectedShadowPosition));
   }
 #endif
   
+  
+  // -- -- --
 
   float shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
 
 // Verts not facing the sun should never have non-1.0 shadow values
-	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, min(1.0,vNormalSunInf*shadowDepthInf));
-	shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb*vNormalSunInf, vNormalSunInf);
+	////shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, min(1.0,vNormalSunInf*shadowDepthInf));
+	//shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb*vNormalSunInf, vNormalSunInf);
 
 // Distance Rolloff
-  //shadowAvg = shadowAvg + min(1.0, (length(projectedShadowPosition.xy)*.0025)*1.5);//
   shadowAvg = clamp(shadowAvg + min(1.0, length(baseShadowLookup.xy) * 0.00375), 0.0, 1.0);
   
   float shadowInfFit = 0.025;
@@ -1113,8 +1105,6 @@ void main() {
 // -- -- --
 
 //  Distance influence of surface shading --
-//  TODO : !! Cleans up shadow crawl with better values
-
   shadowAvg = mix( mix(1.0,(shadowAvg*shadowSurfaceInf),vShadowValid), min(shadowAvg,shadowSurfaceInf), shadowAvg*vShadowValid)
                     * skyBrightness * rainStrengthInv * nightLightInfluence;
                     //* skyBrightness * rainStrengthInv * moonPhaseMultTerrain * nightLightInfluence;
@@ -1191,6 +1181,14 @@ void main() {
 	
 
 
+	// Apply Black Level Shift from User Settings
+	//   Since those set to 0 would be rather low,
+	//     Default is to run black shift with no check.
+	// Level Shifting here first, instead of strictly a composite pass to retain more color detail
+	//   Felt I'd need to store too many values to buffers for a post process to work well
+	//     It didn't make sense to do, for me
+	//lightCd = shiftBlackLevels( lightCd );
+	surfaceShading = shiftBlackLevels( max( surfaceShading, lightCd.r ) * lightCd.r );
 
 
 // -- -- -- -- -- -- --
@@ -1200,15 +1198,6 @@ void main() {
 	outCd*=mix(1.0, dotToCam, isLava);
 	
 
-	// Apply Black Level Shift from User Settings
-	//   Since those set to 0 would be rather low,
-	//     Default is to run black shift with no check.
-	// Level Shifting here first, instead of strictly a composite pass to retain more color detail
-	//   Felt I'd need to store too many values to buffers for a post process to work well
-	//     It didn't make sense to do, for me
-	//lightCd = shiftBlackLevels( lightCd );
-	surfaceShading = shiftBlackLevels( max( surfaceShading, lightCd.r ) * lightCd.r );
-	
 
 // -- -- -- -- -- -- --
 // -- Fog Coloring - -- --
@@ -1580,7 +1569,7 @@ float skyGreyInf = 0.0;
 
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
   //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
-  //outCd.rgb = vec3(haizeColor);
+  //outCd.rgb = vec3(diffuseSun);
 
   outDepthGlow = vec4(outDepth, outEffectGlow, 0.0, 1.0);
 	outNormal = vec4(vNormal*.5+.5, 1.0);

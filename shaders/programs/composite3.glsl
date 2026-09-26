@@ -63,7 +63,7 @@ void main() {
   
   int reachSteps = 7 + BaseQuality*6 ;
   float texScalar = 13.0-reachDist*4.0;
-  vec2 texelRes = vec2(0.0,texelSize.x*texScalar*reachDist);
+  vec2 texelRes = vec2(0.0,texelSize.y*texScalar*reachDist);
   
   
   vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux3, uv, texelRes, reachSteps);
