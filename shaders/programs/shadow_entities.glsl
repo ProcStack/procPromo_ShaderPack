@@ -49,6 +49,8 @@
       //vec4 position = shadowProjection  * vec4(vaPosition,1.0);
       vec4 position = shadowProjection * gl_Vertex;
     #else
+      // TODO : Verify/parity for modern versions of Optifine
+      //          They are still a few versions behind for testing 
       vec4 position = ftransform();
     #endif
 

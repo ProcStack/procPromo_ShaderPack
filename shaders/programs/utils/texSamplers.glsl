@@ -5,6 +5,8 @@ vec2 limitUVs(vec2 uv){
 
 const int axisSamplesCount = 4;
 const float axisSamplesFit = 0.25; // 1/4;
+const float axisSamplesFitInc = 0.20; // 1/5;
+const float axisSamplesFitDuce = 0.1666666666666; // 1/6;
 const vec2 axisSamples[4] = vec2[4](
                               vec2( -1.0, 0.0 ),
                               vec2( 0.0, -1.0 ),
@@ -14,6 +16,8 @@ const vec2 axisSamples[4] = vec2[4](
                             
 const int crossSamplesCount = 4;
 const float crossSamplesFit = 0.25; // 1/4;
+const float crossSamplesFitInc = 0.20; // 1/5;
+const float crossSamplesFitDuce = 0.1666666666666; // 1/6;
 const vec2 crossSamples[4] = vec2[4](
                               vec2( -1.0, -1.0 ),
                               vec2( -1.0, 1.0 ),
@@ -23,6 +27,8 @@ const vec2 crossSamples[4] = vec2[4](
                             
 const int boxSamplesCount = 8;
 const float boxSampleFit = 0.125; // 1/8;
+const float boxSampleFitInc = 0.11111111111111111111111; // 1/9;
+const float boxSampleFitDuce = 0.1; // 1/10;
 const vec2 boxSamples[8] = vec2[8](
                               vec2( -1.0, -1.0 ),
                               vec2( -1.0, 1.0 ),

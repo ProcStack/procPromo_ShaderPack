@@ -6,13 +6,15 @@
 
 #define gbuffers_hand
 
+#include "/shaders.settings"
+
 uniform float frameTimeCounter;
-uniform int heldItemId;
-uniform int heldItemId2;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 
+uniform int heldItemId;
+uniform int heldItemId2;
 uniform int heldBlockLightValue;
 uniform int heldBlockLightValue2;
 
@@ -26,7 +28,6 @@ uniform float viewHeight;
 
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
-attribute vec4 at_tangent;                      //xyz = tangent vector, w = handedness, added in 1.7.10
 
 varying vec2 texelSize;
 varying vec4 texcoord;
@@ -46,17 +47,54 @@ varying float vGlowPerc;
 
 varying vec4 vPos;
 varying vec4 normal;
-varying mat3 tbnMatrix;
 
 void main() {
 
+
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  float center = position.x;
 
+  float isWhichHand = step( 0.0, center ); // Right to init
+  float isLeftHand = step( 0.0, center );
+  float isRightHand = step( center, 0.0 ); 
+  float leftGlow = (heldBlockLightValue2/15.);//*isLeftHand;
+  float rightGlow = (heldBlockLightValue/15.);//*isRightHand;
+
+  //float posScalarDir = heldItemId==111 ? -1.0 : 1.0;
+  float posScalarDir = -1.0;// -(step( -0.0, center )*2.0-1.0);
   
-  vPos = gl_ProjectionMatrix * position;
-  gl_Position = vPos;
 
-  vPos = position;
+// Move hands inward and angle toward camera
+//   Needed for filming usable vertical content...
+//     Either I hide it or leave it on a branch...
+#if HandPosScalar < 1.0
+
+  float handAngle = 0.95; // radians; .35 = ~20 degrees
+  float sideRotation = -handAngle * posScalarDir * (1.0-HandPosScalar);
+  float rotationCos = cos(sideRotation);
+  float rotationSin = sin(sideRotation);
+
+  mat3 yRotation = mat3(
+    rotationCos, 0.0, -rotationSin,
+    0.0,         1.0,  0.0,
+    rotationSin, 0.0,  rotationCos
+  );
+
+  // Move hand "near" center, rotate, move back to original position
+  float handScalarComp = (1.0-HandPosScalar)*posScalarDir;
+  vPos = vec4( yRotation * vec3(gl_Vertex.x+handScalarComp, gl_Vertex.yz), gl_Vertex.w );
+  vPos.x -= handScalarComp*0.75;
+  vPos.z -= handScalarComp*handScalarComp*handScalarComp*posScalarDir*.5; // Depth
+
+
+#else
+  vPos =  gl_Vertex;
+#endif
+
+  gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * vPos;
+
+
+  // -- -- --
   
   color = gl_Color;
 
@@ -81,20 +119,11 @@ void main() {
   normal.xyz = normalize(gl_NormalMatrix * gl_Normal);
   normal.a = 0.02;
   
+
+
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-  
-  vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-  vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-  tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-           tangent.y, binormal.y, normal.y,
-           tangent.z, binormal.z, normal.z);
            
-  float isWhichHand = step( 0.0, position.x ); // Right to init
-  float isLeftHand = step( 0.0, position.x );
-  float isRightHand = step( position.x, 0.0 ); 
-  float leftGlow = (heldBlockLightValue2/15.);//*isLeftHand;
-  float rightGlow = (heldBlockLightValue/15.);//*isRightHand;
 
   float curGlowPerc=0.0;
   if( heldItemId == 14 ){
@@ -164,7 +193,6 @@ uniform int fogMode;
 uniform vec3 sunPosition;
 uniform int isEyeInWater;
 
-
 varying vec4 color;
 varying vec4 texcoord;
 varying vec4 lmcoord;
@@ -184,7 +212,6 @@ varying float vTexColorOnly;
 
 varying vec4 vPos;
 varying vec4 normal;
-varying mat3 tbnMatrix;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
@@ -209,10 +236,8 @@ void main() {
   vec4 outCd = txCd * lightCd * color;
   
   
-  vec3 normalCd = texture2D(normals, tuv).rgb*2.0-1.0;
-  normalCd = normalize( normalCd*tbnMatrix );
   float surfaceShading = 1.0-abs(dot(normalize(-vPos.xyz*vec3(1.0,.91,1.0)),normal.xyz));
-  surfaceShading *= dot(normalize(sunPosition),normalCd)*.2;
+  surfaceShading *= dot(normalize(sunPosition),normal.xyz)*.2;
   surfaceShading *= max(0.0,dot( normalize(sunPosition), vec3(0.0,0.0,-1.0)));
   outCd.rgb += vec3( surfaceShading*.2 );
   
@@ -248,11 +273,11 @@ void main() {
     outCd = mix( outCd, baseCd, debugBlender);
   #endif
   
-  //outCd.rgb = vec3( vTexColorOnly );
+
 
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(1.0,gl_FragCoord.w)-.0001 ), 1.0);
-  gl_FragData[2] = vec4(normalCd.xyz*.5+.5,1.0);
+  gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
   gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w)+.5,0.0,1.0);//glowVal);
   gl_FragData[4] = vec4(glowHSV,1.0);//glowVal);
 

@@ -21,7 +21,6 @@ uniform float viewHeight;
 
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
-attribute vec4 at_tangent;                      //xyz = tangent vector, w = handedness, added in 1.7.10
 
 in vec3 at_velocity; // vertex offset to previous frame
 
@@ -44,7 +43,6 @@ varying vec4 vPos;
 varying vec3 vLocalPos;
 varying vec4 vNormal;
 varying float vNormalSunDot;
-varying mat3 tbnMatrix;
 
 
 
@@ -112,15 +110,6 @@ void main() {
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
-
-  
-  vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-  vec3 binormal = normalize(gl_NormalMatrix * cross(at_tangent.xyz, gl_Normal.xyz) * at_tangent.w);
-  tbnMatrix = mat3(tangent.x, binormal.x, vNormal.x,
-           tangent.y, binormal.y, vNormal.y,
-           tangent.z, binormal.z, vNormal.z);
-  
-  
 	
 	
 	
@@ -263,7 +252,6 @@ varying float vKeepBack;
 varying vec4 vPos;
 varying vec4 vNormal;
 varying float vNormalSunDot;
-varying mat3 tbnMatrix;
 
 #ifdef OVERWORLD
 	// Sun Moon Influence
