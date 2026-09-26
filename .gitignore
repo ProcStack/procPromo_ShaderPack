@@ -5,3 +5,4 @@ shaders/textures/minecraft_vanilla_glowAtlas.png.mcmeta
 shaders/textures/minecraft_vanilla_glowAtlas.png
 utils/stats/*
 *.psd
+*.zip

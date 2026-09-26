@@ -326,13 +326,10 @@ void main() {
 
 	float lightLumaBase = biasToOne( lightCd.r );
 
-  float skyBrightnessMult = eyeBrightnessFit;
 
 
   // -- -- -- -- -- -- -- --
 
-	float rainStrengthVal = rainStrength;
-	float rainStrengthInv = 1.0-rainStrengthVal;
 
   // -- -- -- -- -- -- -- --
   // Based on shadow lookup from Chocapic13's HighPerformance Toaster
@@ -354,6 +351,10 @@ void main() {
     // -- Shadow Sampling & Influence - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
 #ifdef OVERWORLD
+
+    float skyBrightnessMult = eyeBrightnessFit;
+    float rainStrengthVal = rainStrength;
+    float rainStrengthInv = 1.0-rainStrengthVal;
 
 		float lightLuma = shiftBlackLevels( lightLumaBase ); // lightCd.r;
 		
