@@ -1086,6 +1086,7 @@ void main() {
 
 // Distance Rolloff
   shadowAvg = clamp(shadowAvg + min(1.0, length(baseShadowLookup.xy) * 0.00375), 0.0, 1.0);
+  shadowAvg = min( 1.0, shadowAvg*5.0 ); // Shimmer exists still, just snuff out the noise
   
   float shadowInfFit = 0.025;
   float shadowInfFitInv = 40.0; // 1.0/shadowInfFit;
