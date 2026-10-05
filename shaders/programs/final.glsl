@@ -65,6 +65,7 @@ uniform sampler2D gaux2; // Bind 8; 40% Res Glow Pass
 uniform sampler2D gaux3; // Bind 9; 30% Res Glow Pass
 uniform sampler2D gaux4; // Bind 10; 30% Res Glow Pass
 uniform sampler2D colortex9; // Bind 17; Known working from terrain gbuffer
+uniform sampler2D colortex10; // Bind 18; Crepuscular Rays
 
 uniform sampler2D gcolor;
 uniform sampler2D gdepth;
@@ -153,7 +154,7 @@ void edgeLookUp(  sampler2D txColor, sampler2D txDepth, sampler2D txNormal,
 
   vec2 uvDepthLimit = uv+uvOffset;
   vec2 uvNormalLimit = uv+uvOffset*1.5;
-  float curDepth = texture2D(txDepth, uvDepthLimit).r;
+  float curDepth = 1.0-texture2D(txDepth, uvDepthLimit).a;
   vec3 curNormal = texture2D(txNormal, uvNormalLimit).rgb*2.0-1.0;
   
   float curNormalDot = 1.0-abs(dot(normalRef, curNormal));
@@ -229,12 +230,12 @@ void main() {
   
   vec4 baseCd = texture2D(colortex0, uv);
   vec4 outCd = baseCd;
-  vec2 depthEffGlowBase = texture2D(colortex1, uv).rg;
-  float depthBase = depthEffGlowBase.r;
-  float effGlowBase = depthEffGlowBase.g;
+  vec4 shadowPosDepthBase = texture2D(colortex1, uv); // Shadow Position and Depth
+  vec3 posBase = shadowPosDepthBase.rgb;
+  float depthBase = 1.0-shadowPosDepthBase.a;
   
   vec4 normalCd = texture2D(colortex2, uv);
-  vec3 dataCd = texture2D(gaux1, uv).xyz;
+  vec3 lightCd = texture2D(gaux1, uv).xyz;
   vec4 spectralDataCd = texture2D(colortex9, uv);
 
 
@@ -257,17 +258,24 @@ void main() {
 // -- -- -- -- -- 
 // -- Shadows  -- --
 // -- -- -- -- -- -- --
-  //float shadow = dataCd.x;
-  //float shadowDepth = dataCd.y;
+  //float shadow = lightCd.x;
+  //float shadowDepth = lightCd.y;
   //shadowDepth = 1.0-(1.0-shadowDepth)*(1.0-shadowDepth);
   //shadowDepth *= shadowDepth;
+
+
+// -- -- -- -- -- -- -- --
+// -- Light Helpers  -- -- --
+// -- -- -- -- -- -- -- -- -- --
+  float lightLumaVal = lightCd.r;//luma(lightCd.rgb);
+
 
 
 // -- -- -- -- -- -- -- --
 // -- Depth Blur -- -- -- --
 // -- -- -- -- -- -- -- -- -- --
   // All threads are in or out, leaving for now
-  if( UnderWaterBlur && isEyeInWater >= 1 ){
+  if( UnderWaterBlur && isEyeInWater > 0 ){
     float depthBlurInf = smoothstep( .5, 1.5, depth);//biasToOne(depthBase);
     
     float depthBlurTime = worldTime*.07 + depth*3.0;
@@ -277,19 +285,34 @@ void main() {
     vec2 depthBlurUV = uv + vec2( sin(uv.x*uvMult+depthBlurTime), cos(uv.y*uvMult+depthBlurTime) )*depthBlurWarpMag*depthBlurInf;
     vec2 depthBlurReach = vec2( max(0.0,depthBlurInf-length(blurInitCd.rgb)) * texelSize * 6.0 * (1.0-nightVision));
     vec4 depthBlurCd = boxSample( colortex0, depthBlurUV, depthBlurReach, .25 );
-    depthBlurCd.rgb = mix( fogColor*depthCos, (fogColor*.5+.5)*depthBlurCd.rgb, min(1.0,(1.0-depth*.5)));
+    depthBlurCd.rgb = mix( outCd.rgb*depthCos, (fogColor*.75+.25)*depthBlurCd.rgb, min(1.0, depth*10.0));
     
-    float eyeWaterInf = (1.0-isEyeInWater*.2);
-    //float fogBlendDepth = ((depth+.5)*depth+.8);
-    //depthBlurCd.rgb = min(vec3(1.0), depthBlurCd.rgb*mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf));
+    float eyeWaterInf = (1.0-isEyeInWater*.25);
+    float fogBlendDepth = ((depth+.5)*depth+.8);
+    depthBlurCd.rgb = min(vec3(1.0), depthBlurCd.rgb*mix( (fogColor*fogBlendDepth), vec3(1.0), fogBlendDepth*eyeWaterInf));
 
+    float fogDepth = 1.0-depth*depth;
+    fogDepth = biasToOne(fogDepth);
+	  fogDepth = clamp(1.0+log(pow(lightLumaVal,2.8+depth*0.50)), 0.0, 1.0)*(fogDepth*.85+.145)*lightLumaVal * min(1.0,isEyeInWater*.25);
     
+    depthBlurCd = mix( outCd, depthBlurCd, fogDepth);
     baseCd = depthBlurCd;
-    outCd = depthBlurCd;
     
   }
   
-  
+
+// -- -- -- -- -- -- -- -- -- -- -- -- --
+// -- Light/Shadow Crepuscular Rays -- -- --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+#ifdef OVERWORLD
+// posBase.rgb - shadow pos, `baseShadowLookup` from `terrain`
+// depthBase - depth value from eye in scene
+// normalCd.rgb - 0-1 fitted, needs to be converted to -1 to 1 range for calculations
+// shadowcolor0 - primary shadow buffer
+// shadowcolor1 - object data and transparency color
+#endif
+
 // -- -- -- -- --
 // -- To Cam - -- --
 // -- -- -- -- -- -- --
@@ -316,6 +339,7 @@ void main() {
   rainInf = mix( 1.0, rainInf, skyBrightnessMult);
   
   
+
 // -- -- -- -- -- -- -- --
 // -- Edge Detection -- -- --
 // -- -- -- -- -- -- -- -- -- --
@@ -323,9 +347,9 @@ void main() {
   // Edge detect width shift, based on rain or being in water/lava/snow
   float reachOffset = min(.4,isEyeInWater*.5) + rainStrength*1.5;
   // Edge depth boost
-  float edgeDepthInf = biasToOne( (depthCos*.8+.02)*(1.85-dataCd.r*.5) );
+  float edgeDepthInf = biasToOne( (depthCos*.8+.02)*(1.85-lightLumaVal*.5) );
   // Edge detect width
-  float reachMult = mix(2.75-dataCd.r*1.55, .6-skyBrightnessMult*.15+reachOffset, edgeDepthInf );//1.0;//depthBase*.5+.5 ;
+  float reachMult = mix(2.75-lightLumaVal*1.55, .6-skyBrightnessMult*.15+reachOffset, edgeDepthInf );//1.0;//depthBase*.5+.5 ;
 
   // Final Edge Value Multipliers
   float innerMult = 1.0;
@@ -335,7 +359,7 @@ void main() {
   // Tweak Nether settings 
   skyBrightnessInf = 1.0;
   // Make the edge lines fatter in the dark
-	float invLighting = 1.0-(dataCd.r*.4+.35);
+	float invLighting = 1.0-(lightLumaVal*.4+.35);
   reachMult *= 1.1+invLighting;
   // Bias the Cosine Depth closer to the camera
   //depthCos=biasToOne(depthCos);
@@ -377,10 +401,10 @@ void main() {
 #ifdef OVERWORLD
   // Edge boost around well lit areas
   float sunEdgeInf = dot( sunVec, avgNormal );
-  outCd.rgb += mix( outCd.rgb, fogColor, dataCd.r*skyBrightnessMult)*edgeInsideOutsidePerc*dataCd.r*.2*depthCos;
+  outCd.rgb += mix( outCd.rgb, fogColor, lightLumaVal*skyBrightnessMult)*edgeInsideOutsidePerc*lightLumaVal*.2*depthCos;
 #elif defined NETHER
   //outCd.rgb *= outCd.rgb * vec3(.8,.6,.2) * edgeInsideOutsidePerc;// * (shadow*.3+.7);
-	vec3 netherEdgeCd = mix( outCd.rgb*vec3(.75,.5,.2), mix(fogColor,outCd.rgb,depth), dataCd.r*.85);
+	vec3 netherEdgeCd = mix( outCd.rgb*vec3(.75,.5,.2), mix(fogColor,outCd.rgb,depth), lightLumaVal*.85);
 	
   outCd.rgb =  mix(outCd.rgb, netherEdgeCd, edgeInsideOutsidePerc);
 #endif
@@ -393,7 +417,8 @@ void main() {
 
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
-  vec3 outGlowCd = max( blurSecondCd, max(blurInitCd, blurFirstCd) );
+  //vec3 outGlowCd = max( blurSecondCd, max(blurInitCd, blurFirstCd) );
+  vec3 outGlowCd =  blurSecondCd + blurInitCd + blurFirstCd;
   outCd.rgb += outGlowCd * GlowBrightness;// * lavaSnowFogInf;
   
   
@@ -495,6 +520,89 @@ void main() {
 
 // Debug - Shadow Cam
 #if ( DebugView == 2 )
+
+	vec2 debugShadowUV = vec2(uv.x*1.225, uv.y)*3.4;
+
+	// -- -- -- -- -- -- -- -- -- -- -- -- --
+  // -- Left Side of Screen, Top Down - -- --
+	// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+	vec2 debugBufferCdUV = debugShadowUV + vec2(-0.1,-2.3);
+	vec2 debugBufferTexUV = debugBufferCdUV;
+	vec3 bufferCd = texture2D(gaux1, debugBufferTexUV ).rrr;
+	debugBufferCdUV = abs(debugBufferCdUV-.5);
+	float shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
+	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, bufferCd, step(shadowHelperMix, 0.502));
+
+	// -- -- --
+
+	debugBufferCdUV = debugShadowUV + vec2(-0.1,-1.2);
+	debugBufferTexUV = debugBufferCdUV;
+	bufferCd = vec3( 1.0-texture2D(colortex1, debugBufferTexUV ).a );
+	debugBufferCdUV = abs(debugBufferCdUV-.5);
+	shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
+	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, bufferCd, step(shadowHelperMix, 0.502));
+
+	// -- -- --
+
+	debugBufferCdUV = debugShadowUV + vec2(-0.1,-0.1);
+	debugBufferTexUV = debugBufferCdUV;
+	bufferCd = texture2D(colortex2, debugBufferTexUV ).rgb;
+	debugBufferCdUV = abs(debugBufferCdUV-.5);
+	shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
+	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, bufferCd, step(shadowHelperMix, 0.502));
+
+	// -- -- -- -- -- -- -- -- -- -- -- -- --
+  // -- Right Side of Screen, Top Down - -- --
+	// -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+	debugBufferCdUV = debugShadowUV + vec2(-3.05,-2.3);
+	debugBufferTexUV = debugBufferCdUV;
+	bufferCd = texture2D(gaux2, debugBufferTexUV * .4 ).rgb;
+	debugBufferCdUV = abs(debugBufferCdUV-.5);
+	shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
+	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, bufferCd, step(shadowHelperMix, 0.502));
+
+	// -- -- --
+
+	debugBufferCdUV = debugShadowUV + vec2(-3.05,-1.2);
+	debugBufferTexUV = debugBufferCdUV;
+	bufferCd = texture2D(gaux3, debugBufferTexUV * .3 ).rgb;
+	debugBufferCdUV = abs(debugBufferCdUV-.5);
+	shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
+	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, bufferCd, step(shadowHelperMix, 0.502));
+
+	// -- -- --
+
+	debugBufferCdUV = debugShadowUV + vec2(-3.05,-0.1);
+	debugBufferTexUV = debugBufferCdUV;
+  
+  #ifdef OVERWORLD
+	  bufferCd = texture2D(colortex10, debugBufferTexUV * .4 ).rgb;
+  #else
+	  bufferCd = texture2D(gaux4, debugBufferTexUV * .4 ).rgb;
+  #endif
+	debugBufferCdUV = abs(debugBufferCdUV-.5);
+	shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
+	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
+	// -- 
+	outCd.rgb = mix( outCd.rgb, bufferCd, step(shadowHelperMix, 0.502));
+
+  float uvEdges = max( max( max( step(1.0, debugBufferTexUV.x), step(1.0, debugBufferTexUV.y) ), step(debugBufferTexUV.x, 0.0) ), step(debugBufferTexUV.y, 0.0) );
+  //outCd.rgb = mix( vec3(0.0,1.0,0.0), vec3(1.0,0.0,0.0), uvEdges );
+
+
+#elif ( DebugView == 3 )
 	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
 	float fitWidth = 1.0 + aspectRatio*.45;
 	vec2 debugShadowUV = vec2( 1.0-uv.y, (uv.x-.5)*fitWidth+.5)*2.35;
@@ -529,7 +637,7 @@ void main() {
 	
 // Debug - Shadow Debug
 //   Adding the mini cam cause its fun
-#elif ( DebugView == 3 )
+#elif ( DebugView == 4 )
 	//float fitWidth = 1.0 + fract(viewWidth/float(shadowMapResolution))*.5;
 	float fitWidth = 1.0 + aspectRatio*.45;
 	vec2 debugShadowUV = vec2( 1.0-uv.y, ((uv.x)-.5)*fitWidth+.5)*2.35 + vec2(-1.2,-2.15);
@@ -544,7 +652,7 @@ void main() {
 
 
 // Debug - Vanilla -vs- procPromo Debugger
-#elif ( DebugView == 4 )
+#elif ( DebugView == 5 )
 	float debugBlender = step( .5, uv.x);
 	outCd = mix( baseCd, outCd, debugBlender);
 	

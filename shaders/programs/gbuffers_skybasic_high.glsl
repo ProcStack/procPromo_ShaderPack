@@ -199,7 +199,7 @@ if( BaseQuality > 0 ){
 
   outCd.rgb = mix(fogCd, skyCd, upDot);
   
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugBlender = step( .0, basePos.x);
     outCd.rgb = mix( skyColor, outCd.rgb, debugBlender);
   #endif
@@ -238,8 +238,6 @@ if( BaseQuality > 0 ){
   }
 
 
-
-
   const float fadeScalar = 2.5;
   float fadeIns = sunAngle*4.0+.5;
 
@@ -251,7 +249,8 @@ if( BaseQuality > 0 ){
   //outCd.rgb = vec3( min( 1.0, step( .25, sunAngle) * step( sunAngle, .75) * fadeOutMorning ) );
 
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);
+  //gl_FragData[1] = vec4(vec3( min(.999999,gl_FragCoord.w) ), 1.0);
+  gl_FragData[1] = vec4(vec3(1.0),1.0);
 
 }
 #endif

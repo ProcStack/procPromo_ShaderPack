@@ -141,7 +141,7 @@ void main() {
   shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);
   shadowPos.w = 1.0;
 
-  #if ( DebugView == 3 ) // Debug Vision : Shadow Debug
+  #if ( DebugView == 4 ) // Debug Vision : Shadow Debug
 		// Verts push out on the left side of the screen
     //   Showing how far its sampling for the shadow base value
     position.xyz = mat3(gbufferModelView) * (shadowPosition.xyz+shadowPush*clamp(1.0-position.x,0.0,1.0)) + gbufferModelView[3].xyz;
@@ -433,7 +433,7 @@ void main() {
       txCd = texture2D(gcolor, tuv);
     }
 
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugDiscard = step( .0, vPos.x);
     if (txCd.a < .2 && debugDiscard==0.0){
       discard;
@@ -664,7 +664,7 @@ void main() {
   //glowHSV.z *= glowInf * (depth*.2+.8) * GlowBrightness * .5;// * lightLuma;
   glowHSV.z *= vGlowMultiplier * glowValueMult;
 
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugBlender = step( vPos.x, .0 );
     float debugCdMult=color.r*color.g*color.b;
     debugCdMult = step(.998, debugCdMult);
@@ -673,7 +673,8 @@ void main() {
 	
     //outCd.rgb = vec3( avgBlender );
     gl_FragData[0] = outCd;
-    gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
+    //gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
+    gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
     //gl_FragData[3] = vec4(vec3(blockShading), 1.0);
     gl_FragData[3] = vec4(diffuseLight, 1.0);

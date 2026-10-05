@@ -73,7 +73,9 @@ void main() {
 
   //outCd.rgb = vec3(blockSelect);
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(1.0, 0.0, 0.0, blockSelect);
+  //gl_FragData[1] = vec4(1.0, 0.0, 0.0, blockSelect);
+  gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
+  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4(vec3(0.5), blockSelect);
   gl_FragData[3] = vec4(0.0,0.0,outlineMult,blockSelect);
   

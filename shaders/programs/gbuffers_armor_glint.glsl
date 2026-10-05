@@ -115,14 +115,15 @@ void main() {
   vec3 glowHSV = rgb2hsv(glowCd);
   glowHSV.z *= step(.7,outCdMin)*.1*(depth*.5+.5);
   
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     //vec2 screenSpace = (vPos.xy/vPos.z)  * vec2(aspectRatio);
     float debugBlender = step( .0, screenSpace.x);
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
 
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3(gl_FragCoord.w), 1.0);
+  gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
+  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4( vNormal*.5+.5, 1.0 );
   gl_FragData[3] = vec4( glowHSV, 1.0 );
     

@@ -139,7 +139,7 @@ void main() {
   shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);
   shadowPos.w = 1.0;
 
-  #if ( DebugView == 3 ) // Debug Vision : Shadow Debug
+  #if ( DebugView == 4 ) // Debug Vision : Shadow Debug
 		// Verts push out on the left side of the screen
     //   Showing how far its sampling for the shadow base value
     position.xyz = mat3(gbufferModelView) * (shadowPosition.xyz+shadowPush*clamp(1.0-position.x,0.0,1.0)) + gbufferModelView[3].xyz;
@@ -485,13 +485,13 @@ void main() {
 
 		
 		
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugBlender = step( .0, vPos.x);
     outCd = mix( baseCd*vec4(color.rgb,1.0)*lightVal.xyz, outCd, debugBlender);
   #endif
 	
     gl_FragData[0] = outCd;
-    gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
+    gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
     gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
     gl_FragData[3] = vec4(glowHSV,1.0);
 

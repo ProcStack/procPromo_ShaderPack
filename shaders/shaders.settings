@@ -20,7 +20,7 @@
 #define SkyQuality 1    //[0 1 2]
 #define UnderWaterBlur true    //[true false]
 #define SolidLeaves true    //[true false]
-#define DebugView 0    //[0 1 2 3 4]
+#define DebugView 0    //[0 1 2 3 4 5]
 
 // 'shadowMapResolution' - Found in 'utils/shadowCommon.glsl'
 
@@ -28,7 +28,7 @@ const float Distance_DarkenMult = 80.0; // Lower is more & closer fog-ish
 const float Distance_Vibrance = 0.073; // Higher gives distant block colors a boost
 const float Distance_DetailBlendBias = 1.035; // Retain detail near camera, distance offset bias
 
-const float GlowMult_Overworld = 0.35;
+const float GlowMult_Overworld = 0.5;
 const float GlowMult_Nether = 0.45;
 
 const float ColorBoost_IsLava = .55;
@@ -36,7 +36,7 @@ const float ColorBoost_IsLavaNether = 1.0;
 
 const float Normal_InfFalloffRate = 0.8; // Nearby Facing-Camera Color Boost on blocks; higher is brighter
 
-const float Glow_Reach = 1.85;
+const float Glow_Reach = 2.5;
 const float Glow_Perc1 = 0.85;
 const float Glow_Perc2 = 0.75;
 const float Glow_Perc3 = 0.75;

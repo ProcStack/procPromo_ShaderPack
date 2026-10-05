@@ -29,6 +29,7 @@ varying vec3 vGlowEdgeCd;
 varying float vDfLenMult;
 varying float vWorldTime;
 varying float isSun;
+varying float isMoon;
 varying vec3 vSkyUV;
 varying vec2 vTexCoord;
 
@@ -37,7 +38,7 @@ varying vec2 vTexCoord;
 void main() {
 
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
-  vPos=position;
+  vPos=gl_Vertex;
 
   vSkyUV = gl_Vertex.xyz;
   
@@ -56,8 +57,11 @@ void main() {
   
   // Set sun variable
   isSun = 0.0;
+  isMoon = 0.0;
   if (renderStage == MC_RENDER_STAGE_SUN) {
     isSun = 1.0;
+  } else if( renderStage == MC_RENDER_STAGE_MOON) {
+    isMoon = 1.0;
   }
   
   // Legacy, no if
@@ -90,7 +94,6 @@ void main() {
   if( isSun>.5 ){
     //vFittedUV = vTexCoord.st;
     //vGlowEdgeCd = texture2D(gtexture, vec2(0.49375)).rgb; // .5+.0625+.03125
-    //vGlowEdgeCd = texture2D(gtexture, vec2(vMidCoord)).rgb; // .5+.0625+.03125
     vGlowEdgeCd = sunOuterCd; // .5+.0625+.03125
     vDfLenMult = .45;
   }else{
@@ -117,6 +120,7 @@ uniform vec3 moonPosition;
 uniform sampler2D noisetex; // Custom Texture; textures/SoftNoise_1k.jpg
 uniform int renderStage;
 uniform float rainStrength;
+uniform float moonPhaseMultGlow;
 uniform vec3 skyColor;
 
 varying vec4 vPos;
@@ -125,6 +129,7 @@ varying vec3 vGlowEdgeCd;
 varying float vDfLenMult;
 varying float vWorldTime;
 varying float isSun;
+varying float isMoon;
 varying vec3 vSkyUV;
 varying vec2 vTexCoord;
 
@@ -135,9 +140,11 @@ uniform vec3 fogtexture;
 // These don't work as Const in Iris, defines work just fine --
 #define sunInnerCd vec3( 1.0, 1.0, 0.99607843137 )
 #define sunOuterCd vec3( 0.9, 0.9, 0.1 )
+#define moonGlowCd vec3( 0.15294117647058825, 0.2, 0.3215686274509804 )
 
 // Sun settings -
 #define bodyThresh 0.018 // Step(bodyThresh, deltaUVs)
+#define moonBodyThresh 0.25 // Step(bodyThresh, deltaUVs)
 #define outlineThresh 0.0138 // Step(outlineThresh, deltaUVs)
 #define dfMult 22.5 // Sun Aura Mutliplier
 
@@ -176,11 +183,16 @@ void main() {
   vec3 sunCd = mix( sunInnerCd, sunOuterCd, sunOutline);
   sunCd = mix( sunCd, vGlowEdgeCd * dfLen, sunBody);
   
-  outCd.rgb = sunCd;
-  //outCd.rgb = mix( outCd.rgb, vec3(sunCd), step(fituv.x,.5) );
 
 
-  outCd.rgb = mix( baseCd.rgb, outCd.rgb, isSun );
+  outCd.rgb = mix( baseCd.rgb, sunCd, isSun );
+
+  float uvMoonFitDist = 1.0-length(vPos.xz*0.75)-((1.0-moonPhaseMultGlow)*.2);
+  uvMoonFitDist = min(max(0.0, uvMoonFitDist-.2)*1.25, 1.0);
+  uvMoonFitDist = biasToOne( uvMoonFitDist*uvMoonFitDist );
+  float moonGlowMask = 1.0 - step( abs(vPos.x), moonBodyThresh ) * step( abs(vPos.z), moonBodyThresh );
+
+  outCd.rgb = mix( outCd.rgb, moonGlowCd*uvMoonFitDist*moonPhaseMultGlow, isMoon*moonGlowMask );
 
 
   // Clear sky Blue = 0xFF = 255/255 = 1.0
@@ -204,16 +216,11 @@ void main() {
   vec4 baseCd = texture2D(gtexture, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
   uv += noiseX.xy + vTexCoord*.1;
   vec4 mixCd = texture2D(gtexture, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
-  //outCd = mix( baseCd, mixCd, noiseX.x);
-  outCd.rgb *= 1.0-outCd.rgb*.5;
+  outCd = mix( baseCd, mixCd, noiseX.x);
+  //outCd.rgb *= 1.0-outCd.rgb*.5;
+  //outCd.rgb *= mixCd.rgb;
   //float glowVal =  (1.0 - biasToOne( min(1.0, length(fituv-.5)) ))*.5;
 #endif
-
-
-  #if ( DebugView == 4 )
-    float debugBlender = step( .0, vPos.x);
-    outCd = mix( baseCd, outCd, debugBlender);
-  #endif
 
 
 
@@ -222,10 +229,8 @@ void main() {
   //outCd.rgb = mix( outCd.rgb, vec3(1.0,0.0,0.0), step(1.0, outCd.r) );
   //  //outCd.rgb = vec3( vColor.rgb*.1 );
   //outCd.rgb = vec3( isSun, 1.0-isSun, 0.0 );
-  //outCd.rgb = vec3( vGlowEdgeCd * dfLen );
   //outCd.a=1.0;
 
-  //outCd.rgb = vec3(uvshift.xy,0.);
   //outCd.a =1.0;//skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun;
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3(0.0),1.0);

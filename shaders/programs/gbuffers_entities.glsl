@@ -122,7 +122,7 @@ void main() {
   shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);
   shadowPos.w = 1.0;
 
-  #if ( DebugView == 3 ) // Debug Vision : Shadow Debug
+  #if ( DebugView == 4 ) // Debug Vision : Shadow Debug
 		// Verts push out on the left side of the screen
     //   Showing how far its sampling for the shadow base value
     position.xyz = mat3(gbufferModelView) * (shadowPosition.xyz+shadowPush*clamp(1.0-position.x,0.0,1.0)) + gbufferModelView[3].xyz;
@@ -300,6 +300,7 @@ void main() {
   vec2 luv = lmcoord.st;
   vec4 lightBaseCd = texture2D(lightmap, luv);
   vec3 lightCd = lightBaseCd.rgb*.9+.15;
+  float lightLuma = luma(lightCd);
   float lightShadowBlend = clamp( (lightBaseCd.r-.4)*2., 0.0, 1.0 );
   lightShadowBlend = biasToOne( lightShadowBlend );
   
@@ -356,7 +357,7 @@ void main() {
     float rainStrengthVal = rainStrength;
     float rainStrengthInv = 1.0-rainStrengthVal;
 
-		float lightLuma = shiftBlackLevels( lightLumaBase ); // lightCd.r;
+		float lightLumaShifted = shiftBlackLevels( lightLumaBase ); // lightCd.r;
 		
 		ambBrightness = 1.0;
 
@@ -488,7 +489,7 @@ void main() {
   */
   
   //outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg);
-  outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+diffuseSun*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg);
+  outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+diffuseSun*shadowLightInf)), shiftBlackLevels(lightLuma)*shadowMaxSaturation), vec3(1.0),shadowAvg);
 	
   // Shadow influenced by depth using rain
   float lightDepthRainMixer = mix( depthBias*depthBias, (depthBias*.5+.5), rainStrengthInv );
@@ -518,7 +519,7 @@ void main() {
 // -- Debug -- -- --
 // -- -- -- -- -- -- --
 
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugBlender = step( .0, vPos.x );
     outCd = mix( baseCd, outCd, debugBlender);
   #endif
@@ -529,9 +530,10 @@ void main() {
   
 
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(depth, outEffectGlow, 0.0, 1.0);
+  gl_FragData[1] = vec4(1.0-depth, outEffectGlow, 0.0, 1.0);
+  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
-  gl_FragData[3] = vec4( 1.0, 1.0, 0.0,1.0);
+  gl_FragData[3] = vec4( lightLuma, lightLuma, 0.0,1.0);
   gl_FragData[4] = vec4(vec3(0.0),1.0);
 
 }

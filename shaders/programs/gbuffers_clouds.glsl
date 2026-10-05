@@ -6,6 +6,7 @@
 
 
 #include "utils/shadowCommon.glsl"
+#include "utils/mathFuncs.glsl"
 
 uniform float frameTimeCounter;
 uniform mat4 gbufferModelView;
@@ -62,7 +63,7 @@ void main() {
   shadowPos = position;
 
   vec3 toCam = normalize( -position.xyz );
-  vToCam = min( 1.0, dot( toCam, vNormal )*.25+.75+min( 1.0, length(position.xyz)*.0015)*.25 );
+  vToCam = min( 1.0, dot( toCam, vNormal )*.35+.65+min( 1.0, length(position.xyz)*.0025)*.25 );
 	
 	// -- -- --
 
@@ -262,7 +263,7 @@ void main() {
 	// -- -- --
 
   // Distant fade out of horizon clouds
-  float distantClouds = min(1.0, length(vPos.xz)*.001);
+  float distantClouds = min(1.0, length(vPos.xz)*.00055);
   distantClouds = 1.0 - (distantClouds*(distantClouds*.5+.5));
 
 	// -- -- --
@@ -329,10 +330,11 @@ void main() {
     float alphaOffset = 0.25;
   #endif
   outCd.a *= min( 1.0, color.a * max(0.0,1.0-distMix*distMix*15.0) * alphaDistFit * distantClouds + alphaOffset );
-  
+
   vec3 glowHSV = rgb2hsv(outCd.rgb*(.07+toSun*.2 + toSun*toSun*toSun*.05)*rainStrFitInverseFit);
   glowHSV.z *= outCd.a*(glowHSV.z*.5+.5) *(depth*2.0+.2) * distantClouds;
-  float glowReach = ((1.0-depth*.5)+.5)*.5;
+  //float glowReach = clamp((1.0-depth*.9+.5)*.5, -1.0, 1.0);
+  float glowReach = (1.0-depth*.65+.5)*.5;
 
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
   toNorm=normalize(toNorm)*.5+.5;
@@ -406,17 +408,20 @@ void main() {
   // -- -- --
 
   outCd.rgb = mix( outCd.rgb, vec3( luma(color.rgb) ), rainStrFit);
-  outCd.rgb *= vToCam;
-  
+  //outCd.rgb *= vToCam;
+  //outCd.rgb *= clamp( vToCam*1.5-0.45, 0.8, 1.0 );
+  //outCd.rgb = vec3(1.0);
+  //outCd.a=1.0;
 
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugBlender = step( .0, vLocalPos.x);
     outCd = mix( baseCd*color, outCd, debugBlender);
   #endif
   
 
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
+  //gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
+  gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   //gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);
   gl_FragData[2] = vec4(toNorm, 1.0);
   gl_FragData[3] = vec4(glowHSV, glowReach);

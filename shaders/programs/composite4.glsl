@@ -3,6 +3,13 @@
 //
 // 'Spectral Glow' for Entities Outline
 
+// -- -- -- -- -- -- -- --
+// ~~ CURRENTLY UNUSED ~~
+//  Was going to stylize glowing entities further,
+//    But stopped for performance reasons
+//    Been a while, can try again shortly.
+
+
 #ifdef VSH
 
 varying vec2 texcoord;
@@ -145,7 +152,6 @@ void main() {
   boxBlurCd.x=mix(1.0, dataCdBase.b, dataSpec);
   boxBlurCd.y=dataDepth;
   boxBlurCd.z=localSpectralDelta;
-  //vec2 depthEffGlowBase = texture2D(colortex1, texcoord).rg;
   
   
   gl_FragData[0] = vec4( boxBlurCd, 1.0 );

@@ -235,13 +235,14 @@ void main() {
   
   //outCd.rgb=entityColor.rrr;
   
-  #if ( DebugView == 4 )
+  #if ( DebugView == 5 )
     float debugBlender = step( .0, vPos.x);
     outCd = mix( outCd, txCd, debugBlender);
   #endif
   
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(outDepth, outEffectGlow, 0.0, 1.0);
+  gl_FragData[1] = vec4(1.0-outDepth, outEffectGlow, 0.0, 1.0);
+  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
     // [ Sun/Moon Strength, Light Map, Spectral Glow ]
   gl_FragData[3] = outData;
