@@ -30,9 +30,11 @@ const float Distance_DetailBlendBias = 1.035; // Retain detail near camera, dist
 
 const float GlowMult_Overworld = 0.5;
 const float GlowMult_Nether = 0.45;
+const float GlowMult_End = 0.3;
 
-const float ColorBoost_IsLava = .55;
+const float ColorBoost_IsLava = .3;
 const float ColorBoost_IsLavaNether = 1.0;
+const float ColorBoost_IsLavaEnd = 0.35;
 
 const float Normal_InfFalloffRate = 0.8; // Nearby Facing-Camera Color Boost on blocks; higher is brighter
 

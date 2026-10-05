@@ -558,6 +558,9 @@ void main() {
 #ifdef NETHER
 		worldGlowMult = GlowMult_Nether;
 		worldIsLava = ColorBoost_IsLavaNether;
+#elif defined THE_END
+		worldGlowMult = GlowMult_End;
+		worldIsLava = ColorBoost_IsLavaEnd;
 #endif
 
 
@@ -1624,7 +1627,7 @@ float skyGreyInf = 0.0;
   //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
   //outCd.rgb = vec3(lightLumaCd.rgb );
   //outCd.rgb = vec3(vColor.aaa );
-
+  //
   outDepthGlow = vec4(outShadowPos.xyz, 1.0-outDepth);
 	outNormal = vec4(vNormal*.5+.5, 1.0);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]

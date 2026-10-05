@@ -213,7 +213,7 @@ void main() {
 
   uv = fract( vTexCoord*.15 + noiseX.xy*.1 )*(1.0-(noiseX.z*.5));
   noiseX.z = (noiseX.z*.5+.5);
-  vec4 baseCd = texture2D(gtexture, uv) * vColor * noiseX.z * (skyDotY*.4+.3);
+  vec4 baseCd = texture2D(gtexture, uv) * vColor * noiseX.z * (skyDotY*.3+.15);
   uv += noiseX.xy + vTexCoord*.1;
   vec4 mixCd = texture2D(gtexture, uv) * vColor * noiseX.z * min(1.0,skyDotY*.5+.7);
   outCd = mix( baseCd, mixCd, noiseX.x);
