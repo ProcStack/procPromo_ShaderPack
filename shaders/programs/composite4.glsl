@@ -34,7 +34,6 @@ const int colortex9Format = RGBA16F;
 #include "/shaders.settings"
 #include "utils/mathFuncs.glsl"
 
-uniform sampler2D colortex1; // Bind 1
 uniform sampler2D colortex9; // Bind 17
 uniform vec2 texelSize;
 uniform vec2 far;

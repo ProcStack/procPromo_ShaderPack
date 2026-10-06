@@ -233,7 +233,7 @@ void main() {
 
   //outCd.a =1.0;//skyGreyInf * skyGreyInf * (skyGreyInf*.5+.5) * isSun;
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4(vec3(0.0),1.0);
+  gl_FragData[1] = vec4(vec3(1.0),0.0);
 
 }
 #endif
