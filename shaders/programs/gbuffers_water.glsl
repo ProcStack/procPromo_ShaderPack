@@ -318,6 +318,9 @@ void main() {
   float surfaceShading = 9.0-abs(toCamNormalDot);
 
   float fogColorBlend = 1.0;
+  vec3 shadowData = vec3(0.0);
+  float shadowBase = 1.0;
+  float shadowDepthInf = 1.0;
   
     // -- -- -- -- -- -- -- -- -- -- -- --
     // -- Shadow Sampling & Influence - -- --
@@ -339,7 +342,7 @@ void main() {
   vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
   
 	// Get base shadow value
-  float shadowBase=shadow2D(shadowtex0, projectedShadowPosition).x; 
+  shadowBase=shadow2D(shadowtex0, projectedShadowPosition).x; 
 	shadowAvg = shadowBase ;
 	
 	// Get base shadow source block color
@@ -347,7 +350,7 @@ void main() {
 	
 	// Get shadow source distance
 	// Delta of frag shadow distance * shadowDistBiasMult
-	vec3 shadowData = texture2D(shadowcolor1, projectedShadowPosition.xy).rgg;
+	shadowData = texture2D(shadowcolor1, projectedShadowPosition.xy).rgg;
 	shadowData.b = ( shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
 	
 	shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
@@ -387,7 +390,7 @@ void main() {
 #endif
 
   
-  float shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
+  shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
 	
 	// Verts not facing the sun should never have non-1.0 shadow values

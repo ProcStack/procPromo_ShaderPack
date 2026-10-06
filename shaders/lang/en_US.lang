@@ -39,7 +39,7 @@ option.EdgeShading=Edge Outlines
 option.EdgeShading.comment=Visibility of Edges in game, appearing lighter Overworld, darker in the Nether.  0.0, no visible edges. 1.0, default edges (slightly transparent, ~2px wide). 2.0, overdrive edges (100% visible, ~4px wide)
 
 option.HandPosScalar=Hand Position
-option.HandPosScalar.comment=Placement of hand on screen, for portrait mode screens
+option.HandPosScalar.comment=Placement of hand on screen.  For portrait mode screen recordings.  Try ~0.4 for vertical content.
 
 # -- -- --
 
@@ -72,6 +72,13 @@ value.ShadowSampleCount.2=Mid
 value.ShadowSampleCount.3=High
 value.ShadowSampleCount.4=Best
 option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Low, simple shadows, 1 sample.  Mid, mellow shadows, 5 samples. High, goose down pillow soft shadows, 9 samples.
+
+# -- -- --
+
+
+option.VolumeRayCount=Ambiance Volume Resolution
+value.VolumeRayCount.0=Off
+option.VolumeRayCount.comment=The Overworld has shadow/light volumetrics from the sun/moon.  Set the count of shadow map samples.  The higher the slower; set to 0/Off to Disable Volume.  Default : 50
 
 # -- -- --
 

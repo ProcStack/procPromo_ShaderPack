@@ -361,6 +361,10 @@ void main() {
 		
 		ambBrightness = 1.0;
 
+    vec3 shadowData = vec3(0.0);
+    float shadowBase = 1.0;
+    float shadowDepthInf = 1.0;
+
 #if ShadowSampleCount > 0
 
 // localShadowOffset is distance offset from surface to sample shadow
@@ -380,7 +384,7 @@ void main() {
 
 
 	// Get base shadow value
-  float shadowBase=shadow2D(shadowtex0, baseShadowLookup).x; 
+  shadowBase=shadow2D(shadowtex0, baseShadowLookup).x; 
 	shadowAvg = shadowBase ;
 	
 	// Get base shadow source block color
@@ -388,7 +392,7 @@ void main() {
 	
 	// Get shadow source distance
 	// Delta of frag shadow distance * shadowDistBiasMult
-	vec3 shadowData = texture(shadowcolor1, baseShadowLookup.xy).rgg;
+	shadowData = texture(shadowcolor1, baseShadowLookup.xy).rgg;
 	shadowData.b = max(0.0, shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
 	
 	//shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
@@ -435,7 +439,7 @@ void main() {
 
   // -- -- --
   
-  float shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
+  shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
   shadowDepthInf *= shadowDepthInf;
 	
 	// Verts not facing the sun should never have non-1.0 shadow values

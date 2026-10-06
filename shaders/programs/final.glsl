@@ -86,6 +86,8 @@ uniform vec3 skyColor;
 uniform float rainStrength;
 uniform int worldTime;
 uniform float nightVision;
+uniform float texelSizeX;
+uniform float texelSizeY;
 
 uniform int biome;
 
@@ -306,11 +308,11 @@ void main() {
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 #ifdef OVERWORLD
-// posBase.rgb - shadow pos, `baseShadowLookup` from `terrain`
-// depthBase - depth value from eye in scene
-// normalCd.rgb - 0-1 fitted, needs to be converted to -1 to 1 range for calculations
-// shadowcolor0 - primary shadow buffer
-// shadowcolor1 - object data and transparency color
+  if(VolumeRayCount>0){
+    vec2 volUv = uv;// * vec2(0.4);
+    vec3 scenePosDepth = texture2D(colortex10, volUv ).rgb;
+    outCd.rgb *= scenePosDepth.xyz;
+  }
 #endif
 
 // -- -- -- -- --
@@ -655,14 +657,15 @@ void main() {
 #elif ( DebugView == 5 )
 	float debugBlender = step( .5, uv.x);
 	outCd = mix( baseCd, outCd, debugBlender);
-	
 #endif
 
 //outCd.rgb = vec3( step(.99999, edgeDepthInf));
 //outCd.rgb = vec3( biasToOne(edgeDepthInf) );
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
+ 
+  //outCd.rgb = texture2D(colortex10, uv ).rgb;
+  //outCd.rgb = scenePosDepth.rgb;
 	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

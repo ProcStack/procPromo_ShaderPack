@@ -420,8 +420,8 @@ void main() {
   
 
   gl_FragData[0] = outCd;
-  //gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
-  gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
+  gl_FragData[1] = vec4( vec3(1.0), 1.0-min(.9999,gl_FragCoord.w));
+  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   //gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.15, 1.0);
   gl_FragData[2] = vec4(toNorm, 1.0);
   gl_FragData[3] = vec4(glowHSV, glowReach);
