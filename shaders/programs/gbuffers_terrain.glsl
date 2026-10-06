@@ -1035,7 +1035,7 @@ vec3 outShadowPos = vPos.xyz;
 
   vec3 baseShadowLookup = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
 
-  localShadowOffset.z = 0.5 + min( 1.0, ( 0.00003) * shadowThreshold );
+  localShadowOffset.z = 0.5 + min( 1.0, ( 0.00001) * shadowThreshold );
   outShadowPos = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
 
   vec3 projectedShadowPosition = baseShadowLookup;
