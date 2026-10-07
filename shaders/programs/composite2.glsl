@@ -75,7 +75,7 @@ void main() {
   reachDist *= Glow_Perc2 * Glow_Reach * GlowBrightness;//*2.0;
 
   int reachSteps = 7 + BaseQuality*6 ;
-  float texScalar = 13.0-reachDist*5.0;
+  float texScalar = 13.0-reachDist*7.0;
   vec2 texelRes = vec2( texelSize.x * texScalar * reachDist, 0.0 );
   
   vec3 baseBloomCd = directionBlurSample(sampleCd.rgb, gaux2, uv, texelRes, reachSteps);

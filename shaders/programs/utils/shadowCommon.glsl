@@ -73,8 +73,9 @@ const float shadowThreshBase_Entity = 0.00015; // gbuffers_entities.glsl
 const float shadowThreshDist = 0.0000035; // Bias far from Camera
 const float shadowThreshDist_Entity = 0.00035; // Bias far from Camera
 
-const float shadowVolume_NearBias = 0.001; // Bias near to Camera
-const float shadowVolume_FarBias = 0.0005; // Bias far from Camera
+const float ambianceVolume_NearBias = 0.001; // Bias near to Camera
+const float ambianceVolume_FarBias = 0.00005; // Bias far from Camera
+const float ambianceVolume_TargetBias = 0.00003; // Bias far from Camera
 
 const float oneThird = 1.0 / 3.0;
 

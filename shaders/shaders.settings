@@ -24,6 +24,8 @@
 
 #define VolumeRayCount 50 //[0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200]
 
+#define ReflectionQuality 2 //[0 1 2 3]
+
 // 'shadowMapResolution' - Found in 'utils/shadowCommon.glsl'
 
 const float Distance_DarkenMult = 80.0; // Lower is more & closer fog-ish
@@ -35,7 +37,7 @@ const float GlowMult_Nether = 0.4;
 const float GlowMult_End = 0.3;
 
 const float ColorBoost_IsLava = .3;
-const float ColorBoost_IsLavaNether = 0.5;
+const float ColorBoost_IsLavaNether = 0.45;
 const float ColorBoost_IsLavaEnd = 0.35;
 
 const float Normal_InfFalloffRate = 0.8; // Nearby Facing-Camera Color Boost on blocks; higher is brighter

@@ -76,9 +76,19 @@ option.ShadowSampleCount.comment=Set the quality of shadows. Off, no shadows. Lo
 # -- -- --
 
 
+
 option.VolumeRayCount=Ambiance Volume Resolution
 value.VolumeRayCount.0=Off
 option.VolumeRayCount.comment=The Overworld has shadow/light volumetrics from the sun/moon.  Set the count of shadow map samples.  The higher the slower; set to 0/Off to Disable Volume.  Default : 50
+
+# -- -- --
+
+option.ReflectionQuality=Reflection Quality
+value.ReflectionQuality.0=Off
+value.ReflectionQuality.1=Low
+value.ReflectionQuality.2=Mid
+value.ReflectionQuality.3=High
+option.ReflectionQuality.comment=For reflective surfaces like water & glass, calculate a reflection.  Low, Mid, & High determine sample counts of the reflection.  Set Off to disable reflections.
 
 # -- -- --
 
@@ -86,7 +96,7 @@ option.VolumeRayCount.comment=The Overworld has shadow/light volumetrics from th
 option.DebugView=Debug Vision
 value.DebugView.0=Off
 value.DebugView.1=Detail Blurring
-value.DebugView.2=Depth Buffers
+value.DebugView.2=Render Buffers
 value.DebugView.3=Shadow Cam
 value.DebugView.4=Shadow Debug
 value.DebugView.5=Vanilla vs procPromo

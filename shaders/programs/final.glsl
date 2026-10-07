@@ -64,8 +64,8 @@ uniform sampler2D gaux1; // Bind 7;
 uniform sampler2D gaux2; // Bind 8; 40% Res Glow Pass
 uniform sampler2D gaux3; // Bind 9; 30% Res Glow Pass
 uniform sampler2D gaux4; // Bind 10; 30% Res Glow Pass
-uniform sampler2D colortex9; // Bind 17; Known working from terrain gbuffer
-uniform sampler2D colortex10; // Bind 18; Crepuscular Rays
+uniform sampler2D colortex9; // Bind 17; Crepuscular Rays
+uniform sampler2D colortex10; // Bind 18; Reflection Map
 
 uniform sampler2D gcolor;
 uniform sampler2D gdepth;
@@ -238,7 +238,8 @@ void main() {
   
   vec4 normalCd = texture2D(colortex2, uv);
   vec3 lightCd = texture2D(gaux1, uv).xyz;
-  vec4 spectralDataCd = texture2D(colortex9, uv);
+  vec4 reflectionCd = texture2D(colortex9, uv*.3);
+  //vec4 spectralDataCd = texture2D(colortex9, uv);
 
 
 // -- -- -- -- -- -- -- --
@@ -314,6 +315,15 @@ void main() {
     outCd.rgb *= scenePosDepth.xyz;
   }
 #endif
+
+// -- -- -- -- -- -- --
+// -- Reflection Map -- --
+// -- -- -- -- -- -- -- -- --
+
+  #if ReflectionQuality > 0
+    outCd.rgb += reflectionCd.rgb * lightCd.b * min(1.0,depthCos*5.0)*.4;
+  #endif
+
 
 // -- -- -- -- --
 // -- To Cam - -- --
@@ -420,7 +430,7 @@ void main() {
   float lavaSnowFogInf = 1.0 - min(1.0, max(0.0,isEyeInWater-1.0)) ;
   
   //vec3 outGlowCd = max( blurSecondCd, max(blurInitCd, blurFirstCd) );
-  vec3 outGlowCd =  blurSecondCd + blurInitCd + blurFirstCd;
+  vec3 outGlowCd =  blurSecondCd + blurInitCd ;//+ blurFirstCd;
   outCd.rgb += outGlowCd * GlowBrightness;// * lavaSnowFogInf;
   
   
@@ -431,8 +441,8 @@ void main() {
   outCd.rgb += outCd.rgb*.3*edgeInsideOutsidePerc*edgeCdInf;
   
   // Boost Glowing Entity's Color
-  float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
-  outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
+  //float spectralInt = spectralDataCd.b;// + (spectralDataCd.g-.5)*3.0;
+  //outCd.rgb += outCd.rgb * spectralInt * spectralDataCd.r;
   
 
 // -- -- -- -- -- -- -- --
@@ -520,7 +530,7 @@ void main() {
 //     drooollllssss
 //
 
-// Debug - Shadow Cam
+// Debug - Render Buffers; Depth, Block Lighting, Normal, Glow, Shadow Volume
 #if ( DebugView == 2 )
 
 	vec2 debugShadowUV = vec2(uv.x*1.225, uv.y)*3.4;
@@ -577,7 +587,11 @@ void main() {
 
 	debugBufferCdUV = debugShadowUV + vec2(-3.05,-1.2);
 	debugBufferTexUV = debugBufferCdUV;
-	bufferCd = texture2D(gaux3, debugBufferTexUV * .3 ).rgb;
+  #if ReflectionQuality > 0
+    bufferCd = texture2D(colortex9, debugBufferTexUV * .3 ).rgb;
+  #else
+    bufferCd = texture2D(gaux3, debugBufferTexUV * .3 ).rgb;
+  #endif
 	debugBufferCdUV = abs(debugBufferCdUV-.5);
 	shadowHelperMix = max(debugBufferCdUV.y,debugBufferCdUV.x);
 	bufferCd = mix( vec3(0.0), bufferCd, step(shadowHelperMix, 0.50));
@@ -590,7 +604,7 @@ void main() {
 	debugBufferTexUV = debugBufferCdUV;
   
   #ifdef OVERWORLD
-	  bufferCd = texture2D(colortex10, debugBufferTexUV * .4 ).rgb;
+	  bufferCd = texture2D(colortex10, debugBufferTexUV  ).rgb;
   #else
 	  bufferCd = texture2D(gaux4, debugBufferTexUV * .4 ).rgb;
   #endif
@@ -664,8 +678,15 @@ void main() {
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- --
  
-  //outCd.rgb = texture2D(colortex10, uv ).rgb;
-  //outCd.rgb = scenePosDepth.rgb;
+  //outCd.rgb = texture2D(colortex9, uv ).rgb;
+  //outCd.rgb = blurSecondCd.rgb;
+  //outCd.rgb = blurInitCd.rgb;
+  //outCd.rgb = blurFirstCd.rgb;
+  
+  //outCd.rgb = texture2D(gaux2, uv*.4).rgb; // Bind 8
+  //outCd.rgb = texture2D(gaux3, uv*.3).rgb; // Bind 9
+  //outCd.rgb = texture2D(colortex9, uv*.3).rgb; // Bind 9
+  //outCd.rgb = vec3(depthCos+depthCos);
 	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

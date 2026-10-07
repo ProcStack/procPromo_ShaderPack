@@ -720,7 +720,6 @@ uniform float viewHeight;
 
 uniform float near;
 uniform float far;
-uniform sampler2D gaux1;
 uniform sampler2DShadow shadowtex0;
 uniform sampler2DShadow shadowtex1;
 uniform sampler2D shadowcolor0;
@@ -1035,12 +1034,12 @@ vec3 outShadowPos = vPos.xyz;
 
   vec3 baseShadowLookup = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
 
-  localShadowOffset.z = 0.5 + min( 1.0, ( 0.00001) * shadowThreshold );
+  localShadowOffset.z = 0.5 - min( 1.0, ( 0.00002) * shadowThreshold );
   outShadowPos = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
 
   vec3 projectedShadowPosition = baseShadowLookup;
   //float shadowFade = clamp( (1.0-max(abs(shadowPosLocal.x),abs(shadowPosLocal.y))) * shadowEdgeFade, 0.0, 1.0) ;
-  if(VolumeRayCount == 0) { 
+  if(VolumeRayCount == 0) {
     // Get base shadow value
       shadowBase = texture(shadowtex0, baseShadowLookup);
       //float waterShadowBase = texture(shadowtex1, projectedShadowPosition + localShadowOffset);
@@ -1390,7 +1389,6 @@ vec3 outShadowPos = vPos.xyz;
 
 
 
-
 // -- -- -- -- -- 
 // -- Haize -- -- --
 // -- -- -- -- -- -- --
@@ -1403,16 +1401,16 @@ vec3 outShadowPos = vPos.xyz;
 
 
 
-// -- -- -- -- -- -- --
-// -- Fog Vision - -- --
 // -- -- -- -- -- -- -- -- --
+// -- Fog Vision in Water  -- --
+// -- -- -- -- -- -- -- -- -- -- --
 
 vec3 skyGreyCd = outCd.rgb;
 float skyGreyInf = 0.0;
 	
 // Fog when Player in Water 
 	if( isEyeInWater == 1 ){ 
-		float smoothDepth=min(1.0, smoothstep(.01,.1,depth));
+		float smoothDepth=min(1.0, smoothstep(.01,.2,depth)*(0.8+lightLuma*lightLuma*.3));
 		// General brightness under water
 			
     // Darker --
@@ -1523,7 +1521,7 @@ float skyGreyInf = 0.0;
       //glowInf += (max(0.0,luma(outCd.rgb)-.5)*1.85+isLava)*vCdGlow;
       //outCd.rgb = vec3( luma(outCd.rgb) );
       #if defined OVERWORLD
-        glowInf = clamp( (outCd.g-.25)*7.0, 0.0, 1.0 )*.5;
+        glowInf = clamp( (outCd.g-.25)*7.0, 0.0, 1.0 )*.15;
       #else
         glowInf = clamp( (outCd.g-.18)*10.0, 0.0, 1.0 );
       #endif
@@ -1646,7 +1644,8 @@ float skyGreyInf = 0.0;
 	//baseTxCd.a = max(baseTxCd.a, vAlphaRemove) * vColor.a ;
   //tmpCd = vec4( vec3( shadowAvg ), 1.0 );
   //outCd.rgb = vec3(lightLumaCd.rgb );
-  //outCd.rgb = vec3(shadowAvg );
+  //outCd.rgb = vec3( shadowAvg );
+  //outCd.rgb = vec3( lightLumaCd );
   //
 
   // Depth flipped negative so the sky can render outlines

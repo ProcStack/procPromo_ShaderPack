@@ -1,4 +1,4 @@
-// GBuffer - Composite #4 GLSL
+// GBuffer - Composite #5 GLSL
 //   Written by Kevin Edzenga, ProcStack; 2022-2023
 //
 // Ambiance Volume / Crepuscular Rays
@@ -37,10 +37,10 @@
 /* RENDERTARGETS: 10 */
 // target - colortex10
 
-/* COLORTEX9FORMAT:RGBA16 */
+/* COLORTEX10FORMAT:RGBA16 */
 /*
 const int colortex6Format = RGBA16F;
-const int colortex9Format = RGBA16F;
+const int colortex10Format = RGBA16F;
 */
 
   #include "/shaders.settings"
@@ -60,6 +60,7 @@ const int colortex9Format = RGBA16F;
   uniform mat4 shadowModelView;
   uniform mat4 shadowProjection;
   uniform float eyeBrightnessFit;
+  uniform int isEyeInWater;
 
   uniform sampler2D gdepth;
   uniform sampler2D gaux1;
@@ -86,27 +87,27 @@ const int colortex9Format = RGBA16F;
   // -- -- -- -- -- -- -- -- -- -- -- -- --
 
   vec3 projectShadowLookup(vec3 viewPos) {
-      vec3 worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
+    vec3 worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
 
-      vec3 shadowPos = (shadowModelView * vec4(worldPos, 1.0)).xyz;
+    vec3 shadowPos = (shadowModelView * vec4(worldPos, 1.0)).xyz;
 
-      shadowPos = projMAD(shadowProjection, shadowPos);
+    shadowPos = projMAD(shadowProjection, shadowPos);
 
-      vec4 warpedShadowPos = distortShadowShift(vec4(shadowPos, 1.0));
+    vec4 warpedShadowPos = distortShadowShift(vec4(shadowPos, 1.0));
 
-      vec3 lookup = warpedShadowPos.xyz * shadowPosMult + shadowPosOffset;
-      lookup.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist) * shadowThreshold );
+    vec3 lookup = warpedShadowPos.xyz * shadowPosMult + shadowPosOffset;
+    lookup.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist) * shadowThreshold );
 
-      return lookup;
+    return lookup;
   }
 
 
   float jitter(vec2 coord, float depth, float seed) {
-      return fract( sin(dot(coord, vec2(12.9898+depth+seed, 78.233-seed*10.0))) * 43758.5453 )*.1-.05;
+    return fract( sin(dot(coord, vec2(12.9898+depth+seed, 78.233-seed*10.0))) * 43758.5453 )*.1-.05;
   }
 
   vec3 scatter(vec3 pos, float depth, float seed) {
-      return fract(cos(pos*10.0+vec3(seed*234.2342) * depth )*1213.123124)*2.0-1.0;
+    return fract(cos(pos*10.0+vec3(seed*234.2342) * depth )*1213.123124)*2.0-1.0;
   }
 
   // -- -- -- -- -- -- 
@@ -123,7 +124,7 @@ const int colortex9Format = RGBA16F;
     vec4 shadowPosDepthBase = texture2D(colortex1, vUv); // Shadow Position and Depth
     vec3 posBase = shadowPosDepthBase.rgb;
     float depthBase = shadowPosDepthBase.a;
-    float isSky = clamp(smoothstep(.98, 0.9999, depthBase), 0.0, 1.0);
+    float isSky = clamp(smoothstep(.994, 0.9999, depthBase), 0.0, 1.0);
 
     // Unproject fullscreen-quad to camera-space-shadow ray
     //   Used when `isSky=1.0`
@@ -135,7 +136,7 @@ const int colortex9Format = RGBA16F;
 
     vec4 scenePosDepth = texture2D(gdepth, vUv);
     vec3 sceneWorldPos = scenePosDepth.rgb;
-    float sceneDepth = scenePosDepth.a;
+    float sceneDepth = scenePosDepth.a*scenePosDepth.a;
     //float hasGeometry = step(sceneDepth, 0.99999);
 
     vec4 sceneClip = vec4(vUv * 2.0 - 1.0, sceneDepth * 2.0 - 1.0, 1.0);
@@ -154,30 +155,29 @@ const int colortex9Format = RGBA16F;
     // Multisample a base shadow value
     float reachMult = 1.0;
     int addToCount = 0;
+    float multiSampleLight = 0.0;
     #if ShadowSampleCount == 2
       vec2 posOffset;
-      float multiSampleLight = 0.0;
       for( int x=0; x<axisSamplesCount; ++x){
         posOffset = axisSamples[x]*reachMult*shadowMapTexelSize;
-        vec3 shadowLookup = sceneWorldPos + vec3( posOffset, shadowVolume_FarBias*0.5 );
+        vec3 shadowLookup = sceneWorldPos + vec3( posOffset, -ambianceVolume_TargetBias );
       
         multiSampleLight +=  texture(shadowtex0, shadowLookup);
       }
       multiSampleLight = multiSampleLight * axisSamplesFit;
-      multiSampleLight = 1.0-(1.0-biasToOne(multiSampleLight, 4.0))*.85;
+      multiSampleLight = 1.0-(1.0-biasToOne(multiSampleLight, 4.0))*.55;
       rayLight = multiSampleLight*2.0;
       addToCount++;
     #elif ShadowSampleCount >= 3
       vec2 posOffset;
-      float multiSampleLight = 0.0;
       for( int x=0; x<boxSamplesCount; ++x){
         posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
         
-        vec3 shadowLookup = sceneWorldPos + vec3( posOffset, shadowVolume_FarBias*0.5 );
+        vec3 shadowLookup = sceneWorldPos + vec3( posOffset, -ambianceVolume_TargetBias );
         multiSampleLight += texture(shadowtex0, shadowLookup);
       }
       multiSampleLight = multiSampleLight * boxSampleFit;
-      multiSampleLight = 1.0-(1.0-biasToOne(multiSampleLight, 4.0))*.5;
+      multiSampleLight = 1.0-(1.0-biasToOne(multiSampleLight, 4.0))*.55;
       rayLight = multiSampleLight*2.0;
       addToCount++;
     #endif
@@ -190,27 +190,33 @@ const int colortex9Format = RGBA16F;
     //shadowOrigin = vec3(.5,.65,.5);
     vec3 shadowTarget = (sceneWorldPos+shadowPosOffset-.5)*0.998+.5;
 
+
     //shadowOrigin = mix(  shadowOrigin, farViewDir*.5-.5, isSky);
     //shadowTarget = mix(  shadowTarget, farViewDir*.1-.5, isSky);
 
-    shadowOrigin.z -= shadowVolume_NearBias;
-    shadowTarget.z -= shadowVolume_FarBias;
+    shadowOrigin.z -= ambianceVolume_NearBias;
+    shadowTarget.z -= ambianceVolume_FarBias;
+    
     //float middleDistanceMask = min( 1.0, max(0.0,((sceneDepth-.75*(1.0-length(vView.xyz)*.42))*2.0)) * (1.0-max(0.0, ((sceneDepth-0.96)*20.80672268907563))));
-    float middleDistanceMask = min( 1.0, (1.0-max(0.0, ((sceneDepth-0.96)*20.80672268907563))));
-    float middleDistanceMaskInv =  1.0-middleDistanceMask;
+    float distanceFade = clamp( (sceneDepth-0.95)*20.80672268907563, 0.0, 1.0);
+    float middleDistanceMask = 1.0-distanceFade;
+    float middleDistanceMaskInv =  distanceFade;
+
+    //rayLight = 1.0;
 
     float volRayCountInv = 1.0 / float(VolumeRayCount);
     for (int x = 0; x < VolumeRayCount; ++x) {
-        float stepFit = (float(x) + jitter(gl_FragCoord.xy, sceneDepth, float(x))) * volRayCountInv;
-        stepFit = biasToOne(stepFit,1.0+sceneDepth*0.8);
+      float stepFit = (float(x) + jitter(gl_FragCoord.xy, sceneDepth, float(x))) * volRayCountInv;
+      //stepFit = biasToOne(stepFit,1.2+max(sceneDepth,0.1)*20.8);
+      stepFit = biasToOne(stepFit,2.5+sceneDepth*20.8);
 
-        vec3 shadowLookup = mix(shadowOrigin, shadowTarget, stepFit*stepFit);
-        //shadowLookup += scatter(shadowLookup, sceneDepth, float(x))*vec3(0.01,0.01,0.01);
-        
-        float lightVisibility = texture(shadowtex0, shadowLookup);
-        //lightVisibility = clamp((lightVisibility-.5)*2.0+0.5, 0.0, 1.0);
+      vec3 shadowLookup = mix(shadowOrigin, shadowTarget, stepFit*stepFit);
+      //shadowLookup += scatter(shadowLookup, sceneDepth, float(x))*vec3(0.01,0.01,0.01);
+      shadowLookup.z -= ambianceVolume_FarBias;
+      float lightVisibility = texture(shadowtex0, shadowLookup);
+      //lightVisibility = clamp((lightVisibility-.5)*2.0+0.5, 0.0, 1.0);
 
-        rayLight += lightVisibility ;
+      rayLight += lightVisibility ;
     }
 
     float rays = min(1.0, rayLight / float(VolumeRayCount) * 1.5);
@@ -218,7 +224,8 @@ const int colortex9Format = RGBA16F;
 
     float moonAmbianceInf =  moonInf;
     float depthInf = 1.0-min(1.0,max(0.0, depthBase*depthBase-.9 - isSky)*6.2);
-    depthInf = min(1.0,max(0.0, lightCdBase-.4)*2.5*depthInf ) * moonAmbianceInf;
+    depthInf = mix( max(lightCdBase,isSky)*.62+.38, min(1.0,max(0.0, lightCdBase-.4)*2.5*depthInf ), moonAmbianceInf);
+    //depthInf = mix( 1.0, min(1.0,max(0.0, lightCdBase-.4)*2.5*depthInf ), moonAmbianceInf);
     //depthInf = 1.0;
     
     float rayScalar = mix( 0.0, 1.0-moonPhaseMultVar, moonAmbianceInf);
@@ -228,9 +235,16 @@ const int colortex9Format = RGBA16F;
     //rays = mix( rays, rays*.2+.8, rayScalar );
 
     vec3 rayColor = fogColor*.5;
-    outCd.rgb = mix( rayColor, vec3( 1.0 ), rays+(1.0-sunMoonCrossFade) );
+    outCd.rgb = mix( rayColor, vec3( 1.0 ), min(1.0, max(rays,isSky)+(1.0-sunMoonCrossFade)+(1.0-clamp(eyeBrightnessFit*2.0-.5,0.0,1.0))) );
+    //outCd.rgb = vec3( middleDistanceMask );
+    //outCd.rgb = vec3( multiSampleLight );
 
+    //outCd.rgb = vec3( max(lightCdBase,isSky) );
+    //outCd.rgb = vec3( rays );
 
+    //vec3 testLookup = sceneWorldPos + vec3( 0.0,0.0, -0.01 );
+    //multiSampleLight = texture(shadowtex0, testLookup);
+    //outCd.rgb = vec3( multiSampleLight );
 
 #else
     vec4 outCd = vec4(1.0,1.0,1.0,0.0);

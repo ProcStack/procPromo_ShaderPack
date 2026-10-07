@@ -175,6 +175,7 @@ const int shadowcolor1Format = RG16;
     }
     
 		shadowCd.a*=1.0-vIsTranslucent;
+
     outCd = shadowCd;
     //outCd = outAlpha;
     //outData = vec4( length(vShadowPos)/far, shadowCd.aaa );

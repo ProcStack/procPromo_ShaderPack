@@ -47,6 +47,7 @@ vec3 boxBlurSampleHSV( sampler2D tx, vec2 uv, vec2 texelRes){
   vec3 curCd;
 	float curInf;
   vec3 brightestCd = sampleCd.rgb;
+  vec3 avgCd = sampleCd.rgb;
   for( int x=0; x<diagSamplesCount; ++x){
 	
     curUV =  uv + diagSamples[x]*texelRes*sampleCd.z ;
@@ -54,14 +55,17 @@ vec3 boxBlurSampleHSV( sampler2D tx, vec2 uv, vec2 texelRes){
     curCd = texture2D(tx, curUV).rgb;
 		
 		brightestCd = mix( brightestCd, curCd.rgb, step(brightestCd.z, curCd.z) );
+    //avgCd += curCd.rgb;
 		//brightestCd = max( brightestCd, curCd.rgb );
     //brightestCd += curCd;
 
-    sampleCd.z += curCd.z*.5;
+    sampleCd.z += curCd.z*.25;
 
   }
 	//brightestCd *= .25;
-	return vec3( brightestCd.rg, sampleCd.b ) ;
+	//avgCd.xyz *= .2;
+	return vec3( brightestCd.rg, max(sampleCd.z, sampleCd.b) ) ;
+	//return vec3( avgCd ) ;
 }
 
 void main() {
@@ -71,7 +75,7 @@ void main() {
   float depthInf = ( 1.0 + Glow_Perc1 * Glow_Reach ) * GlowBrightness;
 
   float glowBrightness = sampleCd.b;
-  float reachInf = (depthInf + sampleDepth*Glow_Reach)*3.0;
+  float reachInf = (depthInf + sampleDepth*Glow_Reach)*5.0;
 	
   vec3 baseBloomCd = boxBlurSampleHSV(colortex6, texcoord, texelSize * reachInf );
 	

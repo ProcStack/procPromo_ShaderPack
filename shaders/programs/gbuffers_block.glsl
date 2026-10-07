@@ -330,7 +330,6 @@ uniform mat4 gbufferModelViewInverse;
 
 uniform float near;
 uniform float far;
-uniform sampler2D gaux1;
 uniform sampler2DShadow shadow;
 
 uniform vec2 texelSize;

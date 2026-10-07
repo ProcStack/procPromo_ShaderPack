@@ -351,6 +351,7 @@ void main() {
     // -- -- -- -- -- -- -- -- -- -- -- --
     // -- Shadow Sampling & Influence - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+vec3 outShadowPos = vPos.xyz;
 #ifdef OVERWORLD
 
     float skyBrightnessMult = eyeBrightnessFit;
@@ -379,6 +380,10 @@ void main() {
   shadowPosLocal = distortShadowShift( shadowPosLocal );
   
   vec3 baseShadowLookup = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+
+  localShadowOffset.z = 0.5 - min( 1.0, ( 0.00002) * shadowThreshold );
+  outShadowPos = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+
   vec3 projectedShadowPosition = baseShadowLookup;
   //float shadowFade = clamp( (1.0-max(abs(shadowPosLocal.x),abs(shadowPosLocal.y))) * shadowEdgeFade, 0.0, 1.0) ;
 
@@ -535,9 +540,9 @@ void main() {
 
   gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(1.0-depth, outEffectGlow, 0.0, 1.0);
-  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
+  gl_FragData[1] = vec4(outShadowPos, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
-  gl_FragData[3] = vec4( lightLuma, lightLuma, 0.0,1.0);
+  gl_FragData[3] = vec4( lightLuma, 0.0, 0.0,1.0);
   gl_FragData[4] = vec4(vec3(0.0),1.0);
 
 }
