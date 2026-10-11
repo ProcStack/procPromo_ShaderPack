@@ -321,7 +321,7 @@ void main() {
 // -- -- -- -- -- -- -- -- --
 
   #if ReflectionQuality > 0
-    outCd.rgb += reflectionCd.rgb * lightCd.g * min(1.0,depthCos*5.0)*.4;
+    outCd.rgb += reflectionCd.rgb * lightCd.g * min(1.0,depthCos*5.0)*.45;
   #endif
 
 

@@ -217,7 +217,7 @@ const int colortex10Format = RGBA16F;
 
       vec3 shadowLookup = mix(shadowOrigin, shadowTarget, stepFit*stepFit);
       //shadowLookup += scatter(shadowLookup, sceneDepth, float(x))*vec3(0.01,0.01,0.01);
-      shadowLookup.z -= ambianceVolume_FarBias + lightOffset;
+      shadowLookup.z -= ambianceVolume_FarBias + lightOffset + clamp( (sceneDepth-0.7)*3.4, 0.0, 1.0)*.0025;
       float lightVisibility = texture(shadowtex0, shadowLookup);
       //lightVisibility = clamp((lightVisibility-.5)*2.0+0.5, 0.0, 1.0);
 
@@ -249,7 +249,7 @@ const int colortex10Format = RGBA16F;
 
     //vec3 testLookup = sceneWorldPos + vec3( 0.0,0.0, -0.01 );
     //multiSampleLight = texture(shadowtex0, testLookup);
-    outCd.rgb = vec3( multiSampleLight );
+    //outCd.rgb = vec3( multiSampleLight );
 
     //float viewDot = 1.0-max(0.0,dot(vNormal.xyz, -normalize(vPos.xyz)));
 #else
