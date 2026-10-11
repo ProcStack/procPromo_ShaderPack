@@ -108,9 +108,9 @@
     vec3 viewProjectionNormal = normalize(vView.xyz);
 
 
-    vec3 lightReflectionCdBase = texture2D(gaux1, vUv).rgb; // Shadow Position and Depth
+    vec2 lightReflectionCdBase = texture2D(gaux1, vUv).rg; // Shadow Position and Depth
     float lightCdBase = lightReflectionCdBase.r; // Shadow Position and Depth
-    float reflectionMask = lightReflectionCdBase.g; // Reflective Surface Mask
+    float reflectionMask = step(0.0001, lightReflectionCdBase.g); // Reflective Surface Mask
     vec4 shadowPosDepthBase = texture2D(colortex1, vUv); // Shadow Position and Depth
     vec3 posBase = shadowPosDepthBase.rgb;
     float depthBase = shadowPosDepthBase.a;
@@ -180,7 +180,7 @@
     float fresnel = pow(1.0 - max(dot(normal, normalize(-viewPos)), 0.0), 3.0);
 
     vec4 outCd = vec4(reflection * reflectionMask * mix(0.04, 1.0, fresnel)*fade, float(hit));
-    //outCd = vec4(vec3(sceneDepth), 1.0);
+    //outCd = vec4(vec3(reflectionMask), 1.0);
     //outCd = vec4(vec3(lightReflectionCdBase.b), 1.0);
 
 

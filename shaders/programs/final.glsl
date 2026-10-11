@@ -321,7 +321,7 @@ void main() {
 // -- -- -- -- -- -- -- -- --
 
   #if ReflectionQuality > 0
-    outCd.rgb += reflectionCd.rgb * lightCd.b * min(1.0,depthCos*5.0)*.4;
+    outCd.rgb += reflectionCd.rgb * lightCd.g * min(1.0,depthCos*5.0)*.4;
   #endif
 
 
@@ -686,7 +686,6 @@ void main() {
   //outCd.rgb = texture2D(gaux2, uv*.4).rgb; // Bind 8
   //outCd.rgb = texture2D(gaux3, uv*.3).rgb; // Bind 9
   //outCd.rgb = texture2D(colortex9, uv*.3).rgb; // Bind 9
-  //outCd.rgb = vec3(depthCos+depthCos);
 	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

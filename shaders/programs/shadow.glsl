@@ -43,6 +43,7 @@
     #ifdef IS_IRIS
       vec4 basePos = vec4( vaPosition + chunkOffset, 1.0 );
       vec4 position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+      //position = shadowProjection * shadowModelView * gl_Vertex;
       position = shadowProjection * shadowModelView * gl_Vertex;
     #else
       vec4 position = ftransform();

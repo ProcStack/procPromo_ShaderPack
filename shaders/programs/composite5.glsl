@@ -48,7 +48,9 @@ const int colortex10Format = RGBA16F;
   #include "utils/shadowCommon.glsl"
   #include "utils/texSamplers.glsl"
 
-  uniform sampler2D colortex1; // Bind 1
+  uniform sampler2D colortex0; // Diffuse Pass
+  uniform sampler2D colortex1; // Depth Pass
+  uniform sampler2D colortex2; // Normal Pass
   uniform sampler2D colortex9; // Bind 17
   uniform vec2 texelSize;
   uniform float far;
@@ -120,7 +122,9 @@ const int colortex10Format = RGBA16F;
     vec3 viewProjectionNormal = normalize(vView.xyz);
 
 
-    float lightCdBase = texture2D(gaux1, vUv).r; // Shadow Position and Depth
+    vec2 lightOffsetCdBase = texture2D(gaux1, vUv).rb; // Depth and offset amount
+    float lightCdBase = lightOffsetCdBase.r; // Depth
+    float lightOffset = lightOffsetCdBase.g; // Offset amount
     vec4 shadowPosDepthBase = texture2D(colortex1, vUv); // Shadow Position and Depth
     vec3 posBase = shadowPosDepthBase.rgb;
     float depthBase = shadowPosDepthBase.a;
@@ -209,10 +213,11 @@ const int colortex10Format = RGBA16F;
       float stepFit = (float(x) + jitter(gl_FragCoord.xy, sceneDepth, float(x))) * volRayCountInv;
       //stepFit = biasToOne(stepFit,1.2+max(sceneDepth,0.1)*20.8);
       stepFit = biasToOne(stepFit,2.5+sceneDepth*20.8);
+      stepFit = biasToOne(stepFit,2.5+sceneDepth*20.8);
 
       vec3 shadowLookup = mix(shadowOrigin, shadowTarget, stepFit*stepFit);
       //shadowLookup += scatter(shadowLookup, sceneDepth, float(x))*vec3(0.01,0.01,0.01);
-      shadowLookup.z -= ambianceVolume_FarBias;
+      shadowLookup.z -= ambianceVolume_FarBias + lightOffset;
       float lightVisibility = texture(shadowtex0, shadowLookup);
       //lightVisibility = clamp((lightVisibility-.5)*2.0+0.5, 0.0, 1.0);
 
@@ -244,8 +249,9 @@ const int colortex10Format = RGBA16F;
 
     //vec3 testLookup = sceneWorldPos + vec3( 0.0,0.0, -0.01 );
     //multiSampleLight = texture(shadowtex0, testLookup);
-    //outCd.rgb = vec3( multiSampleLight );
+    outCd.rgb = vec3( multiSampleLight );
 
+    //float viewDot = 1.0-max(0.0,dot(vNormal.xyz, -normalize(vPos.xyz)));
 #else
     vec4 outCd = vec4(1.0,1.0,1.0,0.0);
 #endif

@@ -16,12 +16,14 @@ uniform mat4 gbufferModelViewInverse;
 uniform vec2 texelSize;
 
 varying vec3 normal;
+varying vec3 vPos;
   
 void main() {
 
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
   gl_Position = gl_ProjectionMatrix * position;
+  vPos = position.xyz;
 
   color = gl_Color;
 
@@ -54,14 +56,15 @@ const int GL_EXP = 2048;
 uniform int fogMode;
 
 varying vec3 normal;
+varying vec3 vPos;
 
 void main() {
 
   vec4 outCd = texture2D(gcolor, texcoord.st) * color ;
 	
   gl_FragData[0] = outCd;
-  gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
-  //gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
+  //gl_FragData[1] = vec4( vec3(0.0), 1.0-min(.9999,gl_FragCoord.w));
+  gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4( normal*.5+.5, 0.0 );
   gl_FragData[3] = vec4( vec3(0.0), 1.0 );
     

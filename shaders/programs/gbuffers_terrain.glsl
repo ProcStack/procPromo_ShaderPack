@@ -107,6 +107,7 @@ out float vWorldTime;
 out float vIsLava;
 out float vCdGlow;
 out float vDepthAvgColorInf;
+out float vVolumeOffset;
 out float vFinalCompare;
 out float vColorOnly;
 out float vDeltaPow;
@@ -293,6 +294,10 @@ void main() {
 	
   // Leaves
   vAlphaRemove = 0.0;
+
+  // Offset volumetric shadow lookup Z position per block type
+  //   Currently Snow Layers & White Carpet
+  vVolumeOffset = 0.0;
 	
 	// -- -- --
 	
@@ -451,10 +456,11 @@ void main() {
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
   }else if( mc_Entity.x == 106 ){ // Snow Layers
-    //vDeltaPow=0.90;
+    vDeltaPow=0.90;
 		//vAvgColor=vec4(0.985,0.985,0.985,1.0);
 		//vColor=vec4(0.9,0.9,0.9,1.0);
-		vAvgColor.rgb=vec3(luma(vAvgColor.rgb));
+		vAvgColor.rgb=vec3(luma(vAvgColor.rgb)*.75);
+    vVolumeOffset = 0.003;
   }else if( mc_Entity.x == 115 ){ // Birch Wood & Log
     vDeltaMult=1.10;
     vDeltaPow=4.0;
@@ -795,6 +801,7 @@ in float vWorldTime;
 in float vIsLava;
 in float vCdGlow;
 in float vDepthAvgColorInf;
+in float vVolumeOffset;
 in float vFinalCompare;
 in float vDeltaPow;
 in float vDeltaMult;
@@ -1173,7 +1180,7 @@ vec3 outShadowPos = vPos.xyz;
 // Strength of final shadow
   //float lightColorMixer = moonPhaseMultTerrain * skyBrightness * rainStrengthInv;
 	//outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg)*moonPhaseMultTerrain;
-	shadowAvg = 1.0-(1.0-shadowAvg)*1.2;
+	shadowAvg = 1.0-min(1.0, (1.0-shadowAvg)*1.2);
   outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg);
 	//outCd.rgb = shadowAvg+lightCd*shadowLightInf;
 
@@ -1658,7 +1665,7 @@ float skyGreyInf = 0.0;
   
 	outNormal = vec4(vNormal*.5+.5, 1.0);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
-	outLighting = vec4( lightLumaBase, 0.0, 0.0, 1.0);
+	outLighting = vec4( lightLumaBase, 0.0, vVolumeOffset, 1.0);
 	outGlow = vec4( glowHSV, 1.0 );
 	//outGlow = vec4( vec3(0.0), 1.0 );
 
