@@ -48,7 +48,7 @@ const float shadowIntervalSize = 1.00;
 const float shadowEdgeFade = 10.0;
 
 const float shadowMaxSaturation = 0.7; // 0.0-1.0; Lower is darker
-const float shadowLightInf = 0.85; // 0.0-1.0; Lower is darker
+const float shadowLightInf = 1.2; // 0.0-1.0; Lower is darker
 
 // Distance from base of shadow to blend in a blurry shadow
 //   Close to shadow is sharp, further is blurred

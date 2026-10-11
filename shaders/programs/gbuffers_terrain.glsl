@@ -455,11 +455,13 @@ void main() {
   }else if( mc_Entity.x == 105 ){ // Powdered Snow & Lapis
     vDeltaPow=0.90;
 		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
+		vAvgColor.rgb=vec3(luma(vAvgColor.rgb)*.9);
   }else if( mc_Entity.x == 106 ){ // Snow Layers
     vDeltaPow=0.90;
 		//vAvgColor=vec4(0.985,0.985,0.985,1.0);
 		//vColor=vec4(0.9,0.9,0.9,1.0);
-		vAvgColor.rgb=vec3(luma(vAvgColor.rgb)*.75);
+		vAvgColor+=vec4(0.1,0.1,0.12,0.0);
+		vAvgColor.rgb=vec3(luma(vAvgColor.rgb)*.9);
     vVolumeOffset = 0.003;
   }else if( mc_Entity.x == 115 ){ // Birch Wood & Log
     vDeltaMult=1.10;
