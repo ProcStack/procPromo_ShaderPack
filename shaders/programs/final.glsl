@@ -685,7 +685,7 @@ void main() {
   
   //outCd.rgb = texture2D(gaux2, uv*.4).rgb; // Bind 8
   //outCd.rgb = texture2D(gaux3, uv*.3).rgb; // Bind 9
-  //outCd.rgb = lightCd.ggg; // Bind 9
+  //outCd.rgb = baseCd.rgb; // Bind 9
 	gl_FragData[0] = vec4(outCd.rgb,1.0);
 }
 #endif

@@ -125,6 +125,7 @@ const int colortex10Format = RGBA16F;
     vec2 lightOffsetCdBase = texture2D(gaux1, vUv).rb; // Depth and offset amount
     float lightCdBase = lightOffsetCdBase.r; // Depth
     float lightOffset = lightOffsetCdBase.g; // Offset amount
+    float shadowSurfaceSunDot = texture2D(colortex2, vUv).a; // Shadow Position and Depth
     vec4 shadowPosDepthBase = texture2D(colortex1, vUv); // Shadow Position and Depth
     vec3 posBase = shadowPosDepthBase.rgb;
     float depthBase = shadowPosDepthBase.a;
@@ -212,7 +213,7 @@ const int colortex10Format = RGBA16F;
     for (int x = 0; x < VolumeRayCount; ++x) {
       float stepFit = (float(x) + jitter(gl_FragCoord.xy, sceneDepth, float(x))) * volRayCountInv;
       //stepFit = biasToOne(stepFit,1.2+max(sceneDepth,0.1)*20.8);
-      stepFit = biasToOne(stepFit,2.5+sceneDepth*20.8);
+      //stepFit = biasToOne(stepFit,2.5+sceneDepth*20.8);
       stepFit = biasToOne(stepFit,2.5+sceneDepth*20.8);
 
       vec3 shadowLookup = mix(shadowOrigin, shadowTarget, stepFit*stepFit);
@@ -224,7 +225,7 @@ const int colortex10Format = RGBA16F;
       rayLight += lightVisibility ;
     }
 
-    float rays = min(1.0, rayLight / float(VolumeRayCount) * 1.5);
+    float rays = min(1.0, rayLight / float(VolumeRayCount) * 1.5 * shadowSurfaceSunDot);
 
 
     float moonAmbianceInf =  moonInf;
@@ -237,21 +238,17 @@ const int colortex10Format = RGBA16F;
     
     //float rays = min( 1.0, rayLight / float(VolumeRayCount)*max(isSky,middleDistanceMask) + max( rainStrength, middleDistanceMaskInv ) );
     //rays = min( 1.0, rays + isSky + rainStrength + middleDistanceMaskInv + max(0.0, 1.0-eyeBrightnessFit*1.5) + depthInf );
-    //rays = mix( rays, rays*.2+.8, rayScalar );
+    float localEyeBrightness = clamp((eyeBrightnessFit-.5)*2.0+.5, 0.0, 1.0);
+    rays = min( 1.0, mix(rays, rays*.2+.8, rayScalar)*lightCdBase + max(rainStrength*localEyeBrightness, middleDistanceMaskInv) );
 
     vec3 rayColor = fogColor*.5;
     outCd.rgb = mix( rayColor, vec3( 1.0 ), min(1.0, max(rays,isSky)+(1.0-sunMoonCrossFade)+(1.0-clamp(eyeBrightnessFit*2.0-.5,0.0,1.0))) );
     //outCd.rgb = vec3( middleDistanceMask );
-    //outCd.rgb = vec3( multiSampleLight );
-
-    //outCd.rgb = vec3( max(lightCdBase,isSky) );
-    //outCd.rgb = vec3( rays );
-
-    //vec3 testLookup = sceneWorldPos + vec3( 0.0,0.0, -0.01 );
-    //multiSampleLight = texture(shadowtex0, testLookup);
-    //outCd.rgb = vec3( multiSampleLight );
+    //outCd.rgb = vec3( lightCdBase );
 
     //float viewDot = 1.0-max(0.0,dot(vNormal.xyz, -normalize(vPos.xyz)));
+
+
 #else
     vec4 outCd = vec4(1.0,1.0,1.0,0.0);
 #endif

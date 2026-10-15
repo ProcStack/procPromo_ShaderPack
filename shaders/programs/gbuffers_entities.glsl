@@ -325,7 +325,7 @@ void main() {
 	float depthFog = min(1.0, depth*2.5 );
 
 
-	float lightLumaBase = biasToOne( lightCd.r );
+	float lightLumaBase = lightCd.r;// biasToOne( lightCd.r );
 
 
 
@@ -347,6 +347,7 @@ void main() {
   float fogColorBlend = 1.0;
 	
 	float ambBrightness = 3.0;
+  float shadowSurfaceInfOut = 1.0;
   
     // -- -- -- -- -- -- -- -- -- -- -- --
     // -- Shadow Sampling & Influence - -- --
@@ -455,7 +456,10 @@ vec3 outShadowPos = vPos.xyz;
   
   float shadowInfFit = 0.025;
   float shadowInfFitInv = 40.0;// 1.0/shadowInfFit;
-  //float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))*shadowInfFitInv )*1.5);
+  shadowSurfaceInfOut = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))*shadowInfFitInv )*1.5);
+  //float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))*shadowInfFitInv )*1.5)*.5+.5;
+  //float shadowSurfaceInf = min(1.0, max(0.0,shadowInfFit*shadowInfFitInv )*1.5) * lightLumaBase;
+  //float shadowSurfaceInf = min(1.0, max(0.0,(shadowInfFit-(-dot(normalize(shadowLightPosition), vNormal)))*shadowInfFitInv )*1.5)*.5+.5;
   float shadowSurfaceInf = min(1.0, max(0.0,shadowInfFit*shadowInfFitInv )*1.5);
   
   
@@ -497,8 +501,8 @@ vec3 outShadowPos = vPos.xyz;
 									- shadowData.b*2.0, 0.0, 1.0) );
   */
   
-  //outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg);
-  outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+diffuseSun*shadowLightInf)), shiftBlackLevels(lightLuma)*shadowMaxSaturation), vec3(1.0),shadowAvg);
+  outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+lightCd*shadowLightInf)), shiftBlackLevels(luma(lightCd))*shadowMaxSaturation), vec3(1.0),shadowAvg)*min(1.0,lightLumaShifted);
+  //outCd.rgb *= mix(max( (min(vec3(1.0),shadowAvg+diffuseSun*shadowLightInf)), shiftBlackLevels(lightLuma)*shadowMaxSaturation), vec3(1.0),shadowAvg);
 	
   // Shadow influenced by depth using rain
   float lightDepthRainMixer = mix( depthBias*depthBias, (depthBias*.5+.5), rainStrengthInv );
@@ -536,12 +540,12 @@ vec3 outShadowPos = vPos.xyz;
   float entityCd = maxComponent(entityColor.rgb);
   outCd.rgb = mix( outCd.rgb, entityColor.rgb, entityCd*.95);  
 
-  
+  //outCd.rgb = vec3(lightLumaShifted);
 
   gl_FragData[0] = outCd;
   //gl_FragData[1] = vec4(1.0-depth, outEffectGlow, 0.0, 1.0);
   gl_FragData[1] = vec4(outShadowPos, 1.0-min(.9999,gl_FragCoord.w));
-  gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
+  gl_FragData[2] = vec4(vNormal.xyz*.5+.5,shadowSurfaceInfOut);
   gl_FragData[3] = vec4( lightLuma, 0.0, 0.0,1.0);
   gl_FragData[4] = vec4(vec3(0.0),1.0);
 

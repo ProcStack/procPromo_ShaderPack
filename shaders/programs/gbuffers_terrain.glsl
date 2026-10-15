@@ -1229,7 +1229,7 @@ vec3 outShadowPos = vPos.xyz;
 // -- Fake Fresnel - -- --
 // -- -- -- -- -- -- -- -- --
 	float dotToCam = dot(vNormal,normalize(vec3(screenSpace*(1.0-depthBias*.25),1.0)));
-	outCd*=mix(1.0, dotToCam, isLava);
+	outCd*=mix(1.0, dotToCam, isLava*0.5);
 	
 
 
@@ -1370,7 +1370,7 @@ vec3 outShadowPos = vPos.xyz;
 //   Helps with block visibility in the dark
   // Grey out all blocks when raining
 	outCd.rgb *= vec3(mix(1.0, min(1.25,toCamNormalDot*dotRainShift+(.55+dotRainShift)), min(1.0,depth*.5+min(.5,lightCd.r*.5)))+cdRainBoost);
-  //outCd.rgb *= lightCd.rgb;
+
 
   // Bring back more color when raining
   // TODO : Fix while not raining and optimization
@@ -1433,17 +1433,20 @@ float skyGreyInf = 0.0;
 // -- -- --
 
 // Fog when Player in Lava 
-	}else if( isEyeInWater > 1 ){
-		depthBias = depthBias*.1; // depth;
-		depth *= .5;
+	}else if( isEyeInWater == 2 ){
+		depthBias = depthBias*.5; // depth;
+		depth *= .75;
 		
 		outCd.rgb = mix( outCd.rgb, fogColor, max(0.0,(1.0-outDepth*.1)) );
 		
 // -- -- --
 
 //Fog when Player in Powder Snow 
-	//}else if( isEyeInWater == 3 ){
-		//outCd.rgb = mix( outCd.rgb, toFogColor, (1.0-outDepth*.1) );
+	}else if( isEyeInWater == 3 ){
+    lightLuma = min(1.0, lightLuma*2.0);
+    lightCd = min(vec3(1.0), lightCd*2.0);
+    surfaceShading = min((1.0), surfaceShading*2.0);
+		outCd.rgb = mix( outCd.rgb, (fogColor)*.95, (1.0-outDepth*.5) );
 		
 // -- -- --
 
@@ -1504,10 +1507,10 @@ float skyGreyInf = 0.0;
 		
 	//outCd.rgb*=mix( vec3(1.0), lightCd.rgb*skyBrightMultFit, min(1.0,  sunPhaseMult*skyBrightness) );
     
-	outCd.rgb*= min( vec3(1.0), lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonCrossFade*skyBrightness) ) + skyBrightMultFit);
+	//outCd.rgb*= min( vec3(1.0), lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonCrossFade*skyBrightness) ) + skyBrightMultFit);
+	outCd.rgb*= min( vec3(1.0), lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonCrossFade*skyBrightness) ));
 	//outCd.rgb = vec3( skyBrightMultFit );
     
-	//outCd.rgb = lightLumaCd.rgb;
 
   // I just can't get this looking good on Iris
   //   So now no gets block occlusion!!
@@ -1515,7 +1518,7 @@ float skyGreyInf = 0.0;
 	//outCd.rgb = mix( outCd.rgb*lightLumaCd.rgb, outCd.rgb, clamp( lightLumaCd.r*1.5-0.5, 0.0, 1.0 )*(1.0+skyBrightness*.5)  );
 #endif
 
-	glowCd += outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf;
+	glowCd += (outCd.rgb*glowInf+(outCd.rgb+.1)*glowInf) * rainStrengthInv * (1.0-skyBrightness*.5);
 	glowCd = mix(glowCd, vColor.rgb, isLava );
 
 
@@ -1556,7 +1559,7 @@ float skyGreyInf = 0.0;
   float fogDetailInf = 1.0-length( clamp((abs(baseCd.rgb-vAvgColor.rgb)-.15)*depthBias*depthBias, 0.0, 1.0) )*(depth*.9+.1);
 	glowHSV.z *= mix( 1.0, min(1.0, biasToOne(depth*depth)*5.0), lavaSnowFogInf);
 #if defined OVERWORLD
-	outCd.rgb = mix( outCd.rgb, fogColor.rgb*depthBias, lavaSnowFogInf*fogDetailInf);
+	outCd.rgb = mix( outCd.rgb, fogColor.rgb*min(1.0,depthBias+float(isEyeInWater)*.3333), lavaSnowFogInf*fogDetailInf);
 #elif defined NETHER
 	outCd.rgb = mix( outCd.rgb, fogColor.rgb, lavaSnowFogInf*fogDetailInf);
 #endif
@@ -1655,6 +1658,7 @@ float skyGreyInf = 0.0;
   //outCd.rgb = vec3(lightLumaCd.rgb );
   //outCd.rgb = vec3( shadowAvg );
   //outCd.rgb = vec3( lightLumaCd );
+  //outCd.rgb = vec3( lightLumaCd );
   //
 
   // Depth flipped negative so the sky can render outlines
@@ -1665,7 +1669,7 @@ float skyGreyInf = 0.0;
 
 
   
-	outNormal = vec4(vNormal*.5+.5, 1.0);
+	outNormal = vec4(vNormal*.5+.5, shadowSurfaceInf);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
 	outLighting = vec4( lightLumaBase, 0.0, vVolumeOffset, 1.0);
 	outGlow = vec4( glowHSV, 1.0 );

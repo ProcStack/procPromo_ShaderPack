@@ -100,7 +100,7 @@ value.DebugView.2=Render Buffers
 value.DebugView.3=Shadow Cam
 value.DebugView.4=Shadow Debug
 value.DebugView.5=Vanilla vs procPromo
-option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Blurring, test blurring methods and side-by-side views.  Depth Buffers, display the glow and depth based buffers.  Shadow Cam, see what the sun & moon see.  Shadow Debug, shadow sample positions. Vanilla vs procPromo, side-by-side comparison
+option.DebugView.comment=Toggle Debugging Colors & Effects; used in development of this shader pack. Detail Blurring, test blurring methods and side-by-side views.  Render Buffers, display the depth, glow, normal, & shadow buffers.  Shadow Cam, see what the sun & moon see.  Shadow Debug, shadow sample positions. Vanilla vs procPromo, side-by-side comparison
 
 # -- -- --
 
