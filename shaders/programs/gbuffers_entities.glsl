@@ -41,6 +41,7 @@ varying vec4 lmcoord;
 varying vec4 vPos;
 varying vec3 vLocalPos;
 varying vec3 vNormal;
+varying vec3 vWorldNormal;
 varying float vNormalSunDot;
 varying vec3 vAvgColor;
 varying float vAvgColorBlend;
@@ -80,6 +81,7 @@ void main() {
   vPos = gl_ModelViewMatrix * gl_Vertex;
 
   vNormal = normalize(gl_NormalMatrix * gl_Normal);
+  vWorldNormal = gl_Normal;
 
   color = gl_Color;
   //color.a=1.0;
@@ -249,6 +251,7 @@ varying vec4 vtexcoordam;
 
 varying vec4 vPos;
 varying vec3 vNormal;
+varying vec3 vWorldNormal;
 varying float vNormalSunDot;
 varying vec3 vAvgColor;
 varying float vAvgColorBlend;
@@ -546,6 +549,7 @@ vec3 outShadowPos = vPos.xyz;
   //gl_FragData[1] = vec4(1.0-depth, outEffectGlow, 0.0, 1.0);
   gl_FragData[1] = vec4(outShadowPos, 1.0-min(.9999,gl_FragCoord.w));
   gl_FragData[2] = vec4(vNormal.xyz*.5+.5,shadowSurfaceInfOut);
+  gl_FragData[2] = vec4(vWorldNormal.xyz*.5+.5,shadowSurfaceInfOut);
   gl_FragData[3] = vec4( lightLuma, 0.0, 0.0,1.0);
   gl_FragData[4] = vec4(vec3(0.0),1.0);
 

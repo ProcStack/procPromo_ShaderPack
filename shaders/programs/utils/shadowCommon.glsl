@@ -1,4 +1,3 @@
-
 // Learned from Chocapic13's HighPerformance Toaster shader pack
 //  I'm still picking up this shadow stuffs,
 //    So the logic may look pretty close to Chocapic13's shader
@@ -47,8 +46,8 @@ const float shadowIntervalSize = 1.00;
 // edgeFade -> 1-(1-abs(world.xy))*edge 
 const float shadowEdgeFade = 10.0;
 
-const float shadowMaxSaturation = 0.7; // 0.0-1.0; Lower is darker
-const float shadowLightInf = 1.2; // 0.0-1.0; Lower is darker
+const float shadowMaxSaturation = 0.75; // 0.0-1.0; Lower is darker
+const float shadowLightInf = 0.45; // 0.0-1.0; Lower is darker
 
 // Distance from base of shadow to blend in a blurry shadow
 //   Close to shadow is sharp, further is blurred
@@ -73,9 +72,12 @@ const float shadowThreshBase_Entity = 0.00015; // gbuffers_entities.glsl
 const float shadowThreshDist = 0.0000035; // Bias far from Camera
 const float shadowThreshDist_Entity = 0.00035; // Bias far from Camera
 
-const float ambianceVolume_NearBias = 0.0001; // Bias near to Camera
-const float ambianceVolume_FarBias = 0.0003; // Bias far from Camera
-const float ambianceVolume_TargetBias = 0.00003; // Bias far from Camera
+const float ambianceVolume_NearBias = 0.00001; // Bias near to Camera
+//const float ambianceVolume_NearBias = 0.0001; // Bias near to Camera
+const float ambianceVolume_FarBias = 0.0005; // Bias far from Camera
+//const float ambianceVolume_FarBias = 0.0003; // Bias far from Camera
+const float ambianceVolume_TargetBias = 0.0001; // Bias far from Camera
+
 
 const float oneThird = 1.0 / 3.0;
 
