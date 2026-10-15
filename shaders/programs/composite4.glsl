@@ -179,7 +179,7 @@
     vec3 reflection = hit ? texture2D(colortex0, hitUv).rgb : vec3(0.0);
     float fresnel = pow(1.0 - max(dot(normal, normalize(-viewPos)), 0.0), 3.0);
 
-    vec4 outCd = vec4(reflection * reflectionMask * mix(0.04, 1.0, fresnel)*fade, float(hit));
+    vec4 outCd = vec4(reflection * reflectionMask * mix(0.1, 1.0, fresnel)*fade, float(hit));
     //outCd = vec4(vec3(reflectionMask), 1.0);
     //outCd = vec4(vec3(lightReflectionCdBase.b), 1.0);
 

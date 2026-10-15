@@ -841,7 +841,7 @@ void main() {
 
   // -- -- --
 
-	float outDepth = min(.9999,gl_FragCoord.w);
+	float outDepth = min(.99999,gl_FragCoord.w);
 	float isLava = vIsLava;
 	vec4 avgShading = vAvgColor;
 	float avgDelta = 0.0;
@@ -949,7 +949,12 @@ void main() {
 	vec4 lightLumaCd = texture(lightmap, luv);//*1.1;
   
 	float lightLumaBase = clamp(luma(lightLumaCd.rgb)*1.26-.13,0.0,1.0);
-	
+  #ifdef OVERWORLD
+    lightLumaBase*=lightLumaBase;
+  #elif defined(THE_END)
+    lightLumaBase *= (lightLumaBase*.25+.75);
+  #endif
+
 	//txCd.rgb = mix(baseCd.rgb, txCd.rgb, avgDelta);
 	txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
 	
@@ -1554,11 +1559,12 @@ float skyGreyInf = 0.0;
 
       //glowInf += (max(0.0,luma(outCd.rgb)-.5)*1.85+isLava)*vCdGlow;
       //outCd.rgb = vec3( luma(outCd.rgb) );
-      #if defined OVERWORLD
-        glowInf = clamp( (outCd.g-.25)*7.0, 0.0, 1.0 )*.15;
+      #if defined THE_END
+        glowInf = clamp( (outCd.g-.25)*7.0, 0.0, 1.0 )*.5;
       #else
-        glowInf = clamp( (outCd.g-.18)*10.0, 0.0, 1.0 );
+        glowInf = clamp( (outCd.g-.25)*7.0, 0.0, 1.0 )*.15;
       #endif
+      //glowCd = addToGlowPass(glowCd, outCd.rgb*20.0);
       //outCd.rgb = vec3( clamp( (outCd.g-.28)*5.0, 0.0, 1.0) );
       //outCd.rgb = vec3( step(.01, outCd.r) );
   }

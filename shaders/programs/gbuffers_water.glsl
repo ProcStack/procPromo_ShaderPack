@@ -502,9 +502,9 @@ void main() {
     alphaDepth = min(1.0, (alphaDepth+alphaFarDepth)+viewFalloff);
 
 
-    const float MIN_ALPHA = 0.75;
+    const float MIN_ALPHA = 0.85;
     const float MAX_ALPHA = 0.95;
-    alphaDepth = clamp(alphaDepth,0.0,1.0)*(MAX_ALPHA-MIN_ALPHA)+MIN_ALPHA;
+    alphaDepth = clamp(alphaDepth+viewFalloff,0.0,1.0)*(MAX_ALPHA-MIN_ALPHA)+MIN_ALPHA;
     //alphaDepth = (alphaFarDepth);
 
 	  //outCd.rgb = vec3(color* mix(vec4(1.0),txCd,vTextureInf));//+0.5;);

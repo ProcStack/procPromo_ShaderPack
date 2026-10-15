@@ -132,7 +132,7 @@ const int colortex10Format = RGBA16F;
     vec2 lightOffsetCdBase = texture2D(gaux1, vUv).rb; // Depth and offset amount
     float lightCdBase = lightOffsetCdBase.r; // Depth
     float lightOffset = lightOffsetCdBase.g; // Offset amount
-    float shadowSurfaceSunDot = texture2D(colortex2, vUv).a*.75+.25; // Shadow Position and Depth
+    float shadowSurfaceSunDot = texture2D(colortex2, vUv).a; // Shadow Position and Depth
     float lightValBase = texture2D(colortex9, vUv).r; // Shadow Position and Depth
     vec4 shadowPosDepthBase = texture2D(colortex1, vUv); // Shadow Position and Depth
     vec3 posBase = shadowPosDepthBase.rgb;
@@ -170,6 +170,8 @@ const int colortex10Format = RGBA16F;
     //float countDiv = float(VolumeRayCount);
     vec3 shadowLookup = sceneWorldPos + vec3( 0.0,0.0, -ambianceVolume_TargetBias );
     float multiSampleLight =  texture(shadowtex0, shadowLookup);
+    float invDepth = 1.0-sceneDepth*sceneDepth;
+    float localInvDepth = invDepth*1.1; // Remove close-to-cam depth shadow artifacts
     
     #if ShadowSampleCount == 1
       multiSampleLight = multiSampleLight;
@@ -179,7 +181,7 @@ const int colortex10Format = RGBA16F;
     #elif ShadowSampleCount == 2
       for( int x=0; x<axisSamplesCount; ++x){
         posOffset = axisSamples[x]*reachMult*shadowMapTexelSize;
-        vec3 shadowLookup = sceneWorldPos + vec3( posOffset, -ambianceVolume_TargetBias );
+        vec3 shadowLookup = sceneWorldPos + vec3( posOffset, -ambianceVolume_TargetBias - localInvDepth );
       
         multiSampleLight +=  texture(shadowtex0, shadowLookup);
       }
@@ -227,7 +229,7 @@ const int colortex10Format = RGBA16F;
 
     float volRayCountInv = 1.0 / float(VolumeRayCount);
     //float localDepth = 1.0 + max( 0.0, sceneDepth*1.5-0.5 )*2.5;
-    float localDepth = 1.2 + sceneDepth*5.0;
+    float localDepth = 1.0 + sceneDepth*10.0;
     float stepFit = 0.0;
     for (int x = 0; x < VolumeRayCount; ++x) {
       stepFit = (float(x) + jitter(gl_FragCoord.xy, sceneDepth, float(x))) * volRayCountInv;
@@ -237,20 +239,22 @@ const int colortex10Format = RGBA16F;
 
       vec3 shadowLookup = mix(shadowOrigin, shadowTarget, stepFit*stepFit);
       //shadowLookup += scatter(shadowLookup, sceneDepth, float(x))*vec3(0.01,0.01,0.01);
-      shadowLookup.z -= lightOffset;// - clamp( (sceneDepth-0.7)*3.4, 0.0, 1.0)*.0025;
+      shadowLookup.z -= lightOffset + localInvDepth*.0005;// - clamp( (sceneDepth-0.7)*3.4, 0.0, 1.0)*.0025;
       float lightVisibility = texture(shadowtex0, shadowLookup);
       //lightVisibility = clamp((lightVisibility-.5)*2.0+0.5, 0.0, 1.0);
 
       rayLight += lightVisibility ;
     }
 
+    float moonAmbianceInf =  moonInf;
+    float depthInf = 1.0-min(1.0,max(0.0, depthBase*depthBase-.9 - isSky)*6.2);
+    float depthDotInf = 1.0-min(1.0,max(0.0, depthBase-.65 - isSky)*4.2);
+
     float rays = min(1.0, rayLight / float(VolumeRayCount) * 1.5 );
-    rays = min( rays*1.3 * multiSampleLight, shadowSurfaceSunDot);
+    rays = min( rays*1.3 * multiSampleLight, shadowSurfaceSunDot*.75+.25) * min(1.0,shadowSurfaceSunDot+(1.0-depthDotInf));
     //rays = multiSampleLight;
 
 
-    float moonAmbianceInf =  moonInf;
-    float depthInf = 1.0-min(1.0,max(0.0, depthBase*depthBase-.9 - isSky)*6.2);
     //depthInf = mix( max(lightCdBase,isSky)*.62+.38, min(1.0,max(0.0, lightCdBase-.4)*2.5*depthInf ), moonAmbianceInf);
     //depthInf = mix( 1.0, min(1.0,max(0.0, lightCdBase-.4)*2.5*depthInf ), moonAmbianceInf);
     //depthInf = 1.0;
@@ -269,7 +273,7 @@ const int colortex10Format = RGBA16F;
     //outCd.rgb = vec3( multiSampleLight );
     //outCd.rgb *= vec3( mix( 0.0, lightCdBase, (1.0-sunPhaseMult*rayScalar)*eyeBrightnessFit) );
     //outCd.rgb = vec3( max(0.0, (lightCdBase-.4)*1.5)*moonInf );
-    //outCd.rgb = vec3((depthInf));
+    //outCd.rgb = vec3(depthBase);
 
     //float viewDot = 1.0-max(0.0,dot(vNormal.xyz, -normalize(vPos.xyz)));
 
