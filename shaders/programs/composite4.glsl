@@ -41,7 +41,8 @@
 
   uniform sampler2D colortex0; // Diffuse Pass
   uniform sampler2D colortex1; // Depth Pass
-  uniform sampler2D colortex2; // Normal Pass
+  uniform sampler2D colortex2; // Screen-space surface normal Pass
+
   uniform sampler2D gaux1;
   uniform vec2 texelSize;
   uniform sampler2D gdepth;
@@ -116,48 +117,45 @@
     float depthBase = shadowPosDepthBase.a;
     float isSky = clamp(smoothstep(.994, 0.9999, depthBase), 0.0, 1.0); // 0 foreground, 1 sky
 
-    // Surface diffuse color `colortex0`
-    // Screen-space surface normals `colortex2`
 
-
-    float sceneDepth = depthBase;//texture2D(depthtex0, vUv).r;
-    float sceneInvDepth = 1.0-depthBase;//texture2D(depthtex0, vUv).r;
+    float sceneDepth = depthBase;
+    float sceneInvDepth = 1.0-sceneDepth;
 
     vec3 viewPos = reconstructViewPos(vUv, sceneDepth);
     vec3 normal = normalize(texture2D(colortex2, vUv).xyz * 2.0 - 1.0);
 
     // Camera is at (0,0,0) in view space.
-    vec3 incident = normalize(viewPos);
-    vec3 rayDir = normalize(reflect(incident, normal));
+    vec3 rayDir = normalize(reflect( normalize(viewPos), normal ));
 
     vec3 rayPos = viewPos + normal * 0.05; // self-intersection bias
-    bool hit = false;
+    float hit = 0.0;
     vec2 hitUv = vec2(0.0);
     float fade = 0.0;
 
     #if ReflectionQuality == 1
-      const int maxSteps = 8; // ReflectionQuality == 1
+      const int maxSteps = 8;
       const float baseDist = 0.03;
       const float stepSize = 0.15;
     #elif ReflectionQuality == 2
-      const int maxSteps = 18; // ReflectionQuality == 2
+      const int maxSteps = 18;
       const float baseDist = 0.04;
       const float stepSize = 0.12;
     #elif ReflectionQuality == 3
-      const int maxSteps = 32; // ReflectionQuality == 3
+      const int maxSteps = 32;
       const float baseDist = 0.05;
       const float stepSize = 0.1;
     #endif
-    vec3 projTest = vec3(0.0);
-    for (int x = 0; x < maxSteps; ++x) {
+    for( int x = 0; x < maxSteps; ++x ){
       float dist = baseDist + float(x) * stepSize;
-      vec3 samplePos = rayPos + rayDir * dist - vec3(0.0, 0.01, 0.0);
+      float stepr = float(x) * stepSize+ 1.0;
+      vec3 samplePos = rayPos + rayDir * sceneDepth*stepr - vec3(0.0, 0.1, 0.0);
+      //vec3 samplePos = rayPos + rayDir * dist - vec3(0.0, 0.01, 0.0);
       vec3 projected = projectToScreen(samplePos);
       projected.x += jitter( vUv, dist )*sceneInvDepth;
       projected.y += jitter( vUv, dist+0.1 )*sceneInvDepth;
 
-      if (projected.x < 0.0 || projected.x > 1.0 ||
-        projected.y < 0.0 || projected.y > 1.0) {
+      if( projected.x < -0.30 || projected.x > 1.30 ||
+        projected.y < -0.30 || projected.y > 1.30 ){
         break;
       }
 
@@ -167,23 +165,22 @@
 
       // With standard OpenGL projection, larger depth is farther away.
       // The ray hit geometry once it moves behind sampled scene depth.
-      if(projected.z > sceneSampleDepth + 0.0015) {
-        hit = true;
+      if( projected.z > sceneSampleDepth + 0.0015 ){
+        hit = 1.0;
         hitUv = projected.xy;
         fade = 1.0-clamp((max( abs(projected.x-.5), abs(projected.y-.5) )-.45)*10.0, 0.0, 1.0);
-        projTest = vec3(dist);
         break;
       }
     }
 
-    vec3 reflection = hit ? texture2D(colortex0, hitUv).rgb : vec3(0.0);
+    vec3 reflection = hit>0.5 ? texture2D(colortex0, hitUv).rgb : vec3(0.0);
     float fresnel = pow(1.0 - max(dot(normal, normalize(-viewPos)), 0.0), 3.0);
 
-    vec4 outCd = vec4(reflection * reflectionMask * mix(0.1, 1.0, fresnel)*fade, float(hit));
+    vec4 outCd = vec4(reflection * reflectionMask * mix(0.1, 1.0, fresnel)*fade, hit);
     //outCd = vec4(vec3(reflectionMask), 1.0);
     //outCd = vec4(vec3(lightReflectionCdBase.b), 1.0);
 
-
+    //outCd.rgb = normal;
 
 #else
     vec4 outCd = vec4(1.0,1.0,1.0,0.0);

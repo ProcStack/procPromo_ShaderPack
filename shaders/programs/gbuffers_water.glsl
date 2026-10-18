@@ -42,6 +42,7 @@ varying float vKeepBack;
 varying vec4 vPos;
 varying vec3 vLocalPos;
 varying vec4 vNormal;
+varying vec3 vWorldNormal;
 varying float vNormalSunDot;
 
 
@@ -107,6 +108,7 @@ void main() {
   
   vNormal.xyz = normalize(gl_NormalMatrix * gl_Normal);
   vNormal.a = 0.02;
+  vWorldNormal = gl_Normal;
   
   //vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
   vec3 localSunPos = (gbufferProjectionInverse * gbufferModelViewInverse * vec4(sunPosition,1.0) ).xyz;
@@ -252,6 +254,7 @@ varying float vMinAlpha;
 varying float vKeepBack;
 varying vec4 vPos;
 varying vec4 vNormal;
+varying vec3 vWorldNormal;
 varying float vNormalSunDot;
 
 #ifdef OVERWORLD
@@ -272,6 +275,7 @@ varying float vNormalSunDot;
 
 const int GL_LINEAR = 9729;
 const int GL_EXP = 2048;
+const float EPSILONish = 0.001; // Account for Mipmapping
 
 void main() {
 
@@ -282,7 +286,7 @@ void main() {
   vec4 txCd = diffuseNoLimit( gcolor, tuv, texelSize*0.50 );
   vec4 baseCd =  texture2D(gcolor, tuv);// 
   
-	if ( vKeepBack < 0.0 ){
+	if( vKeepBack*baseCd.a < EPSILONish ){
 		discard;
 	}
 	
@@ -519,9 +523,12 @@ void main() {
     outDepth = 1.0-gl_FragCoord.z/gl_FragCoord.w;
     outDepth *= outDepth*outDepth;
 
+    //outCd.rgb = vec3(baseCd.a);
+
     gl_FragData[0] = outCd;
     gl_FragData[1] = vec4(outShadowPos, outDepth);
     gl_FragData[2] = vec4(vNormal.xyz*.5+.5,1.0);
+    //gl_FragData[2] = vec4(vWorldNormal.xyz*.5+.5,1.0);
     gl_FragData[3] = vec4(glowHSV,1.0);
     gl_FragData[4] = vec4(luma(lightVal.rgb),viewDot*.997+.003,0.0,1.0);
 

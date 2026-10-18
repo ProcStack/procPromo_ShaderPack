@@ -456,6 +456,7 @@ void main() {
     vDeltaPow=0.90;
 		//vAvgColor+=vec4(0.1,0.1,0.12,0.0);
 		vAvgColor.rgb=vec3(vAvgColor.rgb*.75);
+    vVolumeOffset = 0.003;
   }else if( mc_Entity.x == 106 ){ // Snow Layers
     vDeltaPow=0.90;
 		//vAvgColor=vec4(0.985,0.985,0.985,1.0);
@@ -624,7 +625,7 @@ void main() {
   }
 
   // Dried Ghast
-  if( mc_Entity.x == 260 ){ 
+  if( mc_Entity.x == 261 ){ 
     vCdGlow = 0.0;
 		vDeltaPow = 1.150;
 		vDeltaMult = 5.5;
@@ -632,8 +633,22 @@ void main() {
   }
 
   // Fire / Soul Fire
-  if( mc_Entity.x == 280 ){
-    vCdGlow=idFitToGlow * worldGlowMult;
+  if( mc_Entity.x == 260 ){
+    vCdGlow=idFitToGlow * worldGlowMult * .5;
+    vColor+=vColor*.15;
+    
+    #ifdef NETHER
+      vCdGlow *= .5;
+      vColor.rgb *= vec3(.85);
+    #endif
+    //vAvgColor = vec4( .8, .6, .0, 1.0 );
+    
+    //vDepthAvgColorInf =  0.0;
+  }
+
+  // Campfire / Soul Campfire
+  if( mc_Entity.x == 259 ){
+    vCdGlow=idFitToGlow * worldGlowMult * .25;
     vColor+=vColor*.15;
     
     #ifdef NETHER
@@ -716,6 +731,9 @@ uniform float nightVision;
 uniform float dayNight;
 uniform float moonPhaseMultTerrain;
 uniform float moonInf;
+
+uniform float darknessFactor; // strength of the darkness effect (0.0-1.0)
+uniform float darknessLightFactor; // Lightmap variation?
 
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
@@ -845,6 +863,12 @@ void main() {
 	float isLava = vIsLava;
 	vec4 avgShading = vAvgColor;
 	float avgDelta = 0.0;
+
+	// -- -- -- -- -- -- --
+  
+  float darknessGlowInf = (1.0 - darknessLightFactor);
+  float darknessLightInf = (1.0 - clamp(darknessFactor*.85*darknessGlowInf-outDepth*2.0, 0.0, 1.0));
+  float darknessGreyInf = (1.0 - min(1.0, darknessLightFactor*0.5 + darknessFactor*.5));
 
 	// -- -- -- -- -- -- --
 
@@ -1535,7 +1559,7 @@ float skyGreyInf = 0.0;
 	//outCd.rgb*=mix( vec3(1.0), lightCd.rgb*skyBrightMultFit, min(1.0,  sunPhaseMult*skyBrightness) );
     
 	//outCd.rgb*= min( vec3(1.0), lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonCrossFade*skyBrightness) ) + skyBrightMultFit);
-	outCd.rgb*= min( vec3(1.0), lightCd.rgb * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonCrossFade*skyBrightness) ));
+	outCd.rgb*= min( vec3(1.0), lightCd.rgb * (1.0+skyBrightness*.3) * darknessLightInf * mix( 1.0, skyBrightMultFit, min(1.0,  sunMoonCrossFade*skyBrightness) ));
 	//outCd.rgb = vec3( skyBrightMultFit );
     
 
@@ -1593,6 +1617,7 @@ float skyGreyInf = 0.0;
 #endif
 
 
+
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Texture Overides from Settings - -- --
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -1626,15 +1651,24 @@ float skyGreyInf = 0.0;
 // Boost bright colors morso
 	boostPeaks(outCd.rgb);
 	
-   
+
 	vec3 ambientCd = mix( outCd.rgb, vColor.rgb, isLava );
 	float ambientGlow = length(ambientCd) * (1.1 + GlowBrightness*.15) * .5;
-	ambientGlow = ambientGlow*ambientGlow;
+	ambientGlow = ambientGlow*ambientGlow * darknessGlowInf * darknessLightInf;
 	glowHSV.z = min( glowHSV.z, ambientGlow );// * vCdGlow;
   
 	
-// -- -- --
-	
+// -- -- -- -- -- -- -- --
+// -- Warden Darkness - -- --
+// -- -- -- -- -- -- -- -- -- --
+
+  if( darknessGreyInf < 1.0 ){ // Uniform, no branching
+    float cdLuma = luma(outCd.rgb);
+    //outCd.rgb = mix(outCd.rgb, vec3(cdLuma), darknessLightInf);
+    outCd.rgb = mix( vec3(cdLuma), outCd.rgb, darknessGreyInf);
+  }
+
+
 	
 // -- -- -- -- -- -- -- -- -- -- -- -- --
 // -- Debugging Views - -- --
@@ -1686,7 +1720,7 @@ float skyGreyInf = 0.0;
   //outCd.rgb = vec3(lightLumaCd.rgb );
   //outCd.rgb = vec3( shadowAvg );
   //outCd.rgb = vec3( lightLumaCd );
-  //outCd.rgb = vec3( diffuseSun );
+  //outCd.rgb = vec3( darknessFactor, darknessLightFactor, 0.0 );
   //
 
   // Depth flipped negative so the sky can render outlines
@@ -1698,7 +1732,7 @@ float skyGreyInf = 0.0;
 
   
 	outNormal = vec4(vNormal*.5+.5, shadowSurfaceInfOut);
-	outNormal = vec4(vWorldNormal*.5+.5, shadowSurfaceInfOut);
+	//outNormal = vec4(vWorldNormal*.5+.5, shadowSurfaceInfOut);
 	// [ Sun/Moon Strength, Light Map, Spectral Glow ]
 	outLighting = vec4( lightLumaBase, 0.0, vVolumeOffset, 1.0);
 	outGlow = vec4( glowHSV, 1.0 );
