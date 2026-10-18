@@ -297,7 +297,8 @@ void main() {
   outCd *= mix(vec4(1.0),txCd,vTextureInf);//+0.5;
 
   //float depth = min(1.0, gl_FragCoord.w);
-  float depth = clamp( gl_FragCoord.z/gl_FragCoord.w, 0.0, 1.0);
+  //float depth = clamp( gl_FragCoord.z/gl_FragCoord.w, 0.0, 1.0);
+	float depth = min(.99999,gl_FragCoord.w);
 	float depthBias = biasToOne(depth, 10.5);
   //outCd.rgb = mix( fogColor, outCd.rgb, smoothstep(.0,.01,depth) );
   outCd.rgb = mix( fogColor*vec3(.8,.8,.9), outCd.rgb, min(1.0,depth*80.0)*.8+.2 ) * lightVal.rgb;
@@ -415,7 +416,8 @@ void main() {
       
     // -- -- --
     //  Distance influence of surface shading --
-      shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * (1-rainStrength) * dayNightMult;
+      shadowAvg = mix( (shadowAvg*shadowSurfaceInf), min(shadowAvg,shadowSurfaceInf), shadowAvg)*skyBrightnessMult * dayNightMult;
+      shadowAvg = mix( shadowAvg, 0.75, rainStrength);
       
     // -- -- --
       diffuseSun *= mix( max(0.0,shadowDepthInf-rainStrength), shadowAvg, sunMoonShadowInf * shadowSurfaceInf );
@@ -429,7 +431,7 @@ void main() {
   // -- -- -- -- -- -- -- -- -- --
     
   // Mute Shadows during Rain
-  diffuseSun = mix( diffuseSun, 0.50, rainStrength);          
+  diffuseSun = mix( diffuseSun, .50, rainStrength);          
   
   lightCd = max( lightCd, diffuseSun);
 	// Mix translucent color
@@ -458,12 +460,11 @@ void main() {
     surfaceShading = max( surfaceShading, lightCd.r );
     surfaceShading = shiftBlackLevels( surfaceShading );
     
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-  // -- 'Specular' Roll-Off; Radial Highlights -- --
-  // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+  // -- -- -- -- -- -- --
+  // -- Rain Shading - -- --
+  // -- -- -- -- -- -- -- -- --
     
-    
-    //outCd.rgb += outCd.rgb * depthBias * surfaceShading *fogColor; // -.2;
+    outCd.rgb = mix(  outCd.rgb, outCd.rgb * fogColor, (1.0-depth)*rainStrength); // -.2;
     //outCd.rgb *= lightCd.xyz; // -.2;
 #endif
 

@@ -25,7 +25,7 @@ const bool waterShadowEnabled = true;
 //const bool shadowtex0Nearest = true;
 //const bool shadow0MinMagNearest = true;
 
-const int shadowMapResolution = 4096; // [512 1024 2048 4096 8192 16384]
+const int shadowMapResolution = 2048; // [512 1024 2048 4096 8192 16384]
 const float shadowMapTexelSize = 1.0/float(shadowMapResolution);
 /* #define MC_SHADOW_QUALITY 0.5 */
 
