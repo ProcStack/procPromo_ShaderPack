@@ -1,4 +1,4 @@
-# ProcStack's procPromo v0.9
+# ProcStack's procPromo v0.9.1
 ### Optifine & Iris Shader Pack
 #### MC 1.26.3; Wilderness Bound
 

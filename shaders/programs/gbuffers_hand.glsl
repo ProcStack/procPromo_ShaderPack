@@ -277,7 +277,7 @@ void main() {
 
   gl_FragData[0] = outCd;
   //gl_FragData[1] = vec4(vec3( min(1.0,gl_FragCoord.w)-.0001 ), 1.0);
-  gl_FragData[1] = vec4(vPos.xyz, 1.0-min(1.0,gl_FragCoord.w-.0001));
+  gl_FragData[1] = vec4(vPos.xyz, 0.9);
   gl_FragData[2] = vec4(normal.xyz*.5+.5,1.0);
   //gl_FragData[3] = vec4(1.0,min(.999999,gl_FragCoord.w)+.5,0.0,1.0);//glowVal);
   gl_FragData[3] = vec4(min(.999999,gl_FragCoord.w)+.5,0.0,0.0,1.0);//glowVal);
