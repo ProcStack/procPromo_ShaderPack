@@ -19,6 +19,8 @@ uniform vec3 sunPosition;
 uniform vec3 upPosition;
 uniform int blockEntityId;
 
+uniform mat3 normalMatrix;
+
 uniform vec2 texelSize;
 
 uniform float viewWidth;
@@ -82,6 +84,8 @@ varying float vWorldTime;
 	varying float dayNightMult;
 	varying float sunPhaseMult;
 	varying vec4 shadowPos;
+  varying float vShadowValid;
+  varying float vShadowPush;
 #endif
 
 
@@ -126,13 +130,15 @@ void main() {
 	// Invert vert  modelVert positions 
   float depth = min(1.5, length(position.xyz)*.015 );
   vec3 shadowPosition = mat3(gbufferModelViewInverse) * position.xyz + gbufferModelViewInverse[3].xyz;
-
-  vec3 shadowNormal = mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;
-  float shadowPushAmmount =  (depth*.5 + .0010 ) ;
-	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.z) );
+  //float shadowPushAmmount =  (depth*.2 + .00030 ) ;
+  float shadowPushAmmount =  ( .0000001 ) ;
+	
+  vec3 shadowNormal = normalMatrix*gl_Normal;//mat3(shadowProjection) * mat3(shadowModelView) * gl_Normal;//vaNormal;
+	float sNormRef = max(abs(shadowNormal.x), abs(shadowNormal.y) );
 	
 	// `+ (0.75-depth*.55)` is scalping fixes
-	sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.55) );
+	//sNormRef = max( -shadowNormal.y*depth, sNormRef + (0.75+depth*.15	) );
+	sNormRef = max( -shadowNormal.y*depth, sNormRef );
   shadowPushAmmount *= sNormRef;
   vec3 shadowPush = shadowNormal*shadowPushAmmount ;
   
@@ -140,6 +146,12 @@ void main() {
   vec3 shadowProjDiag = diagonal3(shadowProjection);
   shadowPos.xyz = (shadowProjDiag * shadowPos.xyz + shadowProjection[3].xyz);
   shadowPos.w = 1.0;
+
+  // Match shadow.glsl: warp per vertex before rasterization and interpolation.
+  shadowPos = distortShadowShift(shadowPos);
+  vShadowValid=step(abs(shadowPos.x),1.0)*step(abs(shadowPos.y),1.0);
+  vShadowPush = 1.0-abs(gl_Normal.y);//step( 0.000001, shadowNormal.y );
+
 
   #if ( DebugView == 4 ) // Debug Vision : Shadow Debug
 		// Verts push out on the left side of the screen
@@ -397,6 +409,8 @@ varying float vWorldTime;
 	varying float dayNightMult;
 	varying float sunPhaseMult;
 	varying vec4 shadowPos;
+  varying float vShadowValid;
+  varying float vShadowPush;
 #endif
 
 const int GL_LINEAR = 9729;
@@ -409,7 +423,6 @@ void main() {
     float blockShading = color.a * (sin( colorValue*PI*.5 )*.5+.5);
     
     vec3 diffuseLight = vec3(0.0);
-
     
 	
     vec2 tuv = texcoord.st;
@@ -421,6 +434,7 @@ void main() {
     float glowInf = 0.0;
     vec3 glowCd = vec3(0,0,0);
 
+	  float outDepth = min(.99999,gl_FragCoord.w);
 
     // -- -- -- -- -- -- --
     
@@ -484,11 +498,11 @@ void main() {
   float toCamNormalDot = dot(normalize(-vPos.xyz*vec3(1.3,1.35,1.3)),vNormal.xyz)+.2;
   float surfaceShading = 9.0-abs(toCamNormalDot);
 
-  float fogColorBlend = 1.0;
   
     // -- -- -- -- -- -- -- -- -- -- -- --
     // -- Shadow Sampling & Influence - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
+vec3 outShadowPos = vPos.xyz;
 #ifdef OVERWORLD
 		float lightLuma = shiftBlackLevels( lightLumaBase ); // lightCd.r;
 
@@ -499,62 +513,71 @@ void main() {
 #if ShadowSampleCount > 0
 
   vec3 localShadowOffset = shadowPosOffset;
-  localShadowOffset.z *= (skyBrightnessMult*.5+.5);
-  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(2.0-depthBias)) * shadowThreshold );
+  //localShadowOffset.z *= (skyBrightnessMult*.5+.5);
+  //localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist*(2.0-depthBias)) * shadowThreshold );
   
+  localShadowOffset.z = 0.5 - min( 1.0, (shadowThreshBase + shadowThreshDist) * shadowThreshold );
+
   vec4 shadowPosLocal = shadowPos;
+  
 
 	// 
-  shadowPosLocal = distortShadowShift( shadowPosLocal );
-  vec3 projectedShadowPosition = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+  //shadowPosLocal = distortShadowShift( shadowPosLocal );
   
-	// Get base shadow value
-  shadowBase=shadow2D(shadowtex0, projectedShadowPosition).x; 
-	shadowAvg = shadowBase ;
-	
-	// Get base shadow source block color
-  shadowCd=texture2D(shadowcolor0, projectedShadowPosition.xy); 
-	
-	// Get shadow source distance
-	// Delta of frag shadow distance * shadowDistBiasMult
-	shadowData = texture2D(shadowcolor1, projectedShadowPosition.xy).rgg;
-	shadowData.b = ( shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
-	
-	shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
-	
-  reachMult = min(10.0,  shadowData.b + .50 )*0.55;
+  vec3 baseShadowLookup = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+
+  localShadowOffset.z = 0.5 - min( 1.0, ( 0.00002) * shadowThreshold );
+  outShadowPos = shadowPosLocal.xyz * shadowPosMult + localShadowOffset;
+
+  vec3 projectedShadowPosition = baseShadowLookup;
+  #if VolumeRayCount == 0
+    // Get base shadow value
+    shadowBase = texture(shadowtex0, baseShadowLookup);
+    shadowAvg = shadowBase ;
+    
+    // Get base shadow source block color
+    //shadowCd=texture2D(shadowcolor0, projectedShadowPosition.xy); 
+    
+    // Get shadow source distance
+    // Delta of frag shadow distance * shadowDistBiasMult
+    //shadowData = texture2D(shadowcolor1, projectedShadowPosition.xy).rgg;
+    //shadowData.b = ( shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
+    
+    //shadowCd.rgb = mix( vec3(0.0), shadowCd.rgb, shadowData.r ); 
+    
+    //reachMult = min(10.0,  shadowData.b + .50 )*0.55;
+    reachMult = 1.0+outDepth*0.75 ;
 
 
-
-
-#if ShadowSampleCount == 2
-  vec2 posOffset;
-  //float reachMult = reachMult;// - (min(1.0,depth*20.0)*.5);
-  reachMult = max(0.0, reachMult - (min(1.0,depth*20.0)*.5));
-  
-  for( int x=0; x<axisSamplesCount; ++x){
-    posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightnessMult;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-  
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, axisSamplesFit);
-  }
-#elif ShadowSampleCount == 3
-  vec2 posOffset;
-  
-  for( int x=0; x<boxSamplesCount; ++x){
-    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
-  }
-#elif ShadowSampleCount > 3
-  vec2 posOffset;
-  
-  for( int x=0; x<boxSamplesCount; ++x){
-    posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
-    projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
-    shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
-  }
-#endif
+    #if ShadowSampleCount == 2
+      vec2 posOffset;
+      //float reachMult = reachMult;// - (min(1.0,depth*20.0)*.5);
+      reachMult = max(0.0, reachMult - (min(1.0,depth*20.0)*.5));
+      
+      for( int x=0; x<axisSamplesCount; ++x){
+        posOffset = axisSamples[x]*reachMult*shadowMapTexelSize*skyBrightnessMult;
+        projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+      
+        shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, axisSamplesFit);
+      }
+    #elif ShadowSampleCount == 3
+      vec2 posOffset;
+      
+      for( int x=0; x<boxSamplesCount; ++x){
+        posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
+        projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+        shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+      }
+    #elif ShadowSampleCount > 3
+      vec2 posOffset;
+      
+      for( int x=0; x<boxSamplesCount; ++x){
+        posOffset = boxSamples[x]*reachMult*shadowMapTexelSize;
+        projectedShadowPosition = vec3(shadowPosLocal.xy+posOffset,shadowPosLocal.z) * shadowPosMult + localShadowOffset;
+        shadowAvg = mix( shadowAvg, shadow2D(shadowtex0, projectedShadowPosition).x, boxSampleFit);
+      }
+    #endif
+  #endif
 
   
   shadowDepthInf = clamp( (depth*Distance_DarkenMult), 0.0, 1.0 );
@@ -600,7 +623,6 @@ void main() {
 	//outCd.rgb = mix(lightCd*shadowAvg, outCd.rgb, shadowCd.a);
 	
 
-  fogColorBlend = skyBrightnessMult;
   
   lightCd = min(vec3(min(1.0,lightLumaBase)), mix( lightCd*(.8+(1.0-skyBrightnessMult)*.2)+shadowData.r*.3*max(0.0,vNormalSunDot), max(lightCd, vec3(shadowAvg)), shadowAvg) );
 	lightCd = mix( vec3(lightLumaBase), lightCd.rgb, skyBrightnessMult);
@@ -673,13 +695,16 @@ void main() {
     outCd = mix( outCd, (texture2D(gcolor, tuv)*debugCdMult+(1.0-debugCdMult)) * lightBaseCd * color, debugBlender);
   #endif
 	
+	//outCd.rgb = vec3(1.0,0.0,0.0);
+	//outCd.rgb = vec3(color.aaa);
+	//float outDepth = min(.99999,gl_FragCoord.w);
     //outCd.rgb = vec3( avgBlender );
     gl_FragData[0] = outCd;
     //gl_FragData[1] = vec4(vec3( min(.999,gl_FragCoord.w) ), 1.0);
-    gl_FragData[1] = vec4(vPos.xyz, 1.0-min(.9999,gl_FragCoord.w));
+    gl_FragData[1] = vec4( outShadowPos, 1.0-min(.9999,gl_FragCoord.w) );
     gl_FragData[2] = vec4(vNormal*.5+.5, 1.0);
     //gl_FragData[3] = vec4(vec3(blockShading), 1.0);
-    gl_FragData[3] = vec4(diffuseLight, 1.0);
+    gl_FragData[3] = vec4( 1.0, 0.0, 0.0, 0.0);
     gl_FragData[4] = vec4( glowHSV, 1.0);
 
     

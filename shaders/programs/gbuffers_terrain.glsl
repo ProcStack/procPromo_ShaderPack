@@ -1096,15 +1096,15 @@ vec3 outShadowPos = vPos.xyz;
       
     // Get shadow source distance
     // Delta of frag shadow distance * shadowDistBiasMult
-      shadowData = texture(shadowcolor1, baseShadowLookup.xy).rgg;
-      shadowData.b = max(0.0, shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
+      //shadowData = texture(shadowcolor1, baseShadowLookup.xy).rgg;
+      //shadowData.b = max(0.0, shadowData.g - length(shadowPosLocal.xyz) ) * shadowDistBiasMult;
       
       // //shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowFade ); 
       //shadowCd.rgb = mix( vec3(1.0), shadowCd.rgb, shadowData.r*shadowFade ); 
 
     // Higher the value, the softer the shadow
     //   ...well "softer", distance of multi-sample
-      reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
+      //reachMult = min(10.0,  shadowData.b*1.2 + 2.2 );
 
       reachMult = max(0.0, reachMult - (min(1.0,outDepth*1000.0)*.5))*1.2 ;
       reachMult = 1.0+outDepth*0.75 ;
